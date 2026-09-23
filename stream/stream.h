@@ -259,7 +259,7 @@ typedef struct stream {
     bool autoprobed : 1; // opened by the autoprobe loop, not explicitly
                          // requested, failures should stay quiet
     struct mp_log *log;
-    struct mpv_global *global;
+    struct domi_vid_global *global;
 
     struct mp_cancel *cancel;   // cancellation notification
 
@@ -326,21 +326,21 @@ void stream_drop_buffers(stream_t *s);
 void stream_rebase_position(stream_t *s);
 int64_t stream_get_size(stream_t *s);
 
-struct mpv_global;
+struct domi_vid_global;
 
 struct bstr stream_read_complete(struct stream *s, void *talloc_ctx,
                                  int max_size);
 struct bstr stream_read_file(const char *filename, void *talloc_ctx,
-                             struct mpv_global *global, int max_size);
+                             struct domi_vid_global *global, int max_size);
 // Like stream_read_file(), but allows specifying flags like with stream_create().
 struct bstr stream_read_file2(const char *filename, void *talloc_ctx,
-                              int flags, struct mpv_global *global, int max_size);
+                              int flags, struct domi_vid_global *global, int max_size);
 
 int stream_control(stream_t *s, int cmd, void *arg);
 void free_stream(stream_t *s);
 
 struct stream_open_args {
-    struct mpv_global *global;
+    struct domi_vid_global *global;
     struct mp_cancel *cancel;   // aborting stream access (used directly)
     const char *url;
     int flags;                  // STREAM_READ etc.
@@ -350,18 +350,18 @@ struct stream_open_args {
 
 int stream_create_with_args(struct stream_open_args *args, struct stream **ret);
 struct stream *stream_create(const char *url, int flags,
-                             struct mp_cancel *c, struct mpv_global *global);
-stream_t *open_output_stream(const char *filename, struct mpv_global *global);
+                             struct mp_cancel *c, struct domi_vid_global *global);
+stream_t *open_output_stream(const char *filename, struct domi_vid_global *global);
 
 void mp_url_unescape_inplace(char *buf);
 char *mp_url_unescape(void *talloc_ctx, const char *url);
 char *mp_url_escape(void *talloc_ctx, const char *s, const char *ok);
 
 // stream_memory.c
-struct stream *stream_memory_open(struct mpv_global *global, void *data, int len);
+struct stream *stream_memory_open(struct domi_vid_global *global, void *data, int len);
 
 // stream_concat.c
-struct stream *stream_concat_open(struct mpv_global *global, struct mp_cancel *c,
+struct stream *stream_concat_open(struct domi_vid_global *global, struct mp_cancel *c,
                                   struct stream **streams, int num_streams);
 
 // stream_file.c
@@ -372,7 +372,7 @@ char *mp_file_get_path(void *talloc_ctx, bstr url);
 struct AVDictionary;
 void mp_setup_av_network_options(struct AVDictionary **dict,
                                  const char *target_fmt,
-                                 struct mpv_global *global,
+                                 struct domi_vid_global *global,
                                  struct mp_log *log);
 
 void stream_print_proto_list(struct mp_log *log);

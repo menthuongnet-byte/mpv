@@ -21,7 +21,7 @@
 #include <string.h>
 #include <assert.h>
 
-#include "mpv_talloc.h"
+#include "domi_vid_talloc.h"
 #include "misc/bstr.h"
 #include "common/common.h"
 #include "common/msg.h"

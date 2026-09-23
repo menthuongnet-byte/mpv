@@ -22,7 +22,7 @@
 #include <limits.h>
 #include <assert.h>
 
-#include "mpv_talloc.h"
+#include "domi_vid_talloc.h"
 
 #include "common/msg.h"
 #include "common/msg_control.h"

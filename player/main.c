@@ -27,7 +27,7 @@
 
 #include <libplacebo/config.h>
 
-#include "mpv_talloc.h"
+#include "domi_vid_talloc.h"
 
 #include "misc/dispatch.h"
 #include "misc/random.h"
@@ -160,9 +160,9 @@ void mp_update_logging(struct MPContext *mpctx, bool preinit)
 void mp_print_version(struct mp_log *log, int always)
 {
     int v = always ? MSGL_INFO : MSGL_V;
-    mp_msg(log, v, "%s %s\n", mpv_version, mpv_copyright);
-    if (strcmp(mpv_builddate, "UNKNOWN"))
-        mp_msg(log, v, " built on %s\n", mpv_builddate);
+    mp_msg(log, v, "%s %s\n", domi_vid_version, domi_vid_copyright);
+    if (strcmp(domi_vid_builddate, "UNKNOWN"))
+        mp_msg(log, v, " built on %s\n", domi_vid_builddate);
     mp_msg(log, v, "libplacebo version: %s\n", PL_VERSION);
     check_library_versions(log, v);
     // Only in verbose mode.
@@ -267,7 +267,7 @@ struct MPContext *mp_create(void)
         return NULL;
     }
 
-    char *enable_talloc = getenv("MPV_LEAK_REPORT");
+    char *enable_talloc = getenv("domi_vid_LEAK_REPORT");
     if (enable_talloc && strcmp(enable_talloc, "1") == 0)
         talloc_enable_leak_report();
 
@@ -288,7 +288,7 @@ struct MPContext *mp_create(void)
 
     mp_mutex_init(&mpctx->abort_lock);
 
-    mpctx->global = talloc_zero(mpctx, struct mpv_global);
+    mpctx->global = talloc_zero(mpctx, struct domi_vid_global);
 
     demux_packet_pool_init(mpctx->global);
     stats_global_init(mpctx->global);
@@ -326,7 +326,7 @@ struct MPContext *mp_create(void)
     cocoa_set_input_context(mpctx->input);
 #endif
 
-    char *verbose_env = getenv("MPV_VERBOSE");
+    char *verbose_env = getenv("domi_vid_VERBOSE");
     if (verbose_env)
         mpctx->opts->verbose = strtol(verbose_env, NULL, 10);
 
@@ -418,8 +418,8 @@ int mp_initialize(struct MPContext *mpctx, char **options)
     MP_STATS(mpctx, "start init");
 
 #if HAVE_COCOA
-    mpv_handle *ctx = mp_new_client(mpctx->clients, "mac");
-    cocoa_set_mpv_handle(ctx);
+    domi_vid_handle *ctx = mp_new_client(mpctx->clients, "mac");
+    cocoa_set_domi_vid_handle(ctx);
 #endif
 
 #if HAVE_WIN32_SMTC
@@ -453,7 +453,7 @@ int mp_initialize(struct MPContext *mpctx, char **options)
     return 0;
 }
 
-int mpv_main(int argc, char *argv[])
+int domi_vid_main(int argc, char *argv[])
 {
     struct MPContext *mpctx = mp_create();
     if (!mpctx)

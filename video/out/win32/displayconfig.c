@@ -21,7 +21,7 @@
 
 #include "displayconfig.h"
 
-#include "mpv_talloc.h"
+#include "domi_vid_talloc.h"
 
 static bool is_valid_refresh_rate(DISPLAYCONFIG_RATIONAL rr)
 {

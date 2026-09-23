@@ -32,7 +32,7 @@
 
 #include "common/msg.h"
 #include "config.h"
-#include "mpv_talloc.h"
+#include "domi_vid_talloc.h"
 
 #include "stream.h"
 #include "options/m_option.h"

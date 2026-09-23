@@ -68,7 +68,7 @@ static int compare_priority(const void *a, const void *b)
     return mp_natural_sort_cmp(s1->fname, s2->fname);
 }
 
-static void append_dir_external_files(struct mpv_global *global, struct MPOpts *opts,
+static void append_dir_external_files(struct domi_vid_global *global, struct MPOpts *opts,
                                       struct subfn **slist, int *nsub,
                                       struct bstr path, const char *fname,
                                       int limit_fuzziness, int limit_type)
@@ -224,7 +224,7 @@ static void filter_subidx(struct subfn **slist, int *nsub)
     }
 }
 
-static void load_paths(struct mpv_global *global, struct MPOpts *opts,
+static void load_paths(struct domi_vid_global *global, struct MPOpts *opts,
                        struct subfn **slist, int *nsubs, const char *fname,
                        char **paths, char *cfg_path, int type)
 {
@@ -249,7 +249,7 @@ static void load_paths(struct mpv_global *global, struct MPOpts *opts,
 
 // Return a list of subtitles and audio files found, sorted by priority.
 // Last element is terminated with a fname==NULL entry.
-struct subfn *find_external_files(struct mpv_global *global, const char *fname,
+struct subfn *find_external_files(struct domi_vid_global *global, const char *fname,
                                   struct MPOpts *opts)
 {
     struct subfn *slist = talloc_array_ptrtype(NULL, slist, 1);

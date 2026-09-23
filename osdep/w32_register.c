@@ -32,20 +32,20 @@
 
 #include "windows_utils.h"
 
-#define MPV_NAME L"mpv"
-#define MPV_FRIENDLY_NAME L"mpv media player"
+#define domi_vid_NAME L"mpv"
+#define domi_vid_FRIENDLY_NAME L"mpv media player"
 
 #define KEY_AUTOPLAY L"Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\AutoplayHandlers"
-#define KEY_MPV_APP L"Software\\Classes\\Applications\\" MPV_NAME L".exe"
-#define KEY_MPV_APP_PATHS L"Software\\Microsoft\\Windows\\CurrentVersion\\App Paths\\"
-#define KEY_MPV_APP_PATH(suffix) KEY_MPV_APP_PATHS MPV_NAME suffix
-#define KEY_MPV_CAPABILITIES_APP L"Software\\Clients\\Media\\" MPV_NAME
-#define KEY_MPV_CAPABILITIES KEY_MPV_CAPABILITIES_APP L"\\Capabilities"
-#define KEY_MPV_UNINSTALL L"Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\" MPV_NAME
+#define KEY_domi_vid_APP L"Software\\Classes\\Applications\\" domi_vid_NAME L".exe"
+#define KEY_domi_vid_APP_PATHS L"Software\\Microsoft\\Windows\\CurrentVersion\\App Paths\\"
+#define KEY_domi_vid_APP_PATH(suffix) KEY_domi_vid_APP_PATHS domi_vid_NAME suffix
+#define KEY_domi_vid_CAPABILITIES_APP L"Software\\Clients\\Media\\" domi_vid_NAME
+#define KEY_domi_vid_CAPABILITIES KEY_domi_vid_CAPABILITIES_APP L"\\Capabilities"
+#define KEY_domi_vid_UNINSTALL L"Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\" domi_vid_NAME
 
-#define MPV_PROG_ID_PREFIX L"io.mpv."
-#define MPV_PROG_ID(h) MPV_PROG_ID_PREFIX h
-#define KEY_MPV_PROG_ID(h) L"Software\\Classes\\" MPV_PROG_ID(h)
+#define domi_vid_PROG_ID_PREFIX L"io.mpv."
+#define domi_vid_PROG_ID(h) domi_vid_PROG_ID_PREFIX h
+#define KEY_domi_vid_PROG_ID(h) L"Software\\Classes\\" domi_vid_PROG_ID(h)
 
 struct w32_register_opts {
     bool register_opt;
@@ -205,7 +205,7 @@ static wchar_t *w32_get_shortcut_path(struct mp_log *log)
     LPWSTR shortcut_path = NULL;
     LPWSTR programs_path = NULL;
     if (SUCCEEDED(SHGetKnownFolderPath(&FOLDERID_Programs, 0, NULL, &programs_path))) {
-        PathAllocCombine(programs_path, MPV_NAME L".lnk",
+        PathAllocCombine(programs_path, domi_vid_NAME L".lnk",
                          PATHCCH_ALLOW_LONG_PATHS, &shortcut_path);
     } else {
         mp_msg(log, MSGL_ERR, "Failed to get Programs folder path.\n");
@@ -215,8 +215,8 @@ static wchar_t *w32_get_shortcut_path(struct mp_log *log)
 }
 
 #define REGISTER_AUTOPLAY_HANDLER(media, event, action)                        \
-    reg_add_str(log, root, KEY_MPV_PROG_ID(media) L"\\shell", NULL, L"open");  \
-    reg_add_str(log, root, KEY_MPV_PROG_ID(media) L"\\shell\\open\\command",   \
+    reg_add_str(log, root, KEY_domi_vid_PROG_ID(media) L"\\shell", NULL, L"open");  \
+    reg_add_str(log, root, KEY_domi_vid_PROG_ID(media) L"\\shell\\open\\command",   \
                 NULL, L"mpv.exe " media L":// --" media L"-device=%L");        \
     reg_add_str(log, root,                                                     \
                 KEY_AUTOPLAY L"\\Handlers\\MpvPlay" event "OnArrival",         \
@@ -226,13 +226,13 @@ static wchar_t *w32_get_shortcut_path(struct mp_log *log)
                 L"DefaultIcon", icon_path);                                    \
     reg_add_str(log, root,                                                     \
                 KEY_AUTOPLAY L"\\Handlers\\MpvPlay" event "OnArrival",         \
-                L"InvokeProgID", MPV_PROG_ID(media));                          \
+                L"InvokeProgID", domi_vid_PROG_ID(media));                          \
     reg_add_str(log, root,                                                     \
                 KEY_AUTOPLAY L"\\Handlers\\MpvPlay" event "OnArrival",         \
                 L"InvokeVerb", L"open");                                       \
     reg_add_str(log, root,                                                     \
                 KEY_AUTOPLAY L"\\Handlers\\MpvPlay" event "OnArrival",         \
-                L"Provider", MPV_FRIENDLY_NAME);                               \
+                L"Provider", domi_vid_FRIENDLY_NAME);                               \
     reg_add_str(log, root,                                                     \
                 KEY_AUTOPLAY L"\\EventHandlers\\Play" event "OnArrival",       \
                 L"MpvPlay" event "OnArrival", L"");
@@ -242,17 +242,17 @@ static void w32_register(struct MPContext *mpctx)
     void *tmp = talloc_new(NULL);
     struct mp_log *log = mp_log_new(tmp, mpctx->log, "win32");
 
-    LPWSTR mpv_path = talloc_array(tmp, wchar_t, MP_PATH_MAX);
-    DWORD mpv_path_len = GetModuleFileNameW(NULL, mpv_path, MP_PATH_MAX);
-    if (!mpv_path_len || mpv_path_len == MP_PATH_MAX) {
+    LPWSTR domi_vid_path = talloc_array(tmp, wchar_t, MP_PATH_MAX);
+    DWORD domi_vid_path_len = GetModuleFileNameW(NULL, domi_vid_path, MP_PATH_MAX);
+    if (!domi_vid_path_len || domi_vid_path_len == MP_PATH_MAX) {
         mp_msg(log, MSGL_ERR, "Failed to get mpv path.\n");
         return;
     }
-    LPWSTR icon_path = talloc_array(tmp, wchar_t, mpv_path_len + 3);
-    memcpy(icon_path, mpv_path, mpv_path_len * sizeof(wchar_t));
-    icon_path[mpv_path_len + 0] = L',';
-    icon_path[mpv_path_len + 1] = L'0';
-    icon_path[mpv_path_len + 2] = L'\0';
+    LPWSTR icon_path = talloc_array(tmp, wchar_t, domi_vid_path_len + 3);
+    memcpy(icon_path, domi_vid_path, domi_vid_path_len * sizeof(wchar_t));
+    icon_path[domi_vid_path_len + 0] = L',';
+    icon_path[domi_vid_path_len + 1] = L'0';
+    icon_path[domi_vid_path_len + 2] = L'\0';
 
     HKEY root = is_admin() ? HKEY_LOCAL_MACHINE : HKEY_CURRENT_USER;
     mp_msg(log, MSGL_INFO, "Registering mpv for %s...\n",
@@ -260,23 +260,23 @@ static void w32_register(struct MPContext *mpctx)
 
     // Register mpv as an application
     // <https://learn.microsoft.com/windows/win32/shell/app-registration>
-    reg_add_str(log, root, KEY_MPV_APP_PATH(".exe"), NULL, mpv_path);
-    reg_add_dwr(log, root, KEY_MPV_APP_PATH(".exe"), L"UseUrl", 1);
+    reg_add_str(log, root, KEY_domi_vid_APP_PATH(".exe"), NULL, domi_vid_path);
+    reg_add_dwr(log, root, KEY_domi_vid_APP_PATH(".exe"), L"UseUrl", 1);
 
     char *rpath = mpctx->opts->w32_register_opts->rpath;
     if (rpath) {
         wchar_t *rpath_w = mp_from_utf8(tmp, rpath);
-        reg_add_str(log, root, KEY_MPV_APP_PATH(".exe"), L"Path", rpath_w);
-        reg_add_str(log, root, KEY_MPV_APP_PATH(".com"), L"Path", rpath_w);
+        reg_add_str(log, root, KEY_domi_vid_APP_PATH(".exe"), L"Path", rpath_w);
+        reg_add_str(log, root, KEY_domi_vid_APP_PATH(".com"), L"Path", rpath_w);
     }
 
     // Name of the "Open With" entry in the context menu
     // I prefer a simple "mpv" here, so let's skip this.
-    // reg_add_str(log, root, KEY_MPV_APP, L"FriendlyAppName", MPV_FRIENDLY_NAME);
+    // reg_add_str(log, root, KEY_domi_vid_APP, L"FriendlyAppName", domi_vid_FRIENDLY_NAME);
 
     // Add shell open command
-    reg_add_str(log, root, KEY_MPV_APP L"\\shell", NULL, L"open");
-    reg_add_str(log, root, KEY_MPV_APP L"\\shell\\open\\command", NULL,
+    reg_add_str(log, root, KEY_domi_vid_APP L"\\shell", NULL, L"open");
+    reg_add_str(log, root, KEY_domi_vid_APP L"\\shell\\open\\command", NULL,
                 L"mpv.exe -- \"%L\"");
 
     // Register mpv capabilities and handlers
@@ -290,14 +290,14 @@ static void w32_register(struct MPContext *mpctx)
     // duplicate this for each supported protocol or file type.
 
     // Register URL handler
-    reg_add_str(log, root, KEY_MPV_PROG_ID("url"), NULL, L"URL:mpv");
-    reg_add_dwr(log, root, KEY_MPV_PROG_ID("url"), L"EditFlags", FTA_Show);
-    reg_add_str(log, root, KEY_MPV_PROG_ID("url"), L"FriendlyTypeName",
+    reg_add_str(log, root, KEY_domi_vid_PROG_ID("url"), NULL, L"URL:mpv");
+    reg_add_dwr(log, root, KEY_domi_vid_PROG_ID("url"), L"EditFlags", FTA_Show);
+    reg_add_str(log, root, KEY_domi_vid_PROG_ID("url"), L"FriendlyTypeName",
                 L"mpv URL handler");
-    reg_add_str(log, root, KEY_MPV_PROG_ID("url") L"\\shell", NULL, L"open");
-    reg_add_str(log, root, KEY_MPV_PROG_ID("url") L"\\shell\\open\\command",
+    reg_add_str(log, root, KEY_domi_vid_PROG_ID("url") L"\\shell", NULL, L"open");
+    reg_add_str(log, root, KEY_domi_vid_PROG_ID("url") L"\\shell\\open\\command",
                 NULL, L"mpv.exe -- \"%L\"");
-    reg_add_str(log, root, KEY_MPV_PROG_ID("url") L"\\shell\\open\\ddeexec",
+    reg_add_str(log, root, KEY_domi_vid_PROG_ID("url") L"\\shell\\open\\ddeexec",
                 NULL, L"");
 
     // Register URL protocols
@@ -321,9 +321,9 @@ static void w32_register(struct MPContext *mpctx)
             RegCloseKey(key);
         }
 
-        reg_add_str(log, root, KEY_MPV_CAPABILITIES L"\\URLAssociations",
+        reg_add_str(log, root, KEY_domi_vid_CAPABILITIES L"\\URLAssociations",
                     mp_from_utf8(tmp, safe_protocols[i]),
-                    MPV_PROG_ID("url"));
+                    domi_vid_PROG_ID("url"));
         if (!protocols_str) {
             protocols_str = talloc_strdup(tmp, safe_protocols[i]);
         } else {
@@ -332,16 +332,16 @@ static void w32_register(struct MPContext *mpctx)
         }
     }
     if (protocols_str) {
-        reg_add_str(log, root, KEY_MPV_APP_PATH(".exe"), L"SupportedProtocols",
+        reg_add_str(log, root, KEY_domi_vid_APP_PATH(".exe"), L"SupportedProtocols",
                     mp_from_utf8(tmp, protocols_str));
     }
 
     // Register file handler
-    reg_add_str(log, root, KEY_MPV_PROG_ID("file"), NULL, L"mpv");
-    reg_add_str(log, root, KEY_MPV_PROG_ID("file"), L"FriendlyTypeName", L"mpv Media File");
-    reg_add_dwr(log, root, KEY_MPV_PROG_ID("file"), L"EditFlags", FTA_OpenIsSafe);
-    reg_add_str(log, root, KEY_MPV_PROG_ID("file") L"\\shell", NULL, L"open");
-    reg_add_str(log, root, KEY_MPV_PROG_ID("file") L"\\shell\\open\\command",
+    reg_add_str(log, root, KEY_domi_vid_PROG_ID("file"), NULL, L"mpv");
+    reg_add_str(log, root, KEY_domi_vid_PROG_ID("file"), L"FriendlyTypeName", L"mpv Media File");
+    reg_add_dwr(log, root, KEY_domi_vid_PROG_ID("file"), L"EditFlags", FTA_OpenIsSafe);
+    reg_add_str(log, root, KEY_domi_vid_PROG_ID("file") L"\\shell", NULL, L"open");
+    reg_add_str(log, root, KEY_domi_vid_PROG_ID("file") L"\\shell\\open\\command",
                 NULL, L"mpv.exe -- \"%L\"");
 
     // Register file associations
@@ -358,18 +358,18 @@ static void w32_register(struct MPContext *mpctx)
         char **exts = exts_groups[i];
         for (int j = 0; exts && exts[j]; ++j) {
             wchar_t *ext = mp_from_utf8(tmp, mp_tprintf(10, ".%s", exts[j]));
-            reg_add_str(log, root, KEY_MPV_APP L"\\SupportedTypes", ext, L"");
-            reg_add_str(log, root, KEY_MPV_CAPABILITIES L"\\FileAssociations",
-                        ext, MPV_PROG_ID("file"));
+            reg_add_str(log, root, KEY_domi_vid_APP L"\\SupportedTypes", ext, L"");
+            reg_add_str(log, root, KEY_domi_vid_CAPABILITIES L"\\FileAssociations",
+                        ext, domi_vid_PROG_ID("file"));
         }
     }
 
     // Connect above handlers to the application
-    reg_add_str(log, root, KEY_MPV_CAPABILITIES, L"ApplicationName", MPV_NAME);
-    reg_add_str(log, root, KEY_MPV_CAPABILITIES, L"ApplicationDescription", MPV_FRIENDLY_NAME);
+    reg_add_str(log, root, KEY_domi_vid_CAPABILITIES, L"ApplicationName", domi_vid_NAME);
+    reg_add_str(log, root, KEY_domi_vid_CAPABILITIES, L"ApplicationDescription", domi_vid_FRIENDLY_NAME);
 
     // Register the application
-    reg_add_str(log, root, L"Software\\RegisteredApplications", MPV_NAME, KEY_MPV_CAPABILITIES);
+    reg_add_str(log, root, L"Software\\RegisteredApplications", domi_vid_NAME, KEY_domi_vid_CAPABILITIES);
 
     // <https://learn.microsoft.com/windows/win32/shell/how-to-register-an-event-handler>
 
@@ -398,32 +398,32 @@ static void w32_register(struct MPContext *mpctx)
     // app correctly. Which is quite stupid, but it's the only way to make it work.
     wchar_t *shortcut_path = w32_get_shortcut_path(log);
     if (shortcut_path) {
-        create_shortcut(log, mpv_path, shortcut_path);
+        create_shortcut(log, domi_vid_path, shortcut_path);
         LocalFree(shortcut_path);
     }
 
     // Register uninstaller
     // <https://learn.microsoft.com/windows/win32/msi/uninstall-registry-key>
-    reg_add_str(log, root, KEY_MPV_UNINSTALL, L"DisplayName", L"mpv media player");
-    reg_add_str(log, root, KEY_MPV_UNINSTALL, L"DisplayIcon", icon_path);
-    reg_add_str(log, root, KEY_MPV_UNINSTALL, L"DisplayVersion", L"" VERSION);
-    reg_add_str(log, root, KEY_MPV_UNINSTALL, L"Version", L"" VERSION);
-    reg_add_dwr(log, root, KEY_MPV_UNINSTALL, L"Language", 1033);
-    reg_add_str(log, root, KEY_MPV_UNINSTALL, L"UninstallString", L"mpv.exe --no-config --unregister");
-    reg_add_dwr(log, root, KEY_MPV_UNINSTALL, L"NoModify", 1);
-    reg_add_dwr(log, root, KEY_MPV_UNINSTALL, L"NoRepair", 1);
-    reg_add_str(log, root, KEY_MPV_UNINSTALL, L"Publisher", L"mpv");
-    reg_add_str(log, root, KEY_MPV_UNINSTALL, L"HelpLink", L"https://mpv.io/manual");
-    reg_add_str(log, root, KEY_MPV_UNINSTALL, L"Readme", L"https://mpv.io/community");
-    reg_add_str(log, root, KEY_MPV_UNINSTALL, L"URLInfoAbout", L"https://mpv.io");
-    reg_add_str(log, root, KEY_MPV_UNINSTALL, L"URLUpdateInfo", L"https://mpv.io/installation");
+    reg_add_str(log, root, KEY_domi_vid_UNINSTALL, L"DisplayName", L"mpv media player");
+    reg_add_str(log, root, KEY_domi_vid_UNINSTALL, L"DisplayIcon", icon_path);
+    reg_add_str(log, root, KEY_domi_vid_UNINSTALL, L"DisplayVersion", L"" VERSION);
+    reg_add_str(log, root, KEY_domi_vid_UNINSTALL, L"Version", L"" VERSION);
+    reg_add_dwr(log, root, KEY_domi_vid_UNINSTALL, L"Language", 1033);
+    reg_add_str(log, root, KEY_domi_vid_UNINSTALL, L"UninstallString", L"mpv.exe --no-config --unregister");
+    reg_add_dwr(log, root, KEY_domi_vid_UNINSTALL, L"NoModify", 1);
+    reg_add_dwr(log, root, KEY_domi_vid_UNINSTALL, L"NoRepair", 1);
+    reg_add_str(log, root, KEY_domi_vid_UNINSTALL, L"Publisher", L"mpv");
+    reg_add_str(log, root, KEY_domi_vid_UNINSTALL, L"HelpLink", L"https://mpv.io/manual");
+    reg_add_str(log, root, KEY_domi_vid_UNINSTALL, L"Readme", L"https://mpv.io/community");
+    reg_add_str(log, root, KEY_domi_vid_UNINSTALL, L"URLInfoAbout", L"https://mpv.io");
+    reg_add_str(log, root, KEY_domi_vid_UNINSTALL, L"URLUpdateInfo", L"https://mpv.io/installation");
 
-    uint64_t size = get_file_size(mpv_path);
+    uint64_t size = get_file_size(domi_vid_path);
     if (size)
-        reg_add_dwr(log, root, KEY_MPV_UNINSTALL, L"EstimatedSize", size / 1024);
+        reg_add_dwr(log, root, KEY_domi_vid_UNINSTALL, L"EstimatedSize", size / 1024);
 
-    if (SUCCEEDED(PathCchRemoveFileSpec(mpv_path, MP_PATH_MAX)))
-        reg_add_str(log, root, KEY_MPV_UNINSTALL, L"InstallLocation", mpv_path);
+    if (SUCCEEDED(PathCchRemoveFileSpec(domi_vid_path, MP_PATH_MAX)))
+        reg_add_str(log, root, KEY_domi_vid_UNINSTALL, L"InstallLocation", domi_vid_path);
 
     mp_msg(log, MSGL_INFO, "mpv has been successfully registered.\n");
     mp_msg(log, MSGL_INFO, "Note: The mpv binary has not been copied or moved. Please keep it in the current directory.\n");
@@ -440,18 +440,18 @@ static void w32_unregister(struct MPContext *mpctx)
     mp_msg(log, MSGL_INFO, "Unregistering mpv for %s...\n",
            root == HKEY_LOCAL_MACHINE ? "all users" : "the current user");
 
-    reg_del(log, root, KEY_MPV_APP_PATH(".exe"), NULL);
-    reg_del(log, root, KEY_MPV_APP_PATH(".com"), NULL);
-    reg_del(log, root, KEY_MPV_APP, NULL);
-    reg_del(log, root, KEY_MPV_CAPABILITIES_APP, NULL);
-    reg_del(log, root, L"Software\\RegisteredApplications", MPV_NAME);
+    reg_del(log, root, KEY_domi_vid_APP_PATH(".exe"), NULL);
+    reg_del(log, root, KEY_domi_vid_APP_PATH(".com"), NULL);
+    reg_del(log, root, KEY_domi_vid_APP, NULL);
+    reg_del(log, root, KEY_domi_vid_CAPABILITIES_APP, NULL);
+    reg_del(log, root, L"Software\\RegisteredApplications", domi_vid_NAME);
 
-    reg_del(log, root, KEY_MPV_PROG_ID("bluray"), NULL);
-    reg_del(log, root, KEY_MPV_PROG_ID("cdda"), NULL);
-    reg_del(log, root, KEY_MPV_PROG_ID("dvd"), NULL);
-    reg_del(log, root, KEY_MPV_PROG_ID("dvda"), NULL);
-    reg_del(log, root, KEY_MPV_PROG_ID("file"), NULL);
-    reg_del(log, root, KEY_MPV_PROG_ID("url"), NULL);
+    reg_del(log, root, KEY_domi_vid_PROG_ID("bluray"), NULL);
+    reg_del(log, root, KEY_domi_vid_PROG_ID("cdda"), NULL);
+    reg_del(log, root, KEY_domi_vid_PROG_ID("dvd"), NULL);
+    reg_del(log, root, KEY_domi_vid_PROG_ID("dvda"), NULL);
+    reg_del(log, root, KEY_domi_vid_PROG_ID("file"), NULL);
+    reg_del(log, root, KEY_domi_vid_PROG_ID("url"), NULL);
 
     reg_del(log, root, KEY_AUTOPLAY L"\\Handlers\\MpvPlayCDAudioOnArrival", NULL);
     reg_del(log, root, KEY_AUTOPLAY L"\\EventHandlers\\PlayCDAudioOnArrival",
@@ -478,7 +478,7 @@ static void w32_unregister(struct MPContext *mpctx)
         LocalFree(shortcut_path);
     }
 
-    reg_del(log, root, KEY_MPV_UNINSTALL, NULL);
+    reg_del(log, root, KEY_domi_vid_UNINSTALL, NULL);
 
     mp_msg(log, MSGL_INFO, "mpv has been successfully unregistered.\n");
     mp_msg(log, MSGL_INFO, "You may now safely delete the mpv binary if desired.\n");

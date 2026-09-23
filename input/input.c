@@ -43,7 +43,7 @@
 #include "options/m_config.h"
 #include "options/m_option.h"
 #include "options/path.h"
-#include "mpv_talloc.h"
+#include "domi_vid_talloc.h"
 #include "options/options.h"
 #include "player/external_files.h"
 #include "misc/bstr.h"
@@ -103,7 +103,7 @@ struct touch_point {
 struct input_ctx {
     mp_mutex mutex;
     struct mp_log *log;
-    struct mpv_global *global;
+    struct domi_vid_global *global;
     struct m_config_cache *opts_cache;
     struct input_opts *opts;
 
@@ -1711,7 +1711,7 @@ static bool parse_config_file(struct input_ctx *ictx, char *file)
     return r;
 }
 
-struct input_ctx *mp_input_init(struct mpv_global *global,
+struct input_ctx *mp_input_init(struct domi_vid_global *global,
                                 void (*wakeup_cb)(void *ctx),
                                 void *wakeup_ctx)
 {
@@ -1886,11 +1886,11 @@ bool mp_input_bind_key(struct input_ctx *ictx, const char *key, bstr command,
     return true;
 }
 
-struct mpv_node mp_input_get_bindings(struct input_ctx *ictx)
+struct domi_vid_node mp_input_get_bindings(struct input_ctx *ictx)
 {
     input_lock(ictx);
-    struct mpv_node root;
-    node_init(&root, MPV_FORMAT_NODE_ARRAY, NULL);
+    struct domi_vid_node root;
+    node_init(&root, domi_vid_FORMAT_NODE_ARRAY, NULL);
 
     for (int x = 0; x < ictx->num_sections; x++) {
         struct cmd_bind_section *s = ictx->sections[x];
@@ -1906,7 +1906,7 @@ struct mpv_node mp_input_get_bindings(struct input_ctx *ictx)
 
         for (int n = 0; n < s->num_binds; n++) {
             struct cmd_bind *b = &s->binds[n];
-            struct mpv_node *entry = node_array_add(&root, MPV_FORMAT_NODE_MAP);
+            struct domi_vid_node *entry = node_array_add(&root, domi_vid_FORMAT_NODE_MAP);
 
             int b_priority = priority;
             if (b->is_builtin && !ictx->opts->default_bindings)

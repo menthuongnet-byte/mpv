@@ -26,7 +26,7 @@
 
 #include "osdep/io.h"
 
-#include "mpv_talloc.h"
+#include "domi_vid_talloc.h"
 
 #include "common/msg.h"
 #include "demux/demux.h"
@@ -43,7 +43,7 @@
 
 struct tl_ctx {
     struct mp_log *log;
-    struct mpv_global *global;
+    struct domi_vid_global *global;
     struct MPOpts *opts;
     struct timeline *tl;
 

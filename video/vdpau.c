@@ -559,7 +559,7 @@ static bool is_emulated(struct AVBufferRef *hw_device_ctx)
     return mp_vdpau_guess_if_emulated(ctx);
 }
 
-static struct AVBufferRef *vdpau_create_standalone(struct mpv_global *global,
+static struct AVBufferRef *vdpau_create_standalone(struct domi_vid_global *global,
         struct mp_log *log, struct hwcontext_create_dev_params *params)
 {
     XInitThreads();

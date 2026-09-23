@@ -231,7 +231,7 @@ struct mp_zimg_context *mp_zimg_alloc(void)
 }
 
 void mp_zimg_enable_cmdline_opts(struct mp_zimg_context *ctx,
-                                 struct mpv_global *g)
+                                 struct domi_vid_global *g)
 {
     if (ctx->opts_cache)
         return;

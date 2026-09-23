@@ -23,7 +23,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "mpv_talloc.h"
+#include "domi_vid_talloc.h"
 
 #include "config.h"
 #include "osdep/timer.h"
@@ -264,7 +264,7 @@ static void dealloc_vo(struct vo *vo)
     talloc_free(vo);
 }
 
-static struct vo *vo_create(bool probing, struct mpv_global *global,
+static struct vo *vo_create(bool probing, struct domi_vid_global *global,
                             struct vo_extra *ex, char *name)
 {
     mp_assert(ex->wakeup_cb);
@@ -328,7 +328,7 @@ error:
     return NULL;
 }
 
-struct vo *init_best_video_out(struct mpv_global *global, struct vo_extra *ex)
+struct vo *init_best_video_out(struct domi_vid_global *global, struct vo_extra *ex)
 {
     struct mp_vo_opts *opts = mp_get_config_group(NULL, global, &vo_sub_opts);
     struct m_obj_settings *vo_list = opts->video_driver_list;

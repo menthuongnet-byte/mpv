@@ -561,21 +561,21 @@ static void wait_events(struct vo *vo, int64_t until_time_ns)
             break;
         case SDL_TEXTINPUT: {
             int sdl_mod = SDL_GetModState();
-            int mpv_mod = 0;
+            int domi_vid_mod = 0;
             // we ignore KMOD_LSHIFT, KMOD_RSHIFT and KMOD_RALT (if
             // mp_input_use_alt_gr() is true) because these are already
             // factored into ev.text.text
             if (sdl_mod & (KMOD_LCTRL | KMOD_RCTRL))
-                mpv_mod |= MP_KEY_MODIFIER_CTRL;
+                domi_vid_mod |= MP_KEY_MODIFIER_CTRL;
             if ((sdl_mod & KMOD_LALT) ||
                 ((sdl_mod & KMOD_RALT) && !mp_input_use_alt_gr(vo->input_ctx)))
-                mpv_mod |= MP_KEY_MODIFIER_ALT;
+                domi_vid_mod |= MP_KEY_MODIFIER_ALT;
             if (sdl_mod & (KMOD_LGUI | KMOD_RGUI))
-                mpv_mod |= MP_KEY_MODIFIER_META;
+                domi_vid_mod |= MP_KEY_MODIFIER_META;
             struct bstr t = {
                 ev.text.text, strlen(ev.text.text)
             };
-            mp_input_put_key_utf8(vo->input_ctx, mpv_mod, t);
+            mp_input_put_key_utf8(vo->input_ctx, domi_vid_mod, t);
             break;
         }
         case SDL_KEYDOWN: {

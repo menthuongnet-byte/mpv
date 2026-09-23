@@ -74,8 +74,8 @@ struct priv {
     uint64_t *gbm_modifiers;
     unsigned int num_gbm_modifiers;
 
-    struct mpv_opengl_drm_params_v2 drm_params;
-    struct mpv_opengl_drm_draw_surface_size draw_surface_size;
+    struct domi_vid_opengl_drm_params_v2 drm_params;
+    struct domi_vid_opengl_drm_draw_surface_size draw_surface_size;
 
     bool allow_modeset;
 };

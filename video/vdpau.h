@@ -1,5 +1,5 @@
-#ifndef MPV_VDPAU_H
-#define MPV_VDPAU_H
+#ifndef domi_vid_VDPAU_H
+#define domi_vid_VDPAU_H
 
 #include <stdatomic.h>
 #include <stdbool.h>

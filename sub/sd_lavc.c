@@ -24,7 +24,7 @@
 #include <libavutil/intreadwrite.h>
 #include <libavutil/opt.h>
 
-#include "mpv_talloc.h"
+#include "domi_vid_talloc.h"
 #include "common/msg.h"
 #include "common/av_common.h"
 #include "demux/stheader.h"

@@ -160,7 +160,7 @@ static const stream_info_t stream_info_concat = {
 // array. Takes over ownership of every stream passed to it (it will free them
 // if the concat stream is closed).
 // If an error happens, NULL is returned, and the streams are not freed.
-struct stream *stream_concat_open(struct mpv_global *global, struct mp_cancel *c,
+struct stream *stream_concat_open(struct domi_vid_global *global, struct mp_cancel *c,
                                   struct stream **streams, int num_streams)
 {
     // (struct priv is blatantly abused to pass in the stream list)

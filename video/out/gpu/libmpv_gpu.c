@@ -1,19 +1,19 @@
 #include "config.h"
 #include "hwdec.h"
-#include "libmpv_gpu.h"
+#include "libdomi_vid_gpu.h"
 #include "mpv/render_gl.h"
 #include "video.h"
 #include "video/out/libmpv.h"
 
-static const struct libmpv_gpu_context_fns *context_backends[] = {
+static const struct libdomi_vid_gpu_context_fns *context_backends[] = {
 #if HAVE_GL
-    &libmpv_gpu_context_gl,
+    &libdomi_vid_gpu_context_gl,
 #endif
     NULL
 };
 
 struct priv {
-    struct libmpv_gpu_context *context;
+    struct libdomi_vid_gpu_context *context;
 
     struct gl_video *renderer;
 };
@@ -24,38 +24,38 @@ struct native_resource_entry {
 };
 
 static const struct native_resource_entry native_resource_map[] = {
-    [MPV_RENDER_PARAM_X11_DISPLAY] = {
+    [domi_vid_RENDER_PARAM_X11_DISPLAY] = {
         .name = "x11",
         .size = 0,
     },
-    [MPV_RENDER_PARAM_WL_DISPLAY] = {
+    [domi_vid_RENDER_PARAM_WL_DISPLAY] = {
         .name = "wl",
         .size = 0,
     },
-    [MPV_RENDER_PARAM_DRM_DRAW_SURFACE_SIZE] = {
+    [domi_vid_RENDER_PARAM_DRM_DRAW_SURFACE_SIZE] = {
         .name = "drm_draw_surface_size",
-        .size = sizeof (mpv_opengl_drm_draw_surface_size),
+        .size = sizeof (domi_vid_opengl_drm_draw_surface_size),
     },
-    [MPV_RENDER_PARAM_DRM_DISPLAY_V2] = {
+    [domi_vid_RENDER_PARAM_DRM_DISPLAY_V2] = {
         .name = "drm_params_v2",
-        .size = sizeof (mpv_opengl_drm_params_v2),
+        .size = sizeof (domi_vid_opengl_drm_params_v2),
     },
 };
 
-static int init(struct render_backend *ctx, mpv_render_param *params)
+static int init(struct render_backend *ctx, domi_vid_render_param *params)
 {
     ctx->priv = talloc_zero(NULL, struct priv);
     struct priv *p = ctx->priv;
 
-    char *api = get_mpv_render_param(params, MPV_RENDER_PARAM_API_TYPE, NULL);
+    char *api = get_domi_vid_render_param(params, domi_vid_RENDER_PARAM_API_TYPE, NULL);
     if (!api)
-        return MPV_ERROR_INVALID_PARAMETER;
+        return domi_vid_ERROR_INVALID_PARAMETER;
 
     for (int n = 0; context_backends[n]; n++) {
-        const struct libmpv_gpu_context_fns *backend = context_backends[n];
+        const struct libdomi_vid_gpu_context_fns *backend = context_backends[n];
         if (strcmp(backend->api_name, api) == 0) {
-            p->context = talloc_zero(NULL, struct libmpv_gpu_context);
-            *p->context = (struct libmpv_gpu_context){
+            p->context = talloc_zero(NULL, struct libdomi_vid_gpu_context);
+            *p->context = (struct libdomi_vid_gpu_context){
                 .global = ctx->global,
                 .log = ctx->log,
                 .fns = backend,
@@ -65,7 +65,7 @@ static int init(struct render_backend *ctx, mpv_render_param *params)
     }
 
     if (!p->context)
-        return MPV_ERROR_NOT_IMPLEMENTED;
+        return domi_vid_ERROR_NOT_IMPLEMENTED;
 
     int err = p->context->fns->init(p->context, params);
     if (err < 0)
@@ -100,25 +100,25 @@ static bool check_format(struct render_backend *ctx, int imgfmt)
     return gl_video_check_format(p->renderer, imgfmt);
 }
 
-static int set_parameter(struct render_backend *ctx, mpv_render_param param)
+static int set_parameter(struct render_backend *ctx, domi_vid_render_param param)
 {
     struct priv *p = ctx->priv;
 
     switch (param.type) {
-    case MPV_RENDER_PARAM_ICC_PROFILE: {
-        mpv_byte_array *data = param.data;
+    case domi_vid_RENDER_PARAM_ICC_PROFILE: {
+        domi_vid_byte_array *data = param.data;
         gl_video_set_icc_profile(p->renderer, bstrdup(NULL, (bstr){data->data, data->size}));
         return 0;
     }
-    case MPV_RENDER_PARAM_AMBIENT_LIGHT: {
-        MP_WARN(ctx, "MPV_RENDER_PARAM_AMBIENT_LIGHT is deprecated and might be "
+    case domi_vid_RENDER_PARAM_AMBIENT_LIGHT: {
+        MP_WARN(ctx, "domi_vid_RENDER_PARAM_AMBIENT_LIGHT is deprecated and might be "
                      "removed in the future (replacement: gamma-auto.lua)\n");
         int lux = *(int *)param.data;
         gl_video_set_ambient_lux(p->renderer, (double)lux);
         return 0;
     }
     default:
-        return MPV_ERROR_NOT_IMPLEMENTED;
+        return domi_vid_ERROR_NOT_IMPLEMENTED;
     }
 }
 
@@ -153,7 +153,7 @@ static void resize(struct render_backend *ctx, struct mp_rect *src,
     gl_video_resize(p->renderer, src, dst, osd);
 }
 
-static int get_target_size(struct render_backend *ctx, mpv_render_param *params,
+static int get_target_size(struct render_backend *ctx, domi_vid_render_param *params,
                            int *out_w, int *out_h)
 {
     struct priv *p = ctx->priv;
@@ -168,7 +168,7 @@ static int get_target_size(struct render_backend *ctx, mpv_render_param *params,
     return 0;
 }
 
-static int render(struct render_backend *ctx, mpv_render_param *params,
+static int render(struct render_backend *ctx, domi_vid_render_param *params,
                   struct vo_frame *frame)
 {
     struct priv *p = ctx->priv;
@@ -179,11 +179,11 @@ static int render(struct render_backend *ctx, mpv_render_param *params,
     if (err < 0)
         return err;
 
-    int depth = *(int *)get_mpv_render_param(params, MPV_RENDER_PARAM_DEPTH,
+    int depth = *(int *)get_domi_vid_render_param(params, domi_vid_RENDER_PARAM_DEPTH,
                                              &(int){0});
     gl_video_set_fb_depth(p->renderer, depth);
 
-    bool flip = *(int *)get_mpv_render_param(params, MPV_RENDER_PARAM_FLIP_Y,
+    bool flip = *(int *)get_domi_vid_render_param(params, domi_vid_RENDER_PARAM_FLIP_Y,
                                              &(int){0});
 
     struct ra_fbo target = {.tex = tex, .flip = flip};

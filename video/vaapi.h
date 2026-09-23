@@ -15,8 +15,8 @@
  * License along with mpv.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef MPV_VAAPI_H
-#define MPV_VAAPI_H
+#ifndef domi_vid_VAAPI_H
+#define domi_vid_VAAPI_H
 
 #include <stdbool.h>
 #include <inttypes.h>

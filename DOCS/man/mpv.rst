@@ -516,11 +516,11 @@ Note: where applicable with JSON-IPC, ``%n%`` is the length in UTF-8 bytes,
 after decoding the JSON data.
 
 Suboptions passed to the client API are also subject to escaping. Using
-``mpv_set_option_string()`` is exactly like passing ``--name=data`` to the
+``domi_vid_set_option_string()`` is exactly like passing ``--name=data`` to the
 command line (but without shell processing of the string). Some options
 support passing values in a more structured way instead of flat strings, and
 can avoid the suboption parsing mess. For example, ``--vf`` supports
-``MPV_FORMAT_NODE``, which lets you pass suboptions as a nested data structure
+``domi_vid_FORMAT_NODE``, which lets you pass suboptions as a nested data structure
 of maps and arrays.
 
 Paths
@@ -555,8 +555,8 @@ For paths passed to mpv suboptions (options that have multiple `:` and
 escape special characters. To work around this, the path can instead be wrapped
 in the "fixed-length" syntax, e.g. ``%n%string_of_length_n`` (see above).
 
-When using the libmpv API, you should strictly avoid using ``mpv_command_string``
-for invoking the ``loadfile`` command, and instead prefer e.g. ``mpv_command``
+When using the libmpv API, you should strictly avoid using ``domi_vid_command_string``
+for invoking the ``loadfile`` command, and instead prefer e.g. ``domi_vid_command``
 to avoid the need for filename escaping.
 
 The same applies when you're using the scripting API, where you should avoid using
@@ -600,7 +600,7 @@ Name             Meaning
 ``~~osxbundle/`` The macOS bundle resource path (macOS only).
 ``~~desktop/``   The path to the desktop.
 ``~~exe_dir/``   The path to the directory containing ``mpv.exe`` (for config
-                 file purposes, ``$MPV_HOME`` will override this) (win32 only).
+                 file purposes, ``$domi_vid_HOME`` will override this) (win32 only).
 ``~~cache/``     The path to application cache data (``~/.cache/mpv/``).
                  On some platforms, this will be the same as ``~~home/``.
 ``~~state/``     The path to application state data (``~/.local/state/mpv/``).
@@ -711,7 +711,7 @@ key is removed before the new value is appended.
 
 If you want to pass a value without interpreting it for escapes or ``,``, it is
 recommended to use the ``-append`` variant. When using libmpv, prefer using
-``MPV_FORMAT_NODE_MAP``; when using a scripting backend or the JSON IPC, use an
+``domi_vid_FORMAT_NODE_MAP``; when using a scripting backend or the JSON IPC, use an
 appropriate structured data type.
 
 Object settings list options
@@ -1640,16 +1640,16 @@ behavior of mpv.
     ``$HOME/.mpv`` is always added to the list of config search paths with a
     lower priority.
 
-``MPV_HOME``
+``domi_vid_HOME``
     Directory where mpv looks for user settings. Overrides ``HOME``, and mpv
-    will try to load the config file as ``$MPV_HOME/mpv.conf``.
+    will try to load the config file as ``$domi_vid_HOME/mpv.conf``.
 
-``MPV_VERBOSE`` (see also ``-v`` and ``--msg-level``)
+``domi_vid_VERBOSE`` (see also ``-v`` and ``--msg-level``)
     Set the initial verbosity level across all message modules (default: 0).
     This is an integer, and the resulting verbosity corresponds to the number
     of ``--v`` options passed to the command line.
 
-``MPV_LEAK_REPORT``
+``domi_vid_LEAK_REPORT``
     If set to ``1``, enable internal talloc leak reporting. If set to another
     value, disable leak reporting.
 
@@ -1787,8 +1787,8 @@ All configuration files should be encoded in UTF-8.
 
     :1: If ``$XDG_CACHE_HOME`` is set, then the derived cache directory
         will be ``$XDG_CACHE_HOME/mpv``.
-    :2: If ``$MPV_HOME`` is set, then the derived cache directory will be
-       ``$MPV_HOME``.
+    :2: If ``$domi_vid_HOME`` is set, then the derived cache directory will be
+       ``$domi_vid_HOME``.
 
     If the directory does not exist, mpv will try to create it automatically.
 
@@ -1798,8 +1798,8 @@ All configuration files should be encoded in UTF-8.
 
     :1: If ``$XDG_CONFIG_HOME`` is set, then the derived configuration directory
         will be ``$XDG_CONFIG_HOME/mpv``.
-    :2: If ``$MPV_HOME`` is set, then the derived configuration directory will be
-       ``$MPV_HOME``.
+    :2: If ``$domi_vid_HOME`` is set, then the derived configuration directory will be
+       ``$domi_vid_HOME``.
 
     If this directory, nor the original configuration directory (see below) do
     not exist, mpv tries to create this directory automatically.
@@ -1853,8 +1853,8 @@ All configuration files should be encoded in UTF-8.
 
     :1: If ``$XDG_STATE_HOME`` is set, then the derived watch later directory
         will be ``$XDG_STATE_HOME/mpv/watch_later``.
-    :2: If ``$MPV_HOME`` is set, then the derived watch later directory will be
-       ``$MPV_HOME/watch_later``.
+    :2: If ``$domi_vid_HOME`` is set, then the derived watch later directory will be
+       ``$domi_vid_HOME/watch_later``.
 
     Each file is a small config file which is loaded if the corresponding media
     file is loaded. It contains the playback position and some (not necessarily
@@ -1890,14 +1890,14 @@ The cache directory is located at ``%LOCALAPPDATA%/mpv/cache``.
 
 The watch_later directory is located at ``%LOCALAPPDATA%/mpv/watch_later``.
 
-The environment variable ``$MPV_HOME`` completely overrides these, like on
+The environment variable ``$domi_vid_HOME`` completely overrides these, like on
 UNIX.
 
 If a directory named ``portable_config`` next to the mpv.exe exists, all
 config will be loaded from this directory only. Watch later config files and
 cache files are written to this directory as well. (This exists on Windows
-only and is redundant with ``$MPV_HOME``. However, since Windows is very
-scripting unfriendly, a wrapper script just setting ``$MPV_HOME``, like you
+only and is redundant with ``$domi_vid_HOME``. However, since Windows is very
+scripting unfriendly, a wrapper script just setting ``$domi_vid_HOME``, like you
 could do it on other systems, won't work. ``portable_config`` is provided for
 convenience to get around this restriction.)
 

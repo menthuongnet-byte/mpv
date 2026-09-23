@@ -43,7 +43,7 @@ struct mp_ipc_ctx {
 
 struct client_arg {
     struct mp_log *log;
-    struct mpv_handle *client;
+    struct domi_vid_handle *client;
 
     char *client_name;
     HANDLE client_h;
@@ -221,7 +221,7 @@ static MP_THREAD_VOID client_thread(void *p)
 
     MP_VERBOSE(arg, "Client connected\n");
 
-    mpv_set_wakeup_callback(arg->client, wakeup_cb, wakeup_event);
+    domi_vid_set_wakeup_callback(arg->client, wakeup_cb, wakeup_event);
 
     // Do the first read operation on the pipe
     if ((ioerr = async_read(arg->client_h, buf, 4096, &ol))) {
@@ -240,12 +240,12 @@ static MP_THREAD_VOID client_thread(void *p)
             ResetEvent(wakeup_event);
 
             while (1) {
-                mpv_event *event = mpv_wait_event(arg->client, 0);
+                domi_vid_event *event = domi_vid_wait_event(arg->client, 0);
 
-                if (event->event_id == MPV_EVENT_NONE)
+                if (event->event_id == domi_vid_EVENT_NONE)
                     break;
 
-                if (event->event_id == MPV_EVENT_SHUTDOWN)
+                if (event->event_id == domi_vid_EVENT_SHUTDOWN)
                     goto done;
 
                 if (!arg->writable)
@@ -304,9 +304,9 @@ done:
         CloseHandle(arg->write_ol.hEvent);
 
     CloseHandle(arg->client_h);
-    mpv_handle *client = arg->client;
+    domi_vid_handle *client = arg->client;
     talloc_free(arg);
-    mpv_destroy(client);
+    domi_vid_destroy(client);
     MP_THREAD_RETURN();
 }
 
@@ -324,7 +324,7 @@ static void ipc_start_client(struct mp_ipc_ctx *ctx, struct client_arg *client)
     return;
 
 err:
-    mpv_destroy(client->client);
+    domi_vid_destroy(client->client);
     CloseHandle(client->client_h);
     talloc_free(client);
 }
@@ -341,7 +341,7 @@ static void ipc_start_client_json(struct mp_ipc_ctx *ctx, int id, HANDLE h)
     ipc_start_client(ctx, client);
 }
 
-bool mp_ipc_start_anon_client(struct mp_ipc_ctx *ctx, struct mpv_handle *h,
+bool mp_ipc_start_anon_client(struct mp_ipc_ctx *ctx, struct domi_vid_handle *h,
                               int out_fd[2])
 {
     return false;
@@ -461,7 +461,7 @@ done:
 }
 
 struct mp_ipc_ctx *mp_init_ipc(struct mp_client_api *client_api,
-                               struct mpv_global *global)
+                               struct domi_vid_global *global)
 {
     struct MPOpts *opts = mp_get_config_group(NULL, global, &mp_opt_root);
 

@@ -85,7 +85,7 @@ class AppHub: NSObject {
         if !isApplication { return }
         log.verbose("Initialising CocoaCB")
         DispatchQueue.main.sync {
-            self.cocoaCb = self.cocoaCb ?? CocoaCB(mpv_create_client(mpv, "cocoacb"))
+            self.cocoaCb = self.cocoaCb ?? CocoaCB(domi_vid_create_client(mpv, "cocoacb"))
         }
 #endif
     }

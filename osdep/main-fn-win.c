@@ -83,7 +83,7 @@ int main(void)
         MP_TARRAY_APPEND(NULL, argv_u8, argv_len, mp_to_utf8(argv_u8, argv[i]));
     MP_TARRAY_APPEND(NULL, argv_u8, argv_len, NULL);
 
-    int ret = mpv_main(argv_len - 1, argv_u8);
+    int ret = domi_vid_main(argv_len - 1, argv_u8);
 
     talloc_free(argv_u8);
     return ret;

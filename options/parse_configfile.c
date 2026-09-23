@@ -155,7 +155,7 @@ int m_config_parse(m_config_t *config, const char *location, bstr data,
 //  initial_section: default section where to add normal options
 //  flags: M_SETOPT_* bits
 //  returns: 1 on success, -1 on error, 0 if file not accessible.
-int m_config_parse_config_file(m_config_t *config, struct mpv_global *global,
+int m_config_parse_config_file(m_config_t *config, struct domi_vid_global *global,
                                const char *conffile, char *initial_section,
                                int flags)
 {

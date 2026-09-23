@@ -1,5 +1,5 @@
-#ifndef MPV_MP_IMAGE_POOL_H
-#define MPV_MP_IMAGE_POOL_H
+#ifndef domi_vid_MP_IMAGE_POOL_H
+#define domi_vid_MP_IMAGE_POOL_H
 
 #include <stdbool.h>
 

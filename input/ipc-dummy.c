@@ -3,12 +3,12 @@
 #include "input/input.h"
 
 struct mp_ipc_ctx *mp_init_ipc(struct mp_client_api *client_api,
-                               struct mpv_global *global)
+                               struct domi_vid_global *global)
 {
     return NULL;
 }
 
-bool mp_ipc_start_anon_client(struct mp_ipc_ctx *ctx, struct mpv_handle *h,
+bool mp_ipc_start_anon_client(struct mp_ipc_ctx *ctx, struct domi_vid_handle *h,
                               int out_fd[2])
 {
     return false;

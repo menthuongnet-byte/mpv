@@ -50,7 +50,7 @@
 /*
  * Locking hierarchy:
  *
- *  MPContext > mp_client_api.lock > mpv_handle.lock > * > mpv_handle.wakeup_lock
+ *  MPContext > mp_client_api.lock > domi_vid_handle.lock > * > domi_vid_handle.wakeup_lock
  *
  * MPContext strictly speaking has no locks, and instead is implicitly managed
  * by MPContext.dispatch, which basically stops the playback thread at defined
@@ -66,7 +66,7 @@ struct mp_client_api {
 
     // -- protected by lock
 
-    struct mpv_handle **clients;
+    struct domi_vid_handle **clients;
     int num_clients;
     bool shutting_down; // do not allow new clients
     bool have_terminator; // a client took over the role of destroying the core
@@ -80,17 +80,17 @@ struct mp_client_api {
     struct mp_custom_protocol *custom_protocols;
     int num_custom_protocols;
 
-    struct mpv_render_context *render_context;
+    struct domi_vid_render_context *render_context;
 };
 
 struct observe_property {
     // -- immutable
-    struct mpv_handle *owner;
+    struct domi_vid_handle *owner;
     char *name;
     int id;                 // ==mp_get_property_id(name)
     uint64_t event_mask;    // ==mp_get_property_event_mask(name)
     int64_t reply_id;
-    mpv_format format;
+    domi_vid_format format;
     const struct m_option *type;
     // -- protected by owner->lock
     size_t refcount;
@@ -103,7 +103,7 @@ struct observe_property {
     bool waiting_for_hook;  // flag for draining old property changes on a hook
 };
 
-struct mpv_handle {
+struct domi_vid_handle {
     // -- immutable
     char name[MAX_CLIENT_NAME];
     struct mp_log *log;
@@ -112,8 +112,8 @@ struct mpv_handle {
     int64_t id;
 
     // -- not thread-safe
-    struct mpv_event *cur_event;
-    struct mpv_event_property cur_property_event;
+    struct domi_vid_event *cur_event;
+    struct domi_vid_event_property cur_property_event;
     struct observe_property *cur_property;
 
     mp_mutex lock;
@@ -132,7 +132,7 @@ struct mpv_handle {
     uint64_t event_mask;
     bool queued_wakeup;
 
-    mpv_event *events;      // ringbuffer of max_events entries
+    domi_vid_event *events;      // ringbuffer of max_events entries
     int max_events;         // allocated number of entries in events
     int first_event;        // events[first_event] is the first readable event
     int num_events;         // number of readable events
@@ -149,7 +149,7 @@ struct mpv_handle {
     int cur_property_index; // round-robin for property events (consumer side)
     uint64_t property_event_masks; // or-ed together event masks of all properties
     // This is incremented whenever the properties[] array above changes. This
-    // is used to safely unlock mpv_handle.lock while reading a property. If
+    // is used to safely unlock domi_vid_handle.lock while reading a property. If
     // the counter didn't change between unlock and relock, then it will assume
     // the array did not change.
     uint64_t properties_change_ts;
@@ -160,9 +160,9 @@ struct mpv_handle {
     int messages_level;
 };
 
-static bool gen_log_message_event(struct mpv_handle *ctx);
-static bool gen_property_change_event(struct mpv_handle *ctx);
-static void notify_property_events(struct mpv_handle *ctx, int event);
+static bool gen_log_message_event(struct domi_vid_handle *ctx);
+static bool gen_property_change_event(struct domi_vid_handle *ctx);
+static void notify_property_events(struct domi_vid_handle *ctx, int event);
 
 // Must be called with prop->owner->lock held.
 static void prop_unref(struct observe_property *prop)
@@ -192,10 +192,10 @@ void mp_clients_destroy(struct MPContext *mpctx)
         return;
     mp_assert(mpctx->clients->num_clients == 0);
 
-    // The API user is supposed to call mpv_render_context_free(). It's simply
+    // The API user is supposed to call domi_vid_render_context_free(). It's simply
     // not allowed not to do this.
     if (mpctx->clients->render_context) {
-        MP_FATAL(mpctx, "Broken API use: mpv_render_context_free() not called.\n");
+        MP_FATAL(mpctx, "Broken API use: domi_vid_render_context_free() not called.\n");
         abort();
     }
 
@@ -205,13 +205,13 @@ void mp_clients_destroy(struct MPContext *mpctx)
 }
 
 // Test for "fuzzy" initialization of all clients. That is, all clients have
-// at least called mpv_wait_event() at least once since creation (or exited).
+// at least called domi_vid_wait_event() at least once since creation (or exited).
 bool mp_clients_all_initialized(struct MPContext *mpctx)
 {
     bool all_ok = true;
     mp_mutex_lock(&mpctx->clients->lock);
     for (int n = 0; n < mpctx->clients->num_clients; n++) {
-        struct mpv_handle *ctx = mpctx->clients->clients[n];
+        struct domi_vid_handle *ctx = mpctx->clients->clients[n];
         mp_mutex_lock(&ctx->lock);
         all_ok &= ctx->fuzzy_initialized;
         mp_mutex_unlock(&ctx->lock);
@@ -220,7 +220,7 @@ bool mp_clients_all_initialized(struct MPContext *mpctx)
     return all_ok;
 }
 
-static struct mpv_handle *find_client_id(struct mp_client_api *clients, int64_t id)
+static struct domi_vid_handle *find_client_id(struct mp_client_api *clients, int64_t id)
 {
     for (int n = 0; n < clients->num_clients; n++) {
         if (clients->clients[n]->id == id)
@@ -229,7 +229,7 @@ static struct mpv_handle *find_client_id(struct mp_client_api *clients, int64_t 
     return NULL;
 }
 
-static struct mpv_handle *find_client(struct mp_client_api *clients,
+static struct domi_vid_handle *find_client(struct mp_client_api *clients,
                                       const char *name)
 {
     if (name[0] == '@') {
@@ -257,7 +257,7 @@ bool mp_client_id_exists(struct MPContext *mpctx, int64_t id)
     return r;
 }
 
-struct mpv_handle *mp_new_client(struct mp_client_api *clients, const char *name)
+struct domi_vid_handle *mp_new_client(struct mp_client_api *clients, const char *name)
 {
     mp_mutex_lock(&clients->lock);
 
@@ -282,14 +282,14 @@ struct mpv_handle *mp_new_client(struct mp_client_api *clients, const char *name
 
     int num_events = 1000;
 
-    struct mpv_handle *client = talloc_ptrtype(NULL, client);
-    *client = (struct mpv_handle){
+    struct domi_vid_handle *client = talloc_ptrtype(NULL, client);
+    *client = (struct domi_vid_handle){
         .log = mp_log_new(client, clients->mpctx->log, nname),
         .mpctx = clients->mpctx,
         .clients = clients,
         .id = ++(clients->id_alloc),
-        .cur_event = talloc_zero(client, struct mpv_event),
-        .events = talloc_array(client, mpv_event, num_events),
+        .cur_event = talloc_zero(client, struct domi_vid_event),
+        .events = talloc_array(client, domi_vid_event, num_events),
         .max_events = num_events,
         .event_mask = (1ULL << INTERNAL_EVENT_BASE) - 1, // exclude internal events
         .wakeup_pipe = {-1, -1},
@@ -308,39 +308,39 @@ struct mpv_handle *mp_new_client(struct mp_client_api *clients, const char *name
 
     mp_mutex_unlock(&clients->lock);
 
-    mpv_request_event(client, MPV_EVENT_TICK, 0);
+    domi_vid_request_event(client, domi_vid_EVENT_TICK, 0);
 
     return client;
 }
 
-void mp_client_set_weak(struct mpv_handle *ctx)
+void mp_client_set_weak(struct domi_vid_handle *ctx)
 {
     mp_mutex_lock(&ctx->lock);
     ctx->is_weak = true;
     mp_mutex_unlock(&ctx->lock);
 }
 
-const char *mpv_client_name(mpv_handle *ctx)
+const char *domi_vid_client_name(domi_vid_handle *ctx)
 {
     return ctx->name;
 }
 
-int64_t mpv_client_id(mpv_handle *ctx)
+int64_t domi_vid_client_id(domi_vid_handle *ctx)
 {
     return ctx->id;
 }
 
-struct mp_log *mp_client_get_log(struct mpv_handle *ctx)
+struct mp_log *mp_client_get_log(struct domi_vid_handle *ctx)
 {
     return ctx->log;
 }
 
-struct mpv_global *mp_client_get_global(struct mpv_handle *ctx)
+struct domi_vid_global *mp_client_get_global(struct domi_vid_handle *ctx)
 {
     return ctx->mpctx->global;
 }
 
-static void wakeup_client(struct mpv_handle *ctx)
+static void wakeup_client(struct domi_vid_handle *ctx)
 {
     mp_mutex_lock(&ctx->wakeup_lock);
     if (!ctx->need_wakeup) {
@@ -355,7 +355,7 @@ static void wakeup_client(struct mpv_handle *ctx)
 }
 
 // Note: the caller has to deal with sporadic wakeups.
-static int wait_wakeup(struct mpv_handle *ctx, int64_t end)
+static int wait_wakeup(struct domi_vid_handle *ctx, int64_t end)
 {
     int r = 0;
     mp_mutex_unlock(&ctx->lock);
@@ -369,7 +369,7 @@ static int wait_wakeup(struct mpv_handle *ctx, int64_t end)
     return r;
 }
 
-void mpv_set_wakeup_callback(mpv_handle *ctx, void (*cb)(void *d), void *d)
+void domi_vid_set_wakeup_callback(domi_vid_handle *ctx, void (*cb)(void *d), void *d)
 {
     mp_mutex_lock(&ctx->wakeup_lock);
     ctx->wakeup_cb = cb;
@@ -379,17 +379,17 @@ void mpv_set_wakeup_callback(mpv_handle *ctx, void (*cb)(void *d), void *d)
     mp_mutex_unlock(&ctx->wakeup_lock);
 }
 
-static void lock_core(mpv_handle *ctx)
+static void lock_core(domi_vid_handle *ctx)
 {
     mp_dispatch_lock(ctx->mpctx->dispatch);
 }
 
-static void unlock_core(mpv_handle *ctx)
+static void unlock_core(domi_vid_handle *ctx)
 {
     mp_dispatch_unlock(ctx->mpctx->dispatch);
 }
 
-void mpv_wait_async_requests(mpv_handle *ctx)
+void domi_vid_wait_async_requests(domi_vid_handle *ctx)
 {
     mp_mutex_lock(&ctx->lock);
     while (ctx->reserved_events || ctx->async_counter)
@@ -400,7 +400,7 @@ void mpv_wait_async_requests(mpv_handle *ctx)
 // Send abort signal to all matching work items.
 // If type==0, destroy all of the matching ctx.
 // If ctx==0, destroy all.
-static void abort_async(struct MPContext *mpctx, mpv_handle *ctx,
+static void abort_async(struct MPContext *mpctx, domi_vid_handle *ctx,
                         int type, uint64_t id)
 {
     mp_mutex_lock(&mpctx->abort_lock);
@@ -421,7 +421,7 @@ static void abort_async(struct MPContext *mpctx, mpv_handle *ctx,
     mp_mutex_unlock(&mpctx->abort_lock);
 }
 
-static void mp_destroy_client(mpv_handle *ctx, bool terminate)
+static void mp_destroy_client(domi_vid_handle *ctx, bool terminate)
 {
     if (!ctx)
         return;
@@ -432,7 +432,7 @@ static void mp_destroy_client(mpv_handle *ctx, bool terminate)
     MP_DBG(ctx, "Destroying client handle...\n");
 
     if (terminate)
-        mpv_command(ctx, (const char*[]){"quit", NULL});
+        domi_vid_command(ctx, (const char*[]){"quit", NULL});
 
     mp_mutex_lock(&ctx->lock);
 
@@ -453,7 +453,7 @@ static void mp_destroy_client(mpv_handle *ctx, bool terminate)
     // reserved_events equals the number of asynchronous requests that weren't
     // yet replied. In order to avoid that trying to reply to a removed client
     // causes a crash, block until all asynchronous requests were served.
-    mpv_wait_async_requests(ctx);
+    domi_vid_wait_async_requests(ctx);
 
     osd_set_external_remove_owner(mpctx->osd, ctx);
     mp_input_remove_sections_by_owner(mpctx->input, ctx->name);
@@ -487,7 +487,7 @@ static void mp_destroy_client(mpv_handle *ctx, bool terminate)
     if (mpctx->is_cli) {
         terminate = false;
     } else {
-        // If the last strong mpv_handle got destroyed, destroy the core.
+        // If the last strong domi_vid_handle got destroyed, destroy the core.
         bool has_strong_ref = false;
         for (int n = 0; n < clients->num_clients; n++)
             has_strong_ref |= !clients->clients[n]->is_weak;
@@ -528,12 +528,12 @@ static void mp_destroy_client(mpv_handle *ctx, bool terminate)
     }
 }
 
-void mpv_destroy(mpv_handle *ctx)
+void domi_vid_destroy(domi_vid_handle *ctx)
 {
     mp_destroy_client(ctx, false);
 }
 
-void mpv_terminate_destroy(mpv_handle *ctx)
+void domi_vid_terminate_destroy(domi_vid_handle *ctx)
 {
     mp_destroy_client(ctx, true);
 }
@@ -568,7 +568,7 @@ void mp_shutdown_clients(struct MPContext *mpctx)
             abort_async(mpctx, NULL, 0, 0);
         }
 
-        mp_client_broadcast_event(mpctx, MPV_EVENT_SHUTDOWN, NULL);
+        mp_client_broadcast_event(mpctx, domi_vid_EVENT_SHUTDOWN, NULL);
         mp_wait_events(mpctx);
 
         mp_mutex_lock(&clients->lock);
@@ -600,13 +600,13 @@ static MP_THREAD_VOID core_thread(void *p)
 
     // This actually waits until all clients are gone before actually
     // destroying mpctx. Actual destruction is done by whatever destroys
-    // the last mpv_handle.
+    // the last domi_vid_handle.
     mp_shutdown_clients(mpctx);
 
     MP_THREAD_RETURN();
 }
 
-mpv_handle *mpv_create(void)
+domi_vid_handle *domi_vid_create(void)
 {
     struct MPContext *mpctx = mp_create();
     if (!mpctx)
@@ -614,7 +614,7 @@ mpv_handle *mpv_create(void)
 
     m_config_set_profile(mpctx->mconfig, "libmpv", 0);
 
-    mpv_handle *ctx = mp_new_client(mpctx->clients, "main");
+    domi_vid_handle *ctx = mp_new_client(mpctx->clients, "main");
     if (!ctx) {
         mp_destroy(mpctx);
         return NULL;
@@ -622,7 +622,7 @@ mpv_handle *mpv_create(void)
 
     if (mp_thread_create(&mpctx->core_thread, core_thread, mpctx) != 0) {
         ctx->clients->have_terminator = true; // avoid blocking
-        mpv_terminate_destroy(ctx);
+        domi_vid_terminate_destroy(ctx);
         mp_destroy(mpctx);
         return NULL;
     }
@@ -630,52 +630,52 @@ mpv_handle *mpv_create(void)
     return ctx;
 }
 
-mpv_handle *mpv_create_client(mpv_handle *ctx, const char *name)
+domi_vid_handle *domi_vid_create_client(domi_vid_handle *ctx, const char *name)
 {
     if (!ctx)
-        return mpv_create();
-    mpv_handle *new = mp_new_client(ctx->mpctx->clients, name);
+        return domi_vid_create();
+    domi_vid_handle *new = mp_new_client(ctx->mpctx->clients, name);
     if (new)
-        mpv_wait_event(new, 0); // set fuzzy_initialized
+        domi_vid_wait_event(new, 0); // set fuzzy_initialized
     return new;
 }
 
-mpv_handle *mpv_create_weak_client(mpv_handle *ctx, const char *name)
+domi_vid_handle *domi_vid_create_weak_client(domi_vid_handle *ctx, const char *name)
 {
-    mpv_handle *new = mpv_create_client(ctx, name);
+    domi_vid_handle *new = domi_vid_create_client(ctx, name);
     if (new)
         mp_client_set_weak(new);
     return new;
 }
 
 #ifdef FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION
-int mpv_initialize_opts(mpv_handle *ctx, char **options);
+int domi_vid_initialize_opts(domi_vid_handle *ctx, char **options);
 #else
 static
 #endif
-int mpv_initialize_opts(mpv_handle *ctx, char **options)
+int domi_vid_initialize_opts(domi_vid_handle *ctx, char **options)
 {
     lock_core(ctx);
-    int res = mp_initialize(ctx->mpctx, options) ? MPV_ERROR_INVALID_PARAMETER : 0;
+    int res = mp_initialize(ctx->mpctx, options) ? domi_vid_ERROR_INVALID_PARAMETER : 0;
     mp_wakeup_core(ctx->mpctx);
     unlock_core(ctx);
     return res;
 }
 
-int mpv_initialize(mpv_handle *ctx)
+int domi_vid_initialize(domi_vid_handle *ctx)
 {
-    return mpv_initialize_opts(ctx, NULL);
+    return domi_vid_initialize_opts(ctx, NULL);
 }
 
 // set ev->data to a new copy of the original data
 // (done only for message types that are broadcast)
-static void dup_event_data(struct mpv_event *ev)
+static void dup_event_data(struct domi_vid_event *ev)
 {
     switch (ev->event_id) {
-    case MPV_EVENT_CLIENT_MESSAGE: {
-        struct mpv_event_client_message *src = ev->data;
-        struct mpv_event_client_message *msg =
-            talloc_zero(NULL, struct mpv_event_client_message);
+    case domi_vid_EVENT_CLIENT_MESSAGE: {
+        struct domi_vid_event_client_message *src = ev->data;
+        struct domi_vid_event_client_message *msg =
+            talloc_zero(NULL, struct domi_vid_event_client_message);
         for (int n = 0; n < src->num_args; n++) {
             MP_TARRAY_APPEND(msg, msg->args, msg->num_args,
                              talloc_strdup(msg, src->args[n]));
@@ -683,11 +683,11 @@ static void dup_event_data(struct mpv_event *ev)
         ev->data = msg;
         break;
     }
-    case MPV_EVENT_START_FILE:
-        ev->data = talloc_memdup(NULL, ev->data, sizeof(mpv_event_start_file));
+    case domi_vid_EVENT_START_FILE:
+        ev->data = talloc_memdup(NULL, ev->data, sizeof(domi_vid_event_start_file));
         break;
-    case MPV_EVENT_END_FILE:
-        ev->data = talloc_memdup(NULL, ev->data, sizeof(mpv_event_end_file));
+    case domi_vid_EVENT_END_FILE:
+        ev->data = talloc_memdup(NULL, ev->data, sizeof(domi_vid_event_end_file));
         break;
     default:
         // Doesn't use events with memory allocation.
@@ -700,9 +700,9 @@ static void dup_event_data(struct mpv_event *ev)
 // reply can be made, even if the buffer becomes congested _after_ sending
 // the request.
 // Returns an error code if the buffer is full.
-static int reserve_reply(struct mpv_handle *ctx)
+static int reserve_reply(struct domi_vid_handle *ctx)
 {
-    int res = MPV_ERROR_EVENT_QUEUE_FULL;
+    int res = domi_vid_ERROR_EVENT_QUEUE_FULL;
     mp_mutex_lock(&ctx->lock);
     if (ctx->reserved_events + ctx->num_events < ctx->max_events && !ctx->choked)
     {
@@ -713,7 +713,7 @@ static int reserve_reply(struct mpv_handle *ctx)
     return res;
 }
 
-static int append_event(struct mpv_handle *ctx, struct mpv_event event, bool copy)
+static int append_event(struct domi_vid_handle *ctx, struct domi_vid_event event, bool copy)
 {
     if (ctx->num_events + ctx->reserved_events >= ctx->max_events)
         return -1;
@@ -722,12 +722,12 @@ static int append_event(struct mpv_handle *ctx, struct mpv_event event, bool cop
     ctx->events[(ctx->first_event + ctx->num_events) % ctx->max_events] = event;
     ctx->num_events++;
     wakeup_client(ctx);
-    if (event.event_id == MPV_EVENT_SHUTDOWN)
-        ctx->event_mask &= ctx->event_mask & ~(1ULL << MPV_EVENT_SHUTDOWN);
+    if (event.event_id == domi_vid_EVENT_SHUTDOWN)
+        ctx->event_mask &= ctx->event_mask & ~(1ULL << domi_vid_EVENT_SHUTDOWN);
     return 0;
 }
 
-static int send_event(struct mpv_handle *ctx, struct mpv_event *event, bool copy)
+static int send_event(struct domi_vid_handle *ctx, struct domi_vid_event *event, bool copy)
 {
     mp_mutex_lock(&ctx->lock);
     uint64_t mask = 1ULL << event->event_id;
@@ -751,8 +751,8 @@ static int send_event(struct mpv_handle *ctx, struct mpv_event *event, bool copy
 
 // Send a reply; the reply must have been previously reserved with
 // reserve_reply (otherwise, use send_event()).
-static void send_reply(struct mpv_handle *ctx, uint64_t userdata,
-                       struct mpv_event *event)
+static void send_reply(struct domi_vid_handle *ctx, uint64_t userdata,
+                       struct domi_vid_event *event)
 {
     event->reply_userdata = userdata;
     mp_mutex_lock(&ctx->lock);
@@ -771,7 +771,7 @@ void mp_client_broadcast_event(struct MPContext *mpctx, int event, void *data)
     mp_mutex_lock(&clients->lock);
 
     for (int n = 0; n < clients->num_clients; n++) {
-        struct mpv_event event_data = {
+        struct domi_vid_event event_data = {
             .event_id = event,
             .data = data,
         };
@@ -805,7 +805,7 @@ int mp_client_send_event(struct MPContext *mpctx, const char *client_name,
     struct mp_client_api *clients = mpctx->clients;
     int r = 0;
 
-    struct mpv_event event_data = {
+    struct domi_vid_event event_data = {
         .event_id = event,
         .data = data,
         .reply_userdata = reply_userdata,
@@ -813,7 +813,7 @@ int mp_client_send_event(struct MPContext *mpctx, const char *client_name,
 
     mp_mutex_lock(&clients->lock);
 
-    struct mpv_handle *ctx = find_client(clients, client_name);
+    struct domi_vid_handle *ctx = find_client(clients, client_name);
     if (ctx) {
         r = send_event(ctx, &event_data, false);
     } else {
@@ -836,7 +836,7 @@ int mp_client_send_event_dup(struct MPContext *mpctx, const char *client_name,
         return 0;
     }
 
-    struct mpv_event event_data = {
+    struct domi_vid_event event_data = {
         .event_id = event,
         .data = data,
     };
@@ -846,16 +846,16 @@ int mp_client_send_event_dup(struct MPContext *mpctx, const char *client_name,
 }
 
 static const bool deprecated_events[] = {
-    [MPV_EVENT_IDLE] = true,
-    [MPV_EVENT_TICK] = true,
+    [domi_vid_EVENT_IDLE] = true,
+    [domi_vid_EVENT_TICK] = true,
 };
 
-int mpv_request_event(mpv_handle *ctx, mpv_event_id event, int enable)
+int domi_vid_request_event(domi_vid_handle *ctx, domi_vid_event_id event, int enable)
 {
-    if (!mpv_event_name(event) || enable < 0 || enable > 1)
-        return MPV_ERROR_INVALID_PARAMETER;
-    if (event == MPV_EVENT_SHUTDOWN && !enable)
-        return MPV_ERROR_INVALID_PARAMETER;
+    if (!domi_vid_event_name(event) || enable < 0 || enable > 1)
+        return domi_vid_ERROR_INVALID_PARAMETER;
+    if (event == domi_vid_EVENT_SHUTDOWN && !enable)
+        return domi_vid_ERROR_INVALID_PARAMETER;
     mp_assert(event < (int)INTERNAL_EVENT_BASE); // excluded above; they have no name
     mp_mutex_lock(&ctx->lock);
     uint64_t bit = 1ULL << event;
@@ -864,14 +864,14 @@ int mpv_request_event(mpv_handle *ctx, mpv_event_id event, int enable)
         deprecated_events[event])
     {
         MP_WARN(ctx, "The '%s' event is deprecated and will be removed.\n",
-                mpv_event_name(event));
+                domi_vid_event_name(event));
     }
     mp_mutex_unlock(&ctx->lock);
     return 0;
 }
 
 // Set waiting_for_hook==true for all possibly pending properties.
-static void set_wait_for_hook_flags(mpv_handle *ctx)
+static void set_wait_for_hook_flags(domi_vid_handle *ctx)
 {
     for (int n = 0; n < ctx->num_properties; n++) {
         struct observe_property *prop = ctx->properties[n];
@@ -882,7 +882,7 @@ static void set_wait_for_hook_flags(mpv_handle *ctx)
 }
 
 // Return whether any property still has waiting_for_hook set.
-static bool check_for_for_hook_flags(mpv_handle *ctx)
+static bool check_for_for_hook_flags(domi_vid_handle *ctx)
 {
     for (int n = 0; n < ctx->num_properties; n++) {
         if (ctx->properties[n]->waiting_for_hook)
@@ -891,9 +891,9 @@ static bool check_for_for_hook_flags(mpv_handle *ctx)
     return false;
 }
 
-mpv_event *mpv_wait_event(mpv_handle *ctx, double timeout)
+domi_vid_event *domi_vid_wait_event(domi_vid_handle *ctx, double timeout)
 {
-    mpv_event *event = ctx->cur_event;
+    domi_vid_event *event = ctx->cur_event;
 
     mp_mutex_lock(&ctx->lock);
 
@@ -906,7 +906,7 @@ mpv_event *mpv_wait_event(mpv_handle *ctx, double timeout)
 
     int64_t deadline = mp_time_ns_add(mp_time_ns(), timeout);
 
-    *event = (mpv_event){0};
+    *event = (domi_vid_event){0};
     talloc_free_children(event);
 
     while (1) {
@@ -915,12 +915,12 @@ mpv_event *mpv_wait_event(mpv_handle *ctx, double timeout)
         // Recover from overflow.
         if (ctx->choked && !ctx->num_events) {
             ctx->choked = false;
-            event->event_id = MPV_EVENT_QUEUE_OVERFLOW;
+            event->event_id = domi_vid_EVENT_QUEUE_OVERFLOW;
             break;
         }
-        struct mpv_event *ev =
+        struct domi_vid_event *ev =
             ctx->num_events ? &ctx->events[ctx->first_event] : NULL;
-        if (ev && ev->event_id == MPV_EVENT_HOOK) {
+        if (ev && ev->event_id == domi_vid_EVENT_HOOK) {
             // Give old property notifications priority over hooks. This is a
             // guarantee given to clients to simplify their logic. New property
             // changes after this are treated normally, so
@@ -958,7 +958,7 @@ mpv_event *mpv_wait_event(mpv_handle *ctx, double timeout)
     return event;
 }
 
-void mpv_wakeup(mpv_handle *ctx)
+void domi_vid_wakeup(domi_vid_handle *ctx)
 {
     mp_mutex_lock(&ctx->lock);
     ctx->queued_wakeup = true;
@@ -968,14 +968,14 @@ void mpv_wakeup(mpv_handle *ctx)
 
 // map client API types to internal types
 static const struct m_option type_conv[] = {
-    [MPV_FORMAT_STRING]     = { .type = CONF_TYPE_STRING },
-    [MPV_FORMAT_FLAG]       = { .type = CONF_TYPE_FLAG },
-    [MPV_FORMAT_INT64]      = { .type = CONF_TYPE_INT64 },
-    [MPV_FORMAT_DOUBLE]     = { .type = CONF_TYPE_DOUBLE },
-    [MPV_FORMAT_NODE]       = { .type = CONF_TYPE_NODE },
+    [domi_vid_FORMAT_STRING]     = { .type = CONF_TYPE_STRING },
+    [domi_vid_FORMAT_FLAG]       = { .type = CONF_TYPE_FLAG },
+    [domi_vid_FORMAT_INT64]      = { .type = CONF_TYPE_INT64 },
+    [domi_vid_FORMAT_DOUBLE]     = { .type = CONF_TYPE_DOUBLE },
+    [domi_vid_FORMAT_NODE]       = { .type = CONF_TYPE_NODE },
 };
 
-static const struct m_option *get_mp_type(mpv_format format)
+static const struct m_option *get_mp_type(domi_vid_format format)
 {
     if ((unsigned)format >= MP_ARRAY_SIZE(type_conv))
         return NULL;
@@ -984,28 +984,28 @@ static const struct m_option *get_mp_type(mpv_format format)
     return &type_conv[format];
 }
 
-// for read requests - MPV_FORMAT_OSD_STRING special handling
-static const struct m_option *get_mp_type_get(mpv_format format)
+// for read requests - domi_vid_FORMAT_OSD_STRING special handling
+static const struct m_option *get_mp_type_get(domi_vid_format format)
 {
-    if (format == MPV_FORMAT_OSD_STRING)
-        format = MPV_FORMAT_STRING; // it's string data, just other semantics
+    if (format == domi_vid_FORMAT_OSD_STRING)
+        format = domi_vid_FORMAT_STRING; // it's string data, just other semantics
     return get_mp_type(format);
 }
 
 // move src->dst, and do implicit conversion if possible (conversions to or
 // from strings are handled otherwise)
-static bool conv_node_to_format(void *dst, mpv_format dst_fmt, mpv_node *src)
+static bool conv_node_to_format(void *dst, domi_vid_format dst_fmt, domi_vid_node *src)
 {
     if (dst_fmt == src->format) {
         const struct m_option *type = get_mp_type(dst_fmt);
         memcpy(dst, &src->u, type->type->size);
         return true;
     }
-    if (dst_fmt == MPV_FORMAT_DOUBLE && src->format == MPV_FORMAT_INT64) {
+    if (dst_fmt == domi_vid_FORMAT_DOUBLE && src->format == domi_vid_FORMAT_INT64) {
         *(double *)dst = src->u.int64;
         return true;
     }
-    if (dst_fmt == MPV_FORMAT_INT64 && src->format == MPV_FORMAT_DOUBLE) {
+    if (dst_fmt == domi_vid_FORMAT_INT64 && src->format == domi_vid_FORMAT_DOUBLE) {
         if (src->u.double_ > (double)INT64_MIN &&
             src->u.double_ < (double)INT64_MAX)
         {
@@ -1016,20 +1016,20 @@ static bool conv_node_to_format(void *dst, mpv_format dst_fmt, mpv_node *src)
     return false;
 }
 
-void mpv_free_node_contents(mpv_node *node)
+void domi_vid_free_node_contents(domi_vid_node *node)
 {
     static const struct m_option type = { .type = CONF_TYPE_NODE };
     m_option_free(&type, node);
 }
 
-int mpv_set_option(mpv_handle *ctx, const char *name, mpv_format format,
+int domi_vid_set_option(domi_vid_handle *ctx, const char *name, domi_vid_format format,
                    void *data)
 {
     const struct m_option *type = get_mp_type(format);
     if (!type)
-        return MPV_ERROR_OPTION_FORMAT;
-    struct mpv_node tmp;
-    if (format != MPV_FORMAT_NODE) {
+        return domi_vid_ERROR_OPTION_FORMAT;
+    struct domi_vid_node tmp;
+    if (format != domi_vid_FORMAT_NODE) {
         tmp.format = format;
         memcpy(&tmp.u, data, type->type->size);
         data = &tmp;
@@ -1040,25 +1040,25 @@ int mpv_set_option(mpv_handle *ctx, const char *name, mpv_format format,
     switch (err) {
     case M_OPT_MISSING_PARAM:
     case M_OPT_INVALID:
-        return MPV_ERROR_OPTION_ERROR;
+        return domi_vid_ERROR_OPTION_ERROR;
     case M_OPT_OUT_OF_RANGE:
-        return MPV_ERROR_OPTION_FORMAT;
+        return domi_vid_ERROR_OPTION_FORMAT;
     case M_OPT_UNKNOWN:
-        return MPV_ERROR_OPTION_NOT_FOUND;
+        return domi_vid_ERROR_OPTION_NOT_FOUND;
     default:
         if (err >= 0)
             return 0;
-        return MPV_ERROR_OPTION_ERROR;
+        return domi_vid_ERROR_OPTION_ERROR;
     }
 }
 
-int mpv_set_option_string(mpv_handle *ctx, const char *name, const char *data)
+int domi_vid_set_option_string(domi_vid_handle *ctx, const char *name, const char *data)
 {
-    return mpv_set_option(ctx, name, MPV_FORMAT_STRING, &data);
+    return domi_vid_set_option(ctx, name, domi_vid_FORMAT_STRING, &data);
 }
 
 // Run a command in the playback thread.
-static void run_locked(mpv_handle *ctx, void (*fn)(void *fn_data), void *fn_data)
+static void run_locked(domi_vid_handle *ctx, void (*fn)(void *fn_data), void *fn_data)
 {
     mp_dispatch_lock(ctx->mpctx->dispatch);
     fn(fn_data);
@@ -1071,7 +1071,7 @@ static void run_locked(mpv_handle *ctx, void (*fn)(void *fn_data), void *fn_data
 //  fn: callback to execute the request
 //  fn_data: opaque caller-defined argument for fn. This will be automatically
 //           freed with talloc_free(fn_data).
-static int run_async(mpv_handle *ctx, void (*fn)(void *fn_data), void *fn_data)
+static int run_async(domi_vid_handle *ctx, void (*fn)(void *fn_data), void *fn_data)
 {
     int err = reserve_reply(ctx);
     if (err < 0) {
@@ -1086,7 +1086,7 @@ struct cmd_request {
     struct MPContext *mpctx;
     struct mp_cmd *cmd;
     int status;
-    struct mpv_node *res;
+    struct domi_vid_node *res;
     struct mp_waiter completion;
 };
 
@@ -1094,23 +1094,23 @@ static void cmd_complete(struct mp_cmd_ctx *cmd)
 {
     struct cmd_request *req = cmd->on_completion_priv;
 
-    req->status = cmd->success ? 0 : MPV_ERROR_COMMAND;
+    req->status = cmd->success ? 0 : domi_vid_ERROR_COMMAND;
     if (req->res) {
         *req->res = cmd->result;
-        cmd->result = (mpv_node){0};
+        cmd->result = (domi_vid_node){0};
     }
 
     // Unblock the waiting thread (especially for async commands).
     mp_waiter_wakeup(&req->completion, 0);
 }
 
-static int run_client_command(mpv_handle *ctx, struct mp_cmd *cmd, mpv_node *res)
+static int run_client_command(domi_vid_handle *ctx, struct mp_cmd *cmd, domi_vid_node *res)
 {
     if (!cmd)
-        return MPV_ERROR_INVALID_PARAMETER;
+        return domi_vid_ERROR_INVALID_PARAMETER;
     if (!ctx->mpctx->initialized) {
         talloc_free(cmd);
-        return MPV_ERROR_UNINITIALIZED;
+        return domi_vid_ERROR_UNINITIALIZED;
     }
 
     cmd->sender = ctx->name;
@@ -1143,30 +1143,30 @@ static int run_client_command(mpv_handle *ctx, struct mp_cmd *cmd, mpv_node *res
     return req.status;
 }
 
-int mpv_command(mpv_handle *ctx, const char **args)
+int domi_vid_command(domi_vid_handle *ctx, const char **args)
 {
     return run_client_command(ctx, mp_input_parse_cmd_strv(ctx->log, args), NULL);
 }
 
-int mpv_command_node(mpv_handle *ctx, mpv_node *args, mpv_node *result)
+int domi_vid_command_node(domi_vid_handle *ctx, domi_vid_node *args, domi_vid_node *result)
 {
-    struct mpv_node rn = {.format = MPV_FORMAT_NONE};
+    struct domi_vid_node rn = {.format = domi_vid_FORMAT_NONE};
     int r = run_client_command(ctx, mp_input_parse_cmd_node(ctx->log, args), result ? &rn : NULL);
     if (result && r >= 0)
         *result = rn;
     return r;
 }
 
-int mpv_command_ret(mpv_handle *ctx, const char **args, mpv_node *result)
+int domi_vid_command_ret(domi_vid_handle *ctx, const char **args, domi_vid_node *result)
 {
-    struct mpv_node rn = {.format = MPV_FORMAT_NONE};
+    struct domi_vid_node rn = {.format = domi_vid_FORMAT_NONE};
     int r = run_client_command(ctx, mp_input_parse_cmd_strv(ctx->log, args), result ? &rn : NULL);
     if (result && r >= 0)
         *result = rn;
     return r;
 }
 
-int mpv_command_string(mpv_handle *ctx, const char *args)
+int domi_vid_command_string(domi_vid_handle *ctx, const char *args)
 {
     return run_client_command(ctx,
         mp_input_parse_cmd(ctx->mpctx->input, bstr0((char*)args), ctx->name), NULL);
@@ -1175,7 +1175,7 @@ int mpv_command_string(mpv_handle *ctx, const char *args)
 struct async_cmd_request {
     struct MPContext *mpctx;
     struct mp_cmd *cmd;
-    struct mpv_handle *reply_ctx;
+    struct domi_vid_handle *reply_ctx;
     uint64_t userdata;
 };
 
@@ -1183,15 +1183,15 @@ static void async_cmd_complete(struct mp_cmd_ctx *cmd)
 {
     struct async_cmd_request *req = cmd->on_completion_priv;
 
-    struct mpv_event_command *data = talloc_zero(NULL, struct mpv_event_command);
+    struct domi_vid_event_command *data = talloc_zero(NULL, struct domi_vid_event_command);
     data->result = cmd->result;
-    cmd->result = (mpv_node){0};
+    cmd->result = (domi_vid_node){0};
     talloc_steal(data, node_get_alloc(&data->result));
 
-    struct mpv_event reply = {
-        .event_id = MPV_EVENT_COMMAND_REPLY,
+    struct domi_vid_event reply = {
+        .event_id = domi_vid_EVENT_COMMAND_REPLY,
         .data = data,
-        .error = cmd->success ? 0 : MPV_ERROR_COMMAND,
+        .error = cmd->success ? 0 : domi_vid_ERROR_COMMAND,
     };
     send_reply(req->reply_ctx, req->userdata, &reply);
 
@@ -1210,7 +1210,7 @@ static void async_cmd_fn(void *data)
     if (cmd->def->can_abort) {
         abort = talloc_zero(NULL, struct mp_abort_entry);
         abort->client = req->reply_ctx;
-        abort->client_work_type = MPV_EVENT_COMMAND_REPLY;
+        abort->client_work_type = domi_vid_EVENT_COMMAND_REPLY;
         abort->client_work_id = req->userdata;
     }
 
@@ -1219,13 +1219,13 @@ static void async_cmd_fn(void *data)
     run_command(req->mpctx, cmd, abort, async_cmd_complete, req);
 }
 
-static int run_async_cmd(mpv_handle *ctx, uint64_t ud, struct mp_cmd *cmd)
+static int run_async_cmd(domi_vid_handle *ctx, uint64_t ud, struct mp_cmd *cmd)
 {
     if (!cmd)
-        return MPV_ERROR_INVALID_PARAMETER;
+        return domi_vid_ERROR_INVALID_PARAMETER;
     if (!ctx->mpctx->initialized) {
         talloc_free(cmd);
-        return MPV_ERROR_UNINITIALIZED;
+        return domi_vid_ERROR_UNINITIALIZED;
     }
 
     cmd->sender = ctx->name;
@@ -1240,32 +1240,32 @@ static int run_async_cmd(mpv_handle *ctx, uint64_t ud, struct mp_cmd *cmd)
     return run_async(ctx, async_cmd_fn, req);
 }
 
-int mpv_command_async(mpv_handle *ctx, uint64_t ud, const char **args)
+int domi_vid_command_async(domi_vid_handle *ctx, uint64_t ud, const char **args)
 {
     return run_async_cmd(ctx, ud, mp_input_parse_cmd_strv(ctx->log, args));
 }
 
-int mpv_command_node_async(mpv_handle *ctx, uint64_t ud, mpv_node *args)
+int domi_vid_command_node_async(domi_vid_handle *ctx, uint64_t ud, domi_vid_node *args)
 {
     return run_async_cmd(ctx, ud, mp_input_parse_cmd_node(ctx->log, args));
 }
 
-void mpv_abort_async_command(mpv_handle *ctx, uint64_t reply_userdata)
+void domi_vid_abort_async_command(domi_vid_handle *ctx, uint64_t reply_userdata)
 {
-    abort_async(ctx->mpctx, ctx, MPV_EVENT_COMMAND_REPLY, reply_userdata);
+    abort_async(ctx->mpctx, ctx, domi_vid_EVENT_COMMAND_REPLY, reply_userdata);
 }
 
 static int translate_property_error(int errc)
 {
     switch (errc) {
     case M_PROPERTY_OK:                 return 0;
-    case M_PROPERTY_ERROR:              return MPV_ERROR_PROPERTY_ERROR;
-    case M_PROPERTY_UNAVAILABLE:        return MPV_ERROR_PROPERTY_UNAVAILABLE;
-    case M_PROPERTY_NOT_IMPLEMENTED:    return MPV_ERROR_PROPERTY_ERROR;
-    case M_PROPERTY_UNKNOWN:            return MPV_ERROR_PROPERTY_NOT_FOUND;
-    case M_PROPERTY_INVALID_FORMAT:     return MPV_ERROR_PROPERTY_FORMAT;
+    case M_PROPERTY_ERROR:              return domi_vid_ERROR_PROPERTY_ERROR;
+    case M_PROPERTY_UNAVAILABLE:        return domi_vid_ERROR_PROPERTY_UNAVAILABLE;
+    case M_PROPERTY_NOT_IMPLEMENTED:    return domi_vid_ERROR_PROPERTY_ERROR;
+    case M_PROPERTY_UNKNOWN:            return domi_vid_ERROR_PROPERTY_NOT_FOUND;
+    case M_PROPERTY_INVALID_FORMAT:     return domi_vid_ERROR_PROPERTY_FORMAT;
     // shouldn't happen
-    default:                            return MPV_ERROR_PROPERTY_ERROR;
+    default:                            return domi_vid_ERROR_PROPERTY_ERROR;
     }
 }
 
@@ -1275,7 +1275,7 @@ struct setproperty_request {
     int format;
     void *data;
     int status;
-    struct mpv_handle *reply_ctx;
+    struct domi_vid_handle *reply_ctx;
     uint64_t userdata;
 };
 
@@ -1284,9 +1284,9 @@ static void setproperty_fn(void *arg)
     struct setproperty_request *req = arg;
     const struct m_option *type = get_mp_type(req->format);
 
-    struct mpv_node *node;
-    struct mpv_node tmp;
-    if (req->format == MPV_FORMAT_NODE) {
+    struct domi_vid_node *node;
+    struct domi_vid_node tmp;
+    if (req->format == domi_vid_FORMAT_NODE) {
         node = req->data;
     } else {
         tmp.format = req->format;
@@ -1299,8 +1299,8 @@ static void setproperty_fn(void *arg)
     req->status = translate_property_error(err);
 
     if (req->reply_ctx) {
-        struct mpv_event reply = {
-            .event_id = MPV_EVENT_SET_PROPERTY_REPLY,
+        struct domi_vid_event reply = {
+            .event_id = domi_vid_EVENT_SET_PROPERTY_REPLY,
             .error = req->status,
         };
         send_reply(req->reply_ctx, req->userdata, &reply);
@@ -1308,23 +1308,23 @@ static void setproperty_fn(void *arg)
     }
 }
 
-int mpv_set_property(mpv_handle *ctx, const char *name, mpv_format format,
+int domi_vid_set_property(domi_vid_handle *ctx, const char *name, domi_vid_format format,
                      void *data)
 {
     if (!ctx->mpctx->initialized) {
-        int r = mpv_set_option(ctx, name, format, data);
-        if (r == MPV_ERROR_OPTION_NOT_FOUND &&
+        int r = domi_vid_set_option(ctx, name, format, data);
+        if (r == domi_vid_ERROR_OPTION_NOT_FOUND &&
             mp_get_property_id(ctx->mpctx, name) >= 0)
-            return MPV_ERROR_PROPERTY_UNAVAILABLE;
+            return domi_vid_ERROR_PROPERTY_UNAVAILABLE;
         switch (r) {
-        case MPV_ERROR_SUCCESS:          return MPV_ERROR_SUCCESS;
-        case MPV_ERROR_OPTION_FORMAT:    return MPV_ERROR_PROPERTY_FORMAT;
-        case MPV_ERROR_OPTION_NOT_FOUND: return MPV_ERROR_PROPERTY_NOT_FOUND;
-        default:                         return MPV_ERROR_PROPERTY_ERROR;
+        case domi_vid_ERROR_SUCCESS:          return domi_vid_ERROR_SUCCESS;
+        case domi_vid_ERROR_OPTION_FORMAT:    return domi_vid_ERROR_PROPERTY_FORMAT;
+        case domi_vid_ERROR_OPTION_NOT_FOUND: return domi_vid_ERROR_PROPERTY_NOT_FOUND;
+        default:                         return domi_vid_ERROR_PROPERTY_ERROR;
         }
     }
     if (!get_mp_type(format))
-        return MPV_ERROR_PROPERTY_FORMAT;
+        return domi_vid_ERROR_PROPERTY_FORMAT;
 
     struct setproperty_request req = {
         .mpctx = ctx->mpctx,
@@ -1336,15 +1336,15 @@ int mpv_set_property(mpv_handle *ctx, const char *name, mpv_format format,
     return req.status;
 }
 
-int mpv_del_property(mpv_handle *ctx, const char *name)
+int domi_vid_del_property(domi_vid_handle *ctx, const char *name)
 {
     const char* args[] = { "del", name, NULL };
-    return mpv_command(ctx, args);
+    return domi_vid_command(ctx, args);
 }
 
-int mpv_set_property_string(mpv_handle *ctx, const char *name, const char *data)
+int domi_vid_set_property_string(domi_vid_handle *ctx, const char *name, const char *data)
 {
-    return mpv_set_property(ctx, name, MPV_FORMAT_STRING, &data);
+    return domi_vid_set_property(ctx, name, domi_vid_FORMAT_STRING, &data);
 }
 
 static void free_prop_set_req(void *ptr)
@@ -1354,14 +1354,14 @@ static void free_prop_set_req(void *ptr)
     m_option_free(type, req->data);
 }
 
-int mpv_set_property_async(mpv_handle *ctx, uint64_t ud, const char *name,
-                           mpv_format format, void *data)
+int domi_vid_set_property_async(domi_vid_handle *ctx, uint64_t ud, const char *name,
+                           domi_vid_format format, void *data)
 {
     const struct m_option *type = get_mp_type(format);
     if (!ctx->mpctx->initialized)
-        return MPV_ERROR_UNINITIALIZED;
+        return domi_vid_ERROR_UNINITIALIZED;
     if (!type)
-        return MPV_ERROR_PROPERTY_FORMAT;
+        return domi_vid_ERROR_PROPERTY_FORMAT;
 
     struct setproperty_request *req = talloc_ptrtype(NULL, req);
     *req = (struct setproperty_request){
@@ -1382,16 +1382,16 @@ int mpv_set_property_async(mpv_handle *ctx, uint64_t ud, const char *name,
 struct getproperty_request {
     struct MPContext *mpctx;
     const char *name;
-    mpv_format format;
+    domi_vid_format format;
     void *data;
     int status;
-    struct mpv_handle *reply_ctx;
+    struct domi_vid_handle *reply_ctx;
     uint64_t userdata;
 };
 
 static void free_prop_data(void *ptr)
 {
-    struct mpv_event_property *prop = ptr;
+    struct domi_vid_event_property *prop = ptr;
     const struct m_option *type = get_mp_type_get(prop->format);
     m_option_free(type, prop->data);
 }
@@ -1406,21 +1406,21 @@ static void getproperty_fn(void *arg)
 
     int err = -1;
     switch (req->format) {
-    case MPV_FORMAT_OSD_STRING:
+    case domi_vid_FORMAT_OSD_STRING:
         err = mp_property_do(req->name, M_PROPERTY_PRINT, data, req->mpctx);
         break;
-    case MPV_FORMAT_STRING: {
+    case domi_vid_FORMAT_STRING: {
         char *s = NULL;
         err = mp_property_do(req->name, M_PROPERTY_GET_STRING, &s, req->mpctx);
         if (err == M_PROPERTY_OK)
             *(char **)data = s;
         break;
     }
-    case MPV_FORMAT_NODE:
-    case MPV_FORMAT_FLAG:
-    case MPV_FORMAT_INT64:
-    case MPV_FORMAT_DOUBLE: {
-        struct mpv_node node = {{0}};
+    case domi_vid_FORMAT_NODE:
+    case domi_vid_FORMAT_FLAG:
+    case domi_vid_FORMAT_INT64:
+    case domi_vid_FORMAT_DOUBLE: {
+        struct domi_vid_node node = {{0}};
         err = mp_property_do(req->name, M_PROPERTY_GET_NODE, &node, req->mpctx);
         if (err == M_PROPERTY_NOT_IMPLEMENTED) {
             // Go through explicit string conversion. Same reasoning as on the
@@ -1430,16 +1430,16 @@ static void getproperty_fn(void *arg)
                                  req->mpctx);
             if (err != M_PROPERTY_OK)
                 break;
-            node.format = MPV_FORMAT_STRING;
+            node.format = domi_vid_FORMAT_STRING;
             node.u.string = s;
         } else if (err <= 0)
             break;
-        if (req->format == MPV_FORMAT_NODE) {
-            *(struct mpv_node *)data = node;
+        if (req->format == domi_vid_FORMAT_NODE) {
+            *(struct domi_vid_node *)data = node;
         } else {
             if (!conv_node_to_format(data, req->format, &node)) {
                 err = M_PROPERTY_INVALID_FORMAT;
-                mpv_free_node_contents(&node);
+                domi_vid_free_node_contents(&node);
             }
         }
         break;
@@ -1451,8 +1451,8 @@ static void getproperty_fn(void *arg)
     req->status = translate_property_error(err);
 
     if (req->reply_ctx) {
-        struct mpv_event_property *prop = talloc_ptrtype(NULL, prop);
-        *prop = (struct mpv_event_property){
+        struct domi_vid_event_property *prop = talloc_ptrtype(NULL, prop);
+        *prop = (struct domi_vid_event_property){
             .name = talloc_steal(prop, (char *)req->name),
             .format = req->format,
             .data = talloc_size(prop, type->type->size),
@@ -1460,8 +1460,8 @@ static void getproperty_fn(void *arg)
         // move data
         memcpy(prop->data, &xdata, type->type->size);
         talloc_set_destructor(prop, free_prop_data);
-        struct mpv_event reply = {
-            .event_id = MPV_EVENT_GET_PROPERTY_REPLY,
+        struct domi_vid_event reply = {
+            .event_id = domi_vid_EVENT_GET_PROPERTY_REPLY,
             .data = prop,
             .error = req->status,
         };
@@ -1470,15 +1470,15 @@ static void getproperty_fn(void *arg)
     }
 }
 
-int mpv_get_property(mpv_handle *ctx, const char *name, mpv_format format,
+int domi_vid_get_property(domi_vid_handle *ctx, const char *name, domi_vid_format format,
                      void *data)
 {
     if (!ctx->mpctx->initialized)
-        return MPV_ERROR_UNINITIALIZED;
+        return domi_vid_ERROR_UNINITIALIZED;
     if (!data)
-        return MPV_ERROR_INVALID_PARAMETER;
+        return domi_vid_ERROR_INVALID_PARAMETER;
     if (!get_mp_type_get(format))
-        return MPV_ERROR_PROPERTY_FORMAT;
+        return domi_vid_ERROR_PROPERTY_FORMAT;
 
     struct getproperty_request req = {
         .mpctx = ctx->mpctx,
@@ -1490,27 +1490,27 @@ int mpv_get_property(mpv_handle *ctx, const char *name, mpv_format format,
     return req.status;
 }
 
-char *mpv_get_property_string(mpv_handle *ctx, const char *name)
+char *domi_vid_get_property_string(domi_vid_handle *ctx, const char *name)
 {
     char *str = NULL;
-    mpv_get_property(ctx, name, MPV_FORMAT_STRING, &str);
+    domi_vid_get_property(ctx, name, domi_vid_FORMAT_STRING, &str);
     return str;
 }
 
-char *mpv_get_property_osd_string(mpv_handle *ctx, const char *name)
+char *domi_vid_get_property_osd_string(domi_vid_handle *ctx, const char *name)
 {
     char *str = NULL;
-    mpv_get_property(ctx, name, MPV_FORMAT_OSD_STRING, &str);
+    domi_vid_get_property(ctx, name, domi_vid_FORMAT_OSD_STRING, &str);
     return str;
 }
 
-int mpv_get_property_async(mpv_handle *ctx, uint64_t ud, const char *name,
-                           mpv_format format)
+int domi_vid_get_property_async(domi_vid_handle *ctx, uint64_t ud, const char *name,
+                           domi_vid_format format)
 {
     if (!ctx->mpctx->initialized)
-        return MPV_ERROR_UNINITIALIZED;
+        return domi_vid_ERROR_UNINITIALIZED;
     if (!get_mp_type_get(format))
-        return MPV_ERROR_PROPERTY_FORMAT;
+        return domi_vid_ERROR_PROPERTY_FORMAT;
 
     struct getproperty_request *req = talloc_ptrtype(NULL, req);
     *req = (struct getproperty_request){
@@ -1535,15 +1535,15 @@ static void property_free(void *p)
     }
 }
 
-int mpv_observe_property(mpv_handle *ctx, uint64_t userdata,
-                         const char *name, mpv_format format)
+int domi_vid_observe_property(domi_vid_handle *ctx, uint64_t userdata,
+                         const char *name, domi_vid_format format)
 {
     const struct m_option *type = get_mp_type_get(format);
-    if (format != MPV_FORMAT_NONE && !type)
-        return MPV_ERROR_PROPERTY_FORMAT;
+    if (format != domi_vid_FORMAT_NONE && !type)
+        return domi_vid_ERROR_PROPERTY_FORMAT;
     // Explicitly disallow this, because it would require a special code path.
-    if (format == MPV_FORMAT_OSD_STRING)
-        return MPV_ERROR_PROPERTY_FORMAT;
+    if (format == domi_vid_FORMAT_OSD_STRING)
+        return domi_vid_ERROR_PROPERTY_FORMAT;
 
     mp_mutex_lock(&ctx->lock);
     mp_assert(!ctx->destroying);
@@ -1573,7 +1573,7 @@ int mpv_observe_property(mpv_handle *ctx, uint64_t userdata,
     return 0;
 }
 
-int mpv_unobserve_property(mpv_handle *ctx, uint64_t userdata)
+int domi_vid_unobserve_property(domi_vid_handle *ctx, uint64_t userdata)
 {
     mp_mutex_lock(&ctx->lock);
     int count = 0;
@@ -1627,7 +1627,7 @@ void mp_client_property_change(struct MPContext *mpctx, const char *name)
     mp_mutex_lock(&clients->lock);
 
     for (int n = 0; n < clients->num_clients; n++) {
-        struct mpv_handle *client = clients->clients[n];
+        struct domi_vid_handle *client = clients->clients[n];
         mp_mutex_lock(&client->lock);
         for (int i = 0; i < client->num_properties; i++) {
             if (client->properties[i]->id == id &&
@@ -1652,7 +1652,7 @@ void mp_client_property_change(struct MPContext *mpctx, const char *name)
 
 // Mark properties as changed in reaction to specific events.
 // Called with ctx->lock held.
-static void notify_property_events(struct mpv_handle *ctx, int event)
+static void notify_property_events(struct domi_vid_handle *ctx, int event)
 {
     uint64_t mask = 1ULL << event;
     for (int i = 0; i < ctx->num_properties; i++) {
@@ -1668,7 +1668,7 @@ static void notify_property_events(struct mpv_handle *ctx, int event)
 }
 
 // Call with ctx->lock held (only). May temporarily drop the lock.
-static void send_client_property_changes(struct mpv_handle *ctx)
+static void send_client_property_changes(struct domi_vid_handle *ctx)
 {
     uint64_t cur_ts = ctx->properties_change_ts;
 
@@ -1716,7 +1716,7 @@ static void send_client_property_changes(struct mpv_handle *ctx)
             bool val_valid = req.status >= 0;
             changed = prop->value_valid != val_valid;
             if (prop->value_valid && val_valid)
-                changed = !equal_mpv_value(&prop->value, &val, prop->format);
+                changed = !equal_domi_vid_value(&prop->value, &val, prop->format);
             if (prop->value_ts == 0)
                 changed = true; // initial event
 
@@ -1760,7 +1760,7 @@ void mp_client_send_property_changes(struct MPContext *mpctx)
     uint64_t cur_ts = clients->clients_list_change_ts;
 
     for (int n = 0; n < clients->num_clients; n++) {
-        struct mpv_handle *ctx = clients->clients[n];
+        struct domi_vid_handle *ctx = clients->clients[n];
 
         mp_mutex_lock(&ctx->lock);
         if (!ctx->has_pending_properties || ctx->destroying) {
@@ -1784,7 +1784,7 @@ void mp_client_send_property_changes(struct MPContext *mpctx)
 
 // Set ctx->cur_event to a generated property change event, if there is any
 // outstanding property.
-static bool gen_property_change_event(struct mpv_handle *ctx)
+static bool gen_property_change_event(struct domi_vid_handle *ctx)
 {
     if (!ctx->mpctx->initialized)
         return false;
@@ -1812,13 +1812,13 @@ static bool gen_property_change_event(struct mpv_handle *ctx)
             if (prop->value_valid)
                 m_option_copy(prop->type, &prop->value_ret, &prop->value);
 
-            ctx->cur_property_event = (struct mpv_event_property){
+            ctx->cur_property_event = (struct domi_vid_event_property){
                 .name = prop->name,
                 .format = prop->value_valid ? prop->format : 0,
                 .data = prop->value_valid ? &prop->value_ret : NULL,
             };
-            *ctx->cur_event = (struct mpv_event){
-                .event_id = MPV_EVENT_PROPERTY_CHANGE,
+            *ctx->cur_event = (struct domi_vid_event){
+                .event_id = domi_vid_EVENT_PROPERTY_CHANGE,
                 .reply_userdata = prop->reply_id,
                 .data = &ctx->cur_property_event,
             };
@@ -1829,7 +1829,7 @@ static bool gen_property_change_event(struct mpv_handle *ctx)
     return false;
 }
 
-int mpv_hook_add(mpv_handle *ctx, uint64_t reply_userdata,
+int domi_vid_hook_add(domi_vid_handle *ctx, uint64_t reply_userdata,
                  const char *name, int priority)
 {
     lock_core(ctx);
@@ -1838,7 +1838,7 @@ int mpv_hook_add(mpv_handle *ctx, uint64_t reply_userdata,
     return 0;
 }
 
-int mpv_hook_continue(mpv_handle *ctx, uint64_t id)
+int domi_vid_hook_continue(domi_vid_handle *ctx, uint64_t id)
 {
     lock_core(ctx);
     int r = mp_hook_continue(ctx->mpctx, ctx->id, id);
@@ -1846,21 +1846,21 @@ int mpv_hook_continue(mpv_handle *ctx, uint64_t id)
     return r;
 }
 
-int mpv_load_config_file(mpv_handle *ctx, const char *filename)
+int domi_vid_load_config_file(domi_vid_handle *ctx, const char *filename)
 {
     lock_core(ctx);
     int r = m_config_parse_config_file(ctx->mpctx->mconfig, ctx->mpctx->global, filename, NULL, 0);
     unlock_core(ctx);
     if (r == 0)
-        return MPV_ERROR_INVALID_PARAMETER;
+        return domi_vid_ERROR_INVALID_PARAMETER;
     if (r < 0)
-        return MPV_ERROR_OPTION_ERROR;
+        return domi_vid_ERROR_OPTION_ERROR;
     return 0;
 }
 
 static void msg_wakeup(void *p)
 {
-    mpv_handle *ctx = p;
+    domi_vid_handle *ctx = p;
     wakeup_client(ctx);
 }
 
@@ -1868,7 +1868,7 @@ static void msg_wakeup(void *p)
 // returned to the API user, but are stored until logging is enabled normally
 // again by calling this without "silent:". (Using a different level will
 // flush it, though.)
-int mpv_request_log_messages(mpv_handle *ctx, const char *min_level)
+int domi_vid_request_log_messages(domi_vid_handle *ctx, const char *min_level)
 {
     bstr blevel = bstr0(min_level);
     bool silent = bstr_eatstart0(&blevel, "silent:");
@@ -1884,7 +1884,7 @@ int mpv_request_log_messages(mpv_handle *ctx, const char *min_level)
         level = MP_LOG_BUFFER_MSGL_TERM;
 
     if (level < 0 && strcmp(min_level, "no") != 0)
-        return MPV_ERROR_INVALID_PARAMETER;
+        return domi_vid_ERROR_INVALID_PARAMETER;
 
     mp_mutex_lock(&ctx->lock);
     if (level < 0 || level != ctx->messages_level) {
@@ -1906,23 +1906,23 @@ int mpv_request_log_messages(mpv_handle *ctx, const char *min_level)
 }
 
 // Set ctx->cur_event to a generated log message event, if any available.
-static bool gen_log_message_event(struct mpv_handle *ctx)
+static bool gen_log_message_event(struct domi_vid_handle *ctx)
 {
     if (ctx->messages) {
         struct mp_log_buffer_entry *msg =
             mp_msg_log_buffer_read(ctx->messages);
         if (msg) {
-            struct mpv_event_log_message *cmsg =
+            struct domi_vid_event_log_message *cmsg =
                 talloc_ptrtype(ctx->cur_event, cmsg);
             talloc_steal(cmsg, msg);
-            *cmsg = (struct mpv_event_log_message){
+            *cmsg = (struct domi_vid_event_log_message){
                 .prefix = msg->prefix,
                 .level = mp_log_levels[msg->level],
-                .log_level = mp_mpv_log_levels[msg->level],
+                .log_level = mp_domi_vid_log_levels[msg->level],
                 .text = msg->text,
             };
-            *ctx->cur_event = (struct mpv_event){
-                .event_id = MPV_EVENT_LOG_MESSAGE,
+            *ctx->cur_event = (struct domi_vid_event){
+                .event_id = domi_vid_EVENT_LOG_MESSAGE,
                 .data = cmsg,
             };
             return true;
@@ -1931,7 +1931,7 @@ static bool gen_log_message_event(struct mpv_handle *ctx)
     return false;
 }
 
-int mpv_get_wakeup_pipe(mpv_handle *ctx)
+int domi_vid_get_wakeup_pipe(domi_vid_handle *ctx)
 {
     mp_mutex_lock(&ctx->wakeup_lock);
     if (ctx->wakeup_pipe[0] == -1) {
@@ -1943,43 +1943,43 @@ int mpv_get_wakeup_pipe(mpv_handle *ctx)
     return fd;
 }
 
-unsigned long mpv_client_api_version(void)
+unsigned long domi_vid_client_api_version(void)
 {
-    return MPV_CLIENT_API_VERSION;
+    return domi_vid_CLIENT_API_VERSION;
 }
 
-int mpv_event_to_node(mpv_node *dst, mpv_event *event)
+int domi_vid_event_to_node(domi_vid_node *dst, domi_vid_event *event)
 {
-    *dst = (mpv_node){0};
+    *dst = (domi_vid_node){0};
 
-    node_init(dst, MPV_FORMAT_NODE_MAP, NULL);
-    node_map_add_string(dst, "event", mpv_event_name(event->event_id));
+    node_init(dst, domi_vid_FORMAT_NODE_MAP, NULL);
+    node_map_add_string(dst, "event", domi_vid_event_name(event->event_id));
 
     if (event->error < 0)
-        node_map_add_string(dst, "error", mpv_error_string(event->error));
+        node_map_add_string(dst, "error", domi_vid_error_string(event->error));
 
     if (event->reply_userdata)
         node_map_add_int64(dst, "id", event->reply_userdata);
 
     switch (event->event_id) {
 
-    case MPV_EVENT_START_FILE: {
-        mpv_event_start_file *esf = event->data;
+    case domi_vid_EVENT_START_FILE: {
+        domi_vid_event_start_file *esf = event->data;
 
         node_map_add_int64(dst, "playlist_entry_id", esf->playlist_entry_id);
         break;
     }
 
-    case MPV_EVENT_END_FILE: {
-        mpv_event_end_file *eef = event->data;
+    case domi_vid_EVENT_END_FILE: {
+        domi_vid_event_end_file *eef = event->data;
 
         const char *reason;
         switch (eef->reason) {
-        case MPV_END_FILE_REASON_EOF: reason = "eof"; break;
-        case MPV_END_FILE_REASON_STOP: reason = "stop"; break;
-        case MPV_END_FILE_REASON_QUIT: reason = "quit"; break;
-        case MPV_END_FILE_REASON_ERROR: reason = "error"; break;
-        case MPV_END_FILE_REASON_REDIRECT: reason = "redirect"; break;
+        case domi_vid_END_FILE_REASON_EOF: reason = "eof"; break;
+        case domi_vid_END_FILE_REASON_STOP: reason = "stop"; break;
+        case domi_vid_END_FILE_REASON_QUIT: reason = "quit"; break;
+        case domi_vid_END_FILE_REASON_ERROR: reason = "error"; break;
+        case domi_vid_END_FILE_REASON_REDIRECT: reason = "redirect"; break;
         default:
             reason = "unknown";
         }
@@ -1993,13 +1993,13 @@ int mpv_event_to_node(mpv_node *dst, mpv_event *event)
                                eef->playlist_insert_num_entries);
         }
 
-        if (eef->reason == MPV_END_FILE_REASON_ERROR)
-            node_map_add_string(dst, "file_error", mpv_error_string(eef->error));
+        if (eef->reason == domi_vid_END_FILE_REASON_ERROR)
+            node_map_add_string(dst, "file_error", domi_vid_error_string(eef->error));
         break;
     }
 
-    case MPV_EVENT_LOG_MESSAGE: {
-        mpv_event_log_message *msg = event->data;
+    case domi_vid_EVENT_LOG_MESSAGE: {
+        domi_vid_event_log_message *msg = event->data;
 
         node_map_add_string(dst, "prefix", msg->prefix);
         node_map_add_string(dst, "level",  msg->level);
@@ -2007,35 +2007,35 @@ int mpv_event_to_node(mpv_node *dst, mpv_event *event)
         break;
     }
 
-    case MPV_EVENT_CLIENT_MESSAGE: {
-        mpv_event_client_message *msg = event->data;
+    case domi_vid_EVENT_CLIENT_MESSAGE: {
+        domi_vid_event_client_message *msg = event->data;
 
-        struct mpv_node *args = node_map_add(dst, "args", MPV_FORMAT_NODE_ARRAY);
+        struct domi_vid_node *args = node_map_add(dst, "args", domi_vid_FORMAT_NODE_ARRAY);
         for (int n = 0; n < msg->num_args; n++) {
-            struct mpv_node *sn = node_array_add(args, MPV_FORMAT_NONE);
-            sn->format = MPV_FORMAT_STRING;
+            struct domi_vid_node *sn = node_array_add(args, domi_vid_FORMAT_NONE);
+            sn->format = domi_vid_FORMAT_STRING;
             sn->u.string = (char *)msg->args[n];
         }
         break;
     }
 
-    case MPV_EVENT_PROPERTY_CHANGE: {
-        mpv_event_property *prop = event->data;
+    case domi_vid_EVENT_PROPERTY_CHANGE: {
+        domi_vid_event_property *prop = event->data;
 
         node_map_add_string(dst, "name", prop->name);
 
         switch (prop->format) {
-        case MPV_FORMAT_NODE:
-            *node_map_add(dst, "data", MPV_FORMAT_NONE) =
-                *(struct mpv_node *)prop->data;
+        case domi_vid_FORMAT_NODE:
+            *node_map_add(dst, "data", domi_vid_FORMAT_NONE) =
+                *(struct domi_vid_node *)prop->data;
             break;
-        case MPV_FORMAT_DOUBLE:
+        case domi_vid_FORMAT_DOUBLE:
             node_map_add_double(dst, "data", *(double *)prop->data);
             break;
-        case MPV_FORMAT_FLAG:
+        case domi_vid_FORMAT_FLAG:
             node_map_add_flag(dst, "data", *(int *)prop->data);
             break;
-        case MPV_FORMAT_STRING:
+        case domi_vid_FORMAT_STRING:
             node_map_add_string(dst, "data", *(char **)prop->data);
             break;
         default: ;
@@ -2043,15 +2043,15 @@ int mpv_event_to_node(mpv_node *dst, mpv_event *event)
         break;
     }
 
-    case MPV_EVENT_COMMAND_REPLY: {
-        mpv_event_command *cmd = event->data;
+    case domi_vid_EVENT_COMMAND_REPLY: {
+        domi_vid_event_command *cmd = event->data;
 
-        *node_map_add(dst, "result", MPV_FORMAT_NONE) = cmd->result;
+        *node_map_add(dst, "result", domi_vid_FORMAT_NONE) = cmd->result;
         break;
     }
 
-    case MPV_EVENT_HOOK: {
-        mpv_event_hook *hook = event->data;
+    case domi_vid_EVENT_HOOK: {
+        domi_vid_event_hook *hook = event->data;
 
         node_map_add_int64(dst, "hook_id", hook->id);
         break;
@@ -2062,30 +2062,30 @@ int mpv_event_to_node(mpv_node *dst, mpv_event *event)
 }
 
 static const char *const err_table[] = {
-    [-MPV_ERROR_SUCCESS] = "success",
-    [-MPV_ERROR_EVENT_QUEUE_FULL] = "event queue full",
-    [-MPV_ERROR_NOMEM] = "memory allocation failed",
-    [-MPV_ERROR_UNINITIALIZED] = "core not initialized",
-    [-MPV_ERROR_INVALID_PARAMETER] = "invalid parameter",
-    [-MPV_ERROR_OPTION_NOT_FOUND] = "option not found",
-    [-MPV_ERROR_OPTION_FORMAT] = "unsupported format for accessing option",
-    [-MPV_ERROR_OPTION_ERROR] = "error setting option",
-    [-MPV_ERROR_PROPERTY_NOT_FOUND] = "property not found",
-    [-MPV_ERROR_PROPERTY_FORMAT] = "unsupported format for accessing property",
-    [-MPV_ERROR_PROPERTY_UNAVAILABLE] = "property unavailable",
-    [-MPV_ERROR_PROPERTY_ERROR] = "error accessing property",
-    [-MPV_ERROR_COMMAND] = "error running command",
-    [-MPV_ERROR_LOADING_FAILED] = "loading failed",
-    [-MPV_ERROR_AO_INIT_FAILED] = "audio output initialization failed",
-    [-MPV_ERROR_VO_INIT_FAILED] = "video output initialization failed",
-    [-MPV_ERROR_NOTHING_TO_PLAY] = "no audio or video data played",
-    [-MPV_ERROR_UNKNOWN_FORMAT] = "unrecognized file format",
-    [-MPV_ERROR_UNSUPPORTED] = "not supported",
-    [-MPV_ERROR_NOT_IMPLEMENTED] = "operation not implemented",
-    [-MPV_ERROR_GENERIC] = "something happened",
+    [-domi_vid_ERROR_SUCCESS] = "success",
+    [-domi_vid_ERROR_EVENT_QUEUE_FULL] = "event queue full",
+    [-domi_vid_ERROR_NOMEM] = "memory allocation failed",
+    [-domi_vid_ERROR_UNINITIALIZED] = "core not initialized",
+    [-domi_vid_ERROR_INVALID_PARAMETER] = "invalid parameter",
+    [-domi_vid_ERROR_OPTION_NOT_FOUND] = "option not found",
+    [-domi_vid_ERROR_OPTION_FORMAT] = "unsupported format for accessing option",
+    [-domi_vid_ERROR_OPTION_ERROR] = "error setting option",
+    [-domi_vid_ERROR_PROPERTY_NOT_FOUND] = "property not found",
+    [-domi_vid_ERROR_PROPERTY_FORMAT] = "unsupported format for accessing property",
+    [-domi_vid_ERROR_PROPERTY_UNAVAILABLE] = "property unavailable",
+    [-domi_vid_ERROR_PROPERTY_ERROR] = "error accessing property",
+    [-domi_vid_ERROR_COMMAND] = "error running command",
+    [-domi_vid_ERROR_LOADING_FAILED] = "loading failed",
+    [-domi_vid_ERROR_AO_INIT_FAILED] = "audio output initialization failed",
+    [-domi_vid_ERROR_VO_INIT_FAILED] = "video output initialization failed",
+    [-domi_vid_ERROR_NOTHING_TO_PLAY] = "no audio or video data played",
+    [-domi_vid_ERROR_UNKNOWN_FORMAT] = "unrecognized file format",
+    [-domi_vid_ERROR_UNSUPPORTED] = "not supported",
+    [-domi_vid_ERROR_NOT_IMPLEMENTED] = "operation not implemented",
+    [-domi_vid_ERROR_GENERIC] = "something happened",
 };
 
-const char *mpv_error_string(int error)
+const char *domi_vid_error_string(int error)
 {
     error = -error;
     if (error < 0)
@@ -2097,45 +2097,45 @@ const char *mpv_error_string(int error)
 }
 
 static const char *const event_table[] = {
-    [MPV_EVENT_NONE] = "none",
-    [MPV_EVENT_SHUTDOWN] = "shutdown",
-    [MPV_EVENT_LOG_MESSAGE] = "log-message",
-    [MPV_EVENT_GET_PROPERTY_REPLY] = "get-property-reply",
-    [MPV_EVENT_SET_PROPERTY_REPLY] = "set-property-reply",
-    [MPV_EVENT_COMMAND_REPLY] = "command-reply",
-    [MPV_EVENT_START_FILE] = "start-file",
-    [MPV_EVENT_END_FILE] = "end-file",
-    [MPV_EVENT_FILE_LOADED] = "file-loaded",
-    [MPV_EVENT_IDLE] = "idle",
-    [MPV_EVENT_TICK] = "tick",
-    [MPV_EVENT_CLIENT_MESSAGE] = "client-message",
-    [MPV_EVENT_VIDEO_RECONFIG] = "video-reconfig",
-    [MPV_EVENT_AUDIO_RECONFIG] = "audio-reconfig",
-    [MPV_EVENT_SEEK] = "seek",
-    [MPV_EVENT_PLAYBACK_RESTART] = "playback-restart",
-    [MPV_EVENT_PROPERTY_CHANGE] = "property-change",
-    [MPV_EVENT_QUEUE_OVERFLOW] = "event-queue-overflow",
-    [MPV_EVENT_HOOK] = "hook",
+    [domi_vid_EVENT_NONE] = "none",
+    [domi_vid_EVENT_SHUTDOWN] = "shutdown",
+    [domi_vid_EVENT_LOG_MESSAGE] = "log-message",
+    [domi_vid_EVENT_GET_PROPERTY_REPLY] = "get-property-reply",
+    [domi_vid_EVENT_SET_PROPERTY_REPLY] = "set-property-reply",
+    [domi_vid_EVENT_COMMAND_REPLY] = "command-reply",
+    [domi_vid_EVENT_START_FILE] = "start-file",
+    [domi_vid_EVENT_END_FILE] = "end-file",
+    [domi_vid_EVENT_FILE_LOADED] = "file-loaded",
+    [domi_vid_EVENT_IDLE] = "idle",
+    [domi_vid_EVENT_TICK] = "tick",
+    [domi_vid_EVENT_CLIENT_MESSAGE] = "client-message",
+    [domi_vid_EVENT_VIDEO_RECONFIG] = "video-reconfig",
+    [domi_vid_EVENT_AUDIO_RECONFIG] = "audio-reconfig",
+    [domi_vid_EVENT_SEEK] = "seek",
+    [domi_vid_EVENT_PLAYBACK_RESTART] = "playback-restart",
+    [domi_vid_EVENT_PROPERTY_CHANGE] = "property-change",
+    [domi_vid_EVENT_QUEUE_OVERFLOW] = "event-queue-overflow",
+    [domi_vid_EVENT_HOOK] = "hook",
 };
 
-const char *mpv_event_name(mpv_event_id event)
+const char *domi_vid_event_name(domi_vid_event_id event)
 {
     if ((unsigned)event >= MP_ARRAY_SIZE(event_table))
         return NULL;
     return event_table[event];
 }
 
-void mpv_free(void *data)
+void domi_vid_free(void *data)
 {
     talloc_free(data);
 }
 
-int64_t mpv_get_time_ns(mpv_handle *ctx)
+int64_t domi_vid_get_time_ns(domi_vid_handle *ctx)
 {
     return mp_time_ns();
 }
 
-int64_t mpv_get_time_us(mpv_handle *ctx)
+int64_t domi_vid_get_time_us(domi_vid_handle *ctx)
 {
     return mp_time_ns() / 1000;
 }
@@ -2149,7 +2149,7 @@ static void do_kill(void *ptr)
     struct track *track = mpctx->vo_chain ? mpctx->vo_chain->track : NULL;
     uninit_video_out(mpctx);
     if (track) {
-        mpctx->error_playing = MPV_ERROR_VO_INIT_FAILED;
+        mpctx->error_playing = domi_vid_ERROR_VO_INIT_FAILED;
         error_on_track(mpctx, track);
     }
 }
@@ -2163,7 +2163,7 @@ void kill_video_async(struct mp_client_api *client_api)
 
 // Used by vo_libmpv to set the current render context.
 bool mp_set_main_render_context(struct mp_client_api *client_api,
-                                struct mpv_render_context *ctx, bool active)
+                                struct domi_vid_render_context *ctx, bool active)
 {
     mp_assert(ctx);
 
@@ -2179,10 +2179,10 @@ bool mp_set_main_render_context(struct mp_client_api *client_api,
 }
 
 // Used by vo_libmpv. Relies on guarantees by mp_render_context_acquire().
-struct mpv_render_context *
+struct domi_vid_render_context *
 mp_client_api_acquire_render_context(struct mp_client_api *ca)
 {
-    struct mpv_render_context *res = NULL;
+    struct domi_vid_render_context *res = NULL;
     mp_mutex_lock(&ca->lock);
     if (ca->render_context && mp_render_context_acquire(ca->render_context))
         res = ca->render_context;
@@ -2195,14 +2195,14 @@ mp_client_api_acquire_render_context(struct mp_client_api *ca)
 struct mp_custom_protocol {
     char *protocol;
     void *user_data;
-    mpv_stream_cb_open_ro_fn open_fn;
+    domi_vid_stream_cb_open_ro_fn open_fn;
 };
 
-int mpv_stream_cb_add_ro(mpv_handle *ctx, const char *protocol, void *user_data,
-                         mpv_stream_cb_open_ro_fn open_fn)
+int domi_vid_stream_cb_add_ro(domi_vid_handle *ctx, const char *protocol, void *user_data,
+                         domi_vid_stream_cb_open_ro_fn open_fn)
 {
     if (!open_fn)
-        return MPV_ERROR_INVALID_PARAMETER;
+        return domi_vid_ERROR_INVALID_PARAMETER;
 
     struct mp_client_api *clients = ctx->clients;
     int r = 0;
@@ -2210,12 +2210,12 @@ int mpv_stream_cb_add_ro(mpv_handle *ctx, const char *protocol, void *user_data,
     for (int n = 0; n < clients->num_custom_protocols; n++) {
         struct mp_custom_protocol *proto = &clients->custom_protocols[n];
         if (strcmp(proto->protocol, protocol) == 0) {
-            r = MPV_ERROR_INVALID_PARAMETER;
+            r = domi_vid_ERROR_INVALID_PARAMETER;
             break;
         }
     }
     if (stream_has_proto(protocol))
-        r = MPV_ERROR_INVALID_PARAMETER;
+        r = domi_vid_ERROR_INVALID_PARAMETER;
     if (r >= 0) {
         struct mp_custom_protocol proto = {
             .protocol = talloc_strdup(clients, protocol),
@@ -2229,8 +2229,8 @@ int mpv_stream_cb_add_ro(mpv_handle *ctx, const char *protocol, void *user_data,
     return r;
 }
 
-bool mp_streamcb_lookup(struct mpv_global *g, const char *protocol,
-                        void **out_user_data, mpv_stream_cb_open_ro_fn *out_fn)
+bool mp_streamcb_lookup(struct domi_vid_global *g, const char *protocol,
+                        void **out_user_data, domi_vid_stream_cb_open_ro_fn *out_fn)
 {
     struct mp_client_api *clients = g->client_api;
     bool found = false;

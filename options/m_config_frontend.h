@@ -60,7 +60,7 @@ struct m_config_option {
 /** \ingroup Config */
 typedef struct m_config {
     struct mp_log *log;
-    struct mpv_global *global; // can be NULL
+    struct domi_vid_global *global; // can be NULL
 
     // Registered options.
     struct m_config_option *opts; // all options, even suboptions
@@ -117,7 +117,7 @@ struct m_config *m_config_new(void *talloc_ctx, struct mp_log *log,
 // structs).
 // args is an array of key/value pairs (args=[k0, v0, k1, v1, ..., NULL]).
 struct m_config *m_config_from_obj_desc_and_args(void *ta_parent,
-    struct mp_log *log, struct mpv_global *global, struct m_obj_desc *desc,
+    struct mp_log *log, struct domi_vid_global *global, struct m_obj_desc *desc,
     char **args);
 
 // Like m_config_from_obj_desc_and_args(), but don't allocate option the
@@ -173,10 +173,10 @@ int m_config_set_option_raw(struct m_config *config, struct m_config_option *co,
 
 void m_config_mark_co_flags(struct m_config_option *co, int flags);
 
-// Convert the mpv_node to raw option data, then call m_config_set_option_raw().
-struct mpv_node;
+// Convert the domi_vid_node to raw option data, then call m_config_set_option_raw().
+struct domi_vid_node;
 int m_config_set_option_node(struct m_config *config, bstr name,
-                             struct mpv_node *data, int flags);
+                             struct domi_vid_node *data, int flags);
 
 // Return option descriptor. You shouldn't use this.
 struct m_config_option *m_config_get_co(const struct m_config *config,
@@ -260,7 +260,7 @@ int m_config_set_profile(struct m_config *config, char *name, int flags);
 // Attempt to "unset" a profile if possible.
 int m_config_restore_profile(struct m_config *config, char *name);
 
-struct mpv_node m_config_get_profiles(struct m_config *config);
+struct domi_vid_node m_config_get_profiles(struct m_config *config);
 
 // Run async option updates here. This will call option_change_callback() on it.
 void m_config_set_update_dispatch_queue(struct m_config *config,

@@ -54,82 +54,82 @@ using namespace winrt::Windows::Media;
 using namespace winrt::Windows::Storage;
 using namespace winrt::Windows::Storage::Streams;
 
-struct mpv_deleter {
+struct domi_vid_deleter {
     void operator()(void *ptr) const {
-        mpv_free(ptr);
+        domi_vid_free(ptr);
     }
 };
-using mp_string = std::unique_ptr<char, mpv_deleter>;
+using mp_string = std::unique_ptr<char, domi_vid_deleter>;
 
-struct mp_node : mpv_node {
+struct mp_node : domi_vid_node {
     mp_node() = default;
     ~mp_node() {
         if (valid)
-            mpv_free_node_contents(static_cast<mpv_node *>(this));
+            domi_vid_free_node_contents(static_cast<domi_vid_node *>(this));
     }
     mp_node(const mp_node &) = delete;
     mp_node& operator=(const mp_node &) = delete;
     mp_node& operator=(mp_node &&) = delete;
     mp_node(mp_node &&o) noexcept
-        : mpv_node(static_cast<mpv_node &>(o)),
+        : domi_vid_node(static_cast<domi_vid_node &>(o)),
           valid(std::exchange(o.valid, false)) {}
 
     bool valid = false;
 };
 
-template<mpv_format F> struct mp_fmt;
-template<> struct mp_fmt<MPV_FORMAT_FLAG>   { using type = int; };
-template<> struct mp_fmt<MPV_FORMAT_INT64>  { using type = int64_t; };
-template<> struct mp_fmt<MPV_FORMAT_DOUBLE> { using type = double; };
-template<> struct mp_fmt<MPV_FORMAT_NODE>   { using type = mp_node; };
+template<domi_vid_format F> struct mp_fmt;
+template<> struct mp_fmt<domi_vid_FORMAT_FLAG>   { using type = int; };
+template<> struct mp_fmt<domi_vid_FORMAT_INT64>  { using type = int64_t; };
+template<> struct mp_fmt<domi_vid_FORMAT_DOUBLE> { using type = double; };
+template<> struct mp_fmt<domi_vid_FORMAT_NODE>   { using type = mp_node; };
 
-template<mpv_format F>
+template<domi_vid_format F>
 static inline std::optional<typename mp_fmt<F>::type>
-mp_get_property(mpv_handle *mpv, const char *name)
+mp_get_property(domi_vid_handle *mpv, const char *name)
 {
     typename mp_fmt<F>::type val;
-    if (mpv_get_property(mpv, name, F, &val) != MPV_ERROR_SUCCESS)
+    if (domi_vid_get_property(mpv, name, F, &val) != domi_vid_ERROR_SUCCESS)
         return std::nullopt;
-    if constexpr (F == MPV_FORMAT_NODE)
+    if constexpr (F == domi_vid_FORMAT_NODE)
         val.valid = true;
     return val;
 }
 
 template<typename T> struct mp_fmt_e;
-template<> struct mp_fmt_e<int> { static constexpr mpv_format value = MPV_FORMAT_FLAG; };
-template<> struct mp_fmt_e<bool> { static constexpr mpv_format value = MPV_FORMAT_FLAG; };
-template<> struct mp_fmt_e<int64_t> { static constexpr mpv_format value = MPV_FORMAT_INT64; };
-template<> struct mp_fmt_e<double> { static constexpr mpv_format value = MPV_FORMAT_DOUBLE; };
+template<> struct mp_fmt_e<int> { static constexpr domi_vid_format value = domi_vid_FORMAT_FLAG; };
+template<> struct mp_fmt_e<bool> { static constexpr domi_vid_format value = domi_vid_FORMAT_FLAG; };
+template<> struct mp_fmt_e<int64_t> { static constexpr domi_vid_format value = domi_vid_FORMAT_INT64; };
+template<> struct mp_fmt_e<double> { static constexpr domi_vid_format value = domi_vid_FORMAT_DOUBLE; };
 
 template<typename T>
-static inline int mp_set_property(mpv_handle *mpv, const char *name, T &&val)
+static inline int mp_set_property(domi_vid_handle *mpv, const char *name, T &&val)
 {
     using val_t = std::remove_reference_t<T>;
-    typename mp_fmt<mp_fmt_e<val_t>::value>::type mpv_val = std::forward<T>(val);
-    return mpv_set_property(mpv, name, mp_fmt_e<val_t>::value, &mpv_val);
+    typename mp_fmt<mp_fmt_e<val_t>::value>::type domi_vid_val = std::forward<T>(val);
+    return domi_vid_set_property(mpv, name, mp_fmt_e<val_t>::value, &domi_vid_val);
 }
 
 struct smtc_ctx {
     mp_log *log;
-    mpv_handle *mpv;
+    domi_vid_handle *mpv;
     SystemMediaTransportControls smtc{ nullptr };
     IAsyncOperation<FileProperties::StorageItemThumbnail> thumb_async{ nullptr };
     std::atomic_bool close{ false };
     std::atomic<HWND> hwnd{ nullptr };
 };
 
-static void update_state(SystemMediaTransportControls &smtc, mpv_handle *mpv)
+static void update_state(SystemMediaTransportControls &smtc, domi_vid_handle *mpv)
 {
-    auto closed = mp_get_property<MPV_FORMAT_FLAG>(mpv, "idle-active");
+    auto closed = mp_get_property<domi_vid_FORMAT_FLAG>(mpv, "idle-active");
     if (!closed.value_or(false)) {
-        auto paused = mp_get_property<MPV_FORMAT_FLAG>(mpv, "pause");
+        auto paused = mp_get_property<domi_vid_FORMAT_FLAG>(mpv, "pause");
         smtc.PlaybackStatus(paused.value_or(true) ? MediaPlaybackStatus::Paused : MediaPlaybackStatus::Playing);
         smtc.IsPlayEnabled(true);
         smtc.IsPauseEnabled(true);
         smtc.IsStopEnabled(true);
-        auto ch_index = mp_get_property<MPV_FORMAT_INT64>(mpv, "chapter");
-        auto ch_count = mp_get_property<MPV_FORMAT_INT64>(mpv, "chapter-list/count");
-        auto pl_count = mp_get_property<MPV_FORMAT_INT64>(mpv, "playlist-count");
+        auto ch_index = mp_get_property<domi_vid_FORMAT_INT64>(mpv, "chapter");
+        auto ch_count = mp_get_property<domi_vid_FORMAT_INT64>(mpv, "chapter-list/count");
+        auto pl_count = mp_get_property<domi_vid_FORMAT_INT64>(mpv, "playlist-count");
         smtc.IsNextEnabled(pl_count > 1 || ch_count > ch_index.value_or(0));
         smtc.IsPreviousEnabled(pl_count > 1 || ch_index > 0);
         smtc.IsRewindEnabled(true);
@@ -143,15 +143,15 @@ static void update_state(SystemMediaTransportControls &smtc, mpv_handle *mpv)
         smtc.IsRewindEnabled(false);
     }
 
-    auto shuffle = mp_get_property<MPV_FORMAT_FLAG>(mpv, "shuffle");
+    auto shuffle = mp_get_property<domi_vid_FORMAT_FLAG>(mpv, "shuffle");
     smtc.ShuffleEnabled(shuffle.value_or(false));
 
-    auto speed = mp_get_property<MPV_FORMAT_DOUBLE>(mpv, "speed");
+    auto speed = mp_get_property<domi_vid_FORMAT_DOUBLE>(mpv, "speed");
     smtc.PlaybackRate(speed.value_or(1.0));
 
-    mp_string loop_file_opt{ mpv_get_property_string(mpv, "loop-file") };
+    mp_string loop_file_opt{ domi_vid_get_property_string(mpv, "loop-file") };
     bool loop_file = loop_file_opt && strcmp(loop_file_opt.get(), "no");
-    mp_string loop_playlist_opt{ mpv_get_property_string(mpv, "loop-playlist") };
+    mp_string loop_playlist_opt{ domi_vid_get_property_string(mpv, "loop-playlist") };
     bool loop_playlist = loop_playlist_opt && strcmp(loop_playlist_opt.get(), "no");
     if (loop_file) {
         smtc.AutoRepeatMode(MediaPlaybackAutoRepeatMode::Track);
@@ -161,8 +161,8 @@ static void update_state(SystemMediaTransportControls &smtc, mpv_handle *mpv)
         smtc.AutoRepeatMode(MediaPlaybackAutoRepeatMode::None);
     }
 
-    auto pos = mp_get_property<MPV_FORMAT_DOUBLE>(mpv, "time-pos");
-    auto duration = mp_get_property<MPV_FORMAT_DOUBLE>(mpv, "duration");
+    auto pos = mp_get_property<domi_vid_FORMAT_DOUBLE>(mpv, "time-pos");
+    auto duration = mp_get_property<domi_vid_FORMAT_DOUBLE>(mpv, "duration");
 
     if (!pos || !duration)
         return;
@@ -178,33 +178,33 @@ static void update_state(SystemMediaTransportControls &smtc, mpv_handle *mpv)
 
 static void update_thumbnail(SystemMediaTransportControls &smtc, smtc_ctx &ctx)
 {
-    auto track_list = mp_get_property<MPV_FORMAT_NODE>(ctx.mpv, "track-list");
+    auto track_list = mp_get_property<domi_vid_FORMAT_NODE>(ctx.mpv, "track-list");
     if (!track_list)
         return;
-    mp_assert(track_list->format == MPV_FORMAT_NODE_ARRAY);
+    mp_assert(track_list->format == domi_vid_FORMAT_NODE_ARRAY);
     auto list = track_list->u.list;
     const char *thumbnail = nullptr;
-    mp_string filepath{ mpv_get_property_string(ctx.mpv, "path") };
+    mp_string filepath{ domi_vid_get_property_string(ctx.mpv, "path") };
     // Get first albumart or image from tracks
     for (int i = 0; i < list->num; ++i) {
-        mpv_node *img = node_map_get(list->values + i, "image");
-        if (!img || img->format != MPV_FORMAT_FLAG || !img->u.flag)
+        domi_vid_node *img = node_map_get(list->values + i, "image");
+        if (!img || img->format != domi_vid_FORMAT_FLAG || !img->u.flag)
             continue;
 
         // If this is the only track selected and image, try to use it directly
         if (list->num == 1)
             thumbnail = filepath.get();
 
-        mpv_node *file = node_map_get(list->values + i, "external-filename");
-        if (!file || file->format != MPV_FORMAT_STRING || !file->u.string)
+        domi_vid_node *file = node_map_get(list->values + i, "external-filename");
+        if (!file || file->format != domi_vid_FORMAT_STRING || !file->u.string)
             continue;
 
         // Select first image found
         if (!thumbnail)
             thumbnail = file->u.string;
 
-        mpv_node *art = node_map_get(list->values + i, "albumart");
-        if (!art || art->format != MPV_FORMAT_FLAG || !art->u.flag)
+        domi_vid_node *art = node_map_get(list->values + i, "albumart");
+        if (!art || art->format != domi_vid_FORMAT_FLAG || !art->u.flag)
             continue;
 
         // Select first albumart found
@@ -259,29 +259,29 @@ static void update_metadata(SystemMediaTransportControls &smtc, smtc_ctx &ctx)
     auto updater = smtc.DisplayUpdater();
     updater.ClearAll();
 
-    auto image_opt = mp_get_property<MPV_FORMAT_FLAG>(mpv, "current-tracks/video/image");
+    auto image_opt = mp_get_property<domi_vid_FORMAT_FLAG>(mpv, "current-tracks/video/image");
     bool video = bool(image_opt);
     bool image = image_opt.value_or(false);
-    auto audio = mp_get_property<MPV_FORMAT_FLAG>(mpv, "current-tracks/audio/selected");
+    auto audio = mp_get_property<domi_vid_FORMAT_FLAG>(mpv, "current-tracks/audio/selected");
 
     if (!video && !image && !audio)
         return;
 
     update_thumbnail(smtc, ctx);
 
-    mp_string title{ mpv_get_property_osd_string(mpv, "media-title") };
+    mp_string title{ domi_vid_get_property_osd_string(mpv, "media-title") };
     if (video && !image) {
         updater.Type(MediaPlaybackType::Video);
         const auto &props = updater.VideoProperties();
         if (title)
             props.Title(winrt::to_hstring(title.get()));
-        auto ch_index = mp_get_property<MPV_FORMAT_INT64>(mpv, "chapter").value_or(-1);
+        auto ch_index = mp_get_property<domi_vid_FORMAT_INT64>(mpv, "chapter").value_or(-1);
         if (ch_index >= 0) {
             mp_string ch_title {
-                mpv_get_property_string(mpv, std::format("chapter-list/{}/title", ch_index).c_str())
+                domi_vid_get_property_string(mpv, std::format("chapter-list/{}/title", ch_index).c_str())
             };
             if (ch_title) {
-                auto ch_count = mp_get_property<MPV_FORMAT_INT64>(mpv, "chapter-list/count").value_or(0);
+                auto ch_count = mp_get_property<domi_vid_FORMAT_INT64>(mpv, "chapter-list/count").value_or(0);
                 props.Subtitle(winrt::to_hstring(std::format("{} ({}/{})", ch_title.get(), ch_index + 1, ch_count)));
             }
         }
@@ -295,30 +295,30 @@ static void update_metadata(SystemMediaTransportControls &smtc, smtc_ctx &ctx)
         const auto &props = updater.MusicProperties();
         if (title)
             props.Title(winrt::to_hstring(title.get()));
-        if (mp_string str{ mpv_get_property_string(mpv, "metadata/by-key/Album_Artist") })
+        if (mp_string str{ domi_vid_get_property_string(mpv, "metadata/by-key/Album_Artist") })
             props.AlbumArtist(winrt::to_hstring(str.get()));
-        if (mp_string str{ mpv_get_property_string(mpv, "metadata/by-key/Album") })
+        if (mp_string str{ domi_vid_get_property_string(mpv, "metadata/by-key/Album") })
             props.AlbumTitle(winrt::to_hstring(str.get()));
-        if (mp_string str{ mpv_get_property_string(mpv, "metadata/by-key/Album_Track_Count") })
+        if (mp_string str{ domi_vid_get_property_string(mpv, "metadata/by-key/Album_Track_Count") })
             props.AlbumTrackCount(std::atoi(str.get()));
-        if (mp_string str{ mpv_get_property_string(mpv, "metadata/by-key/Artist") })
+        if (mp_string str{ domi_vid_get_property_string(mpv, "metadata/by-key/Artist") })
             props.Artist(winrt::to_hstring(str.get()));
-        if (mp_string str{ mpv_get_property_string(mpv, "metadata/by-key/Track") })
+        if (mp_string str{ domi_vid_get_property_string(mpv, "metadata/by-key/Track") })
             props.TrackNumber(std::atoi(str.get()));
     }
 
     updater.Update();
 }
 
-static void handle_mp_event(smtc_ctx *ctx, mpv_event *event)
+static void handle_mp_event(smtc_ctx *ctx, domi_vid_event *event)
 {
     if (!ctx || !ctx->smtc || !ctx->mpv || ctx->close)
         return;
 
     try {
         update_state(ctx->smtc, ctx->mpv);
-        if (event->event_id == MPV_EVENT_PROPERTY_CHANGE) {
-            auto &prop = *static_cast<mpv_event_property *>(event->data);
+        if (event->event_id == domi_vid_EVENT_PROPERTY_CHANGE) {
+            auto &prop = *static_cast<domi_vid_event_property *>(event->data);
             if (!strcmp(prop.name, "time-pos") || !strcmp(prop.name, "duration"))
                 return;
         }
@@ -338,18 +338,18 @@ static LRESULT CALLBACK WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
     switch (uMsg)
     {
     case WM_MP_EVENT:
-        handle_mp_event(ctx, reinterpret_cast<mpv_event *>(lParam));
+        handle_mp_event(ctx, reinterpret_cast<domi_vid_event *>(lParam));
         return 0;
     case WM_SETFOCUS:
         if (!ctx)
             return 0;
-        if (auto wid { mp_get_property<MPV_FORMAT_INT64>(ctx->mpv, "window-id") })
+        if (auto wid { mp_get_property<domi_vid_FORMAT_INT64>(ctx->mpv, "window-id") })
             SetFocus(HWND(*wid));
         return 0;
     case WM_ACTIVATE:
         if (!ctx)
             return 0;
-        if (auto wid { mp_get_property<MPV_FORMAT_INT64>(ctx->mpv, "window-id") }) {
+        if (auto wid { mp_get_property<domi_vid_FORMAT_INT64>(ctx->mpv, "window-id") }) {
             if (IsIconic(HWND(*wid)))
                 ShowWindow(HWND(*wid), SW_RESTORE);
             BringWindowToTop(HWND(*wid));
@@ -406,18 +406,18 @@ static MP_THREAD_VOID win_event_loop_fn(void *arg)
                 mp_set_property(mpv, "pause", true);
                 break;
             case SystemMediaTransportControlsButton::Stop:
-                mpv_command_string(mpv, "stop");
+                domi_vid_command_string(mpv, "stop");
                 break;
             case SystemMediaTransportControlsButton::Next: {
-                auto ch_index = mp_get_property<MPV_FORMAT_INT64>(mpv, "chapter").value_or(0);
-                auto ch_count = mp_get_property<MPV_FORMAT_INT64>(mpv, "chapter-list/count");
+                auto ch_index = mp_get_property<domi_vid_FORMAT_INT64>(mpv, "chapter").value_or(0);
+                auto ch_count = mp_get_property<domi_vid_FORMAT_INT64>(mpv, "chapter-list/count");
                 // mpv allows to jump past last chapter
-                mpv_command_string(mpv, ch_index < ch_count ? "add chapter 1" : "playlist-next");
+                domi_vid_command_string(mpv, ch_index < ch_count ? "add chapter 1" : "playlist-next");
                 break;
             }
             case SystemMediaTransportControlsButton::Previous: {
-                auto ch_index = mp_get_property<MPV_FORMAT_INT64>(mpv, "chapter");
-                mpv_command_string(mpv, ch_index > 0 ? "add chapter -1" : "playlist-prev");
+                auto ch_index = mp_get_property<domi_vid_FORMAT_INT64>(mpv, "chapter");
+                domi_vid_command_string(mpv, ch_index > 0 ? "add chapter -1" : "playlist-prev");
                 break;
             }
             default:
@@ -467,7 +467,7 @@ static MP_THREAD_VOID win_event_loop_fn(void *arg)
     }
 
     ctx.close = true;
-    mpv_wakeup(mpv);
+    domi_vid_wakeup(mpv);
     HWND hwnd = ctx.hwnd;
     ctx.hwnd = nullptr;
     if (ctx.thumb_async)
@@ -478,10 +478,10 @@ static MP_THREAD_VOID win_event_loop_fn(void *arg)
     MP_THREAD_RETURN();
 }
 
-static MP_THREAD_VOID mpv_event_loop_fn(void *arg)
+static MP_THREAD_VOID domi_vid_event_loop_fn(void *arg)
 {
     mp_thread_set_name("smtc/mpv");
-    auto mpv = static_cast<mpv_handle *>(arg);
+    auto mpv = static_cast<domi_vid_handle *>(arg);
     smtc_ctx ctx = {
         .log = mp_client_get_log(mpv),
         .mpv = mpv
@@ -503,32 +503,32 @@ static MP_THREAD_VOID mpv_event_loop_fn(void *arg)
     // For simplicity we observe time-pos and duration as integers, so we get
     // update every second, faster than recommended, but should be fine.
 
-    mpv_observe_property(mpv, 0, "current-tracks", MPV_FORMAT_NODE_MAP);
-    mpv_observe_property(mpv, 0, "duration", MPV_FORMAT_INT64);
-    mpv_observe_property(mpv, 0, "idle-active", MPV_FORMAT_FLAG);
-    mpv_observe_property(mpv, 0, "media-title", MPV_FORMAT_STRING);
-    mpv_observe_property(mpv, 0, "metadata", MPV_FORMAT_NODE_MAP);
-    mpv_observe_property(mpv, 0, "pause", MPV_FORMAT_FLAG);
-    mpv_observe_property(mpv, 0, "shuffle", MPV_FORMAT_DOUBLE);
-    mpv_observe_property(mpv, 0, "speed", MPV_FORMAT_DOUBLE);
-    mpv_observe_property(mpv, 0, "time-pos", MPV_FORMAT_INT64);
-    mpv_observe_property(mpv, 0, "track-list", MPV_FORMAT_NODE);
+    domi_vid_observe_property(mpv, 0, "current-tracks", domi_vid_FORMAT_NODE_MAP);
+    domi_vid_observe_property(mpv, 0, "duration", domi_vid_FORMAT_INT64);
+    domi_vid_observe_property(mpv, 0, "idle-active", domi_vid_FORMAT_FLAG);
+    domi_vid_observe_property(mpv, 0, "media-title", domi_vid_FORMAT_STRING);
+    domi_vid_observe_property(mpv, 0, "metadata", domi_vid_FORMAT_NODE_MAP);
+    domi_vid_observe_property(mpv, 0, "pause", domi_vid_FORMAT_FLAG);
+    domi_vid_observe_property(mpv, 0, "shuffle", domi_vid_FORMAT_DOUBLE);
+    domi_vid_observe_property(mpv, 0, "speed", domi_vid_FORMAT_DOUBLE);
+    domi_vid_observe_property(mpv, 0, "time-pos", domi_vid_FORMAT_INT64);
+    domi_vid_observe_property(mpv, 0, "track-list", domi_vid_FORMAT_NODE);
     // TODO: Options are not observable, fix me!
-    mpv_observe_property(mpv, 0, "loop-file", MPV_FORMAT_DOUBLE);
-    mpv_observe_property(mpv, 0, "loop-playlist", MPV_FORMAT_DOUBLE);
+    domi_vid_observe_property(mpv, 0, "loop-file", domi_vid_FORMAT_DOUBLE);
+    domi_vid_observe_property(mpv, 0, "loop-playlist", domi_vid_FORMAT_DOUBLE);
 
     while (!ctx.close) {
-        mpv_event *event = mpv_wait_event(mpv, -1);
+        domi_vid_event *event = domi_vid_wait_event(mpv, -1);
         if (ctx.close)
             break;
-        if (event->event_id == MPV_EVENT_SHUTDOWN) {
+        if (event->event_id == domi_vid_EVENT_SHUTDOWN) {
             HWND hwnd = ctx.hwnd;
             if (hwnd)
                 PostMessageW(hwnd, WM_CLOSE, 0, 0);
             break;
         }
-        if (event->event_id == MPV_EVENT_PROPERTY_CHANGE ||
-            event->event_id == MPV_EVENT_PLAYBACK_RESTART)
+        if (event->event_id == domi_vid_EVENT_PROPERTY_CHANGE ||
+            event->event_id == domi_vid_EVENT_PLAYBACK_RESTART)
         {
             HWND hwnd = ctx.hwnd;
             if (hwnd)
@@ -538,15 +538,15 @@ static MP_THREAD_VOID mpv_event_loop_fn(void *arg)
     mp_thread_join(win_event_loop);
 
 error:
-    mpv_destroy(mpv);
+    domi_vid_destroy(mpv);
     MP_THREAD_RETURN();
 }
 
-void mp_smtc_init(mpv_handle *mpv)
+void mp_smtc_init(domi_vid_handle *mpv)
 {
-    mp_thread mpv_event_loop;
-    if (!mp_thread_create(&mpv_event_loop, mpv_event_loop_fn, mpv))
-        mp_thread_detach(mpv_event_loop);
+    mp_thread domi_vid_event_loop;
+    if (!mp_thread_create(&domi_vid_event_loop, domi_vid_event_loop_fn, mpv))
+        mp_thread_detach(domi_vid_event_loop);
     else
-        mpv_destroy(mpv);
+        domi_vid_destroy(mpv);
 }

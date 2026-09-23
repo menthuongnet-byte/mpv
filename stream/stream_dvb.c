@@ -1050,7 +1050,7 @@ dvb_state_t *dvb_get_state(stream_t *stream)
         return global_dvb_state;
 
     struct mp_log *log = stream->log;
-    struct mpv_global *global = stream->global;
+    struct domi_vid_global *global = stream->global;
 
     dvb_state_t *state = talloc_zero(NULL, dvb_state_t);
     state->switching_channel = false;

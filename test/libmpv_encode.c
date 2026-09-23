@@ -30,7 +30,7 @@
 
 #include <mpv/client.h>
 
-#include "libmpv_common.h"
+#include "libdomi_vid_common.h"
 
 // Temporary output file
 static const char *out_path;
@@ -38,7 +38,7 @@ static const char *out_path;
 static void cleanup(void)
 {
     if (ctx)
-        mpv_destroy(ctx);
+        domi_vid_destroy(ctx);
     if (out_path && *out_path)
         unlink(out_path);
 }
@@ -46,11 +46,11 @@ static void cleanup(void)
 static void wait_done(void)
 {
     while (1) {
-        mpv_event *ev = mpv_wait_event(ctx, -1.0);
-        if (ev->event_id == MPV_EVENT_NONE)
+        domi_vid_event *ev = domi_vid_wait_event(ctx, -1.0);
+        if (ev->event_id == domi_vid_EVENT_NONE)
             continue;
-        printf("event: %s\n", mpv_event_name(ev->event_id));
-        if (ev->event_id == MPV_EVENT_SHUTDOWN)
+        printf("event: %s\n", domi_vid_event_name(ev->event_id));
+        if (ev->event_id == domi_vid_EVENT_SHUTDOWN)
             return;
     }
 }
@@ -74,7 +74,7 @@ static void check_output(FILE *fp)
 
 int main(int argc, char *argv[])
 {
-    ctx = mpv_create();
+    ctx = domi_vid_create();
     if (!ctx)
         return 1;
 
@@ -99,7 +99,7 @@ int main(int argc, char *argv[])
     set_property_string("terminal", "yes");
     set_property_string("msg-level", "all=v");
 
-    if (mpv_initialize(ctx) != 0)
+    if (domi_vid_initialize(ctx) != 0)
         return 1;
 
     set_property_string("idle", "once");
@@ -108,7 +108,7 @@ int main(int argc, char *argv[])
     command(cmd);
 
     wait_done();
-    mpv_destroy(ctx);
+    domi_vid_destroy(ctx);
     ctx = NULL;
 
     FILE *output = fopen(out_path, "rb");

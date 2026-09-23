@@ -601,7 +601,7 @@ struct m_config_cache *m_config_cache_from_shadow(void *ta_parent,
 }
 
 struct m_config_cache *m_config_cache_alloc(void *ta_parent,
-                                            struct mpv_global *global,
+                                            struct domi_vid_global *global,
                                             const struct m_sub_options *group)
 {
     return m_config_cache_from_shadow(ta_parent, global->config, group);
@@ -891,7 +891,7 @@ void m_config_cache_set_dispatch_change_cb(struct m_config_cache *cache,
     }
 }
 
-void *mp_get_config_group(void *ta_parent, struct mpv_global *global,
+void *mp_get_config_group(void *ta_parent, struct domi_vid_global *global,
                           const struct m_sub_options *group)
 {
     struct m_config_cache *cache = m_config_cache_alloc(NULL, global, group);
@@ -901,7 +901,7 @@ void *mp_get_config_group(void *ta_parent, struct mpv_global *global,
     return cache->opts;
 }
 
-static const struct m_config_group *find_group(struct mpv_global *global,
+static const struct m_config_group *find_group(struct domi_vid_global *global,
                                                const struct m_option *cfg)
 {
     struct m_config_shadow *shadow = global->config;
@@ -915,7 +915,7 @@ static const struct m_config_group *find_group(struct mpv_global *global,
 }
 
 void *m_config_group_from_desc(void *ta_parent, struct mp_log *log,
-        struct mpv_global *global, struct m_obj_desc *desc, const char *name)
+        struct domi_vid_global *global, struct m_obj_desc *desc, const char *name)
 {
     const struct m_config_group *group = find_group(global, desc->options);
     if (group) {

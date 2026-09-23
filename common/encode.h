@@ -26,7 +26,7 @@
 
 #include "demux/demux.h"
 
-struct mpv_global;
+struct domi_vid_global;
 struct mp_log;
 struct encode_lavc_context;
 
@@ -45,7 +45,7 @@ struct encode_opts {
 };
 
 // interface for player core
-struct encode_lavc_context *encode_lavc_init(struct mpv_global *global);
+struct encode_lavc_context *encode_lavc_init(struct domi_vid_global *global);
 bool encode_lavc_free(struct encode_lavc_context *ctx);
 void encode_lavc_discontinuity(struct encode_lavc_context *ctx);
 bool encode_lavc_showhelp(struct mp_log *log, struct encode_opts *options);

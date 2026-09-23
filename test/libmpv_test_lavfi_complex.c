@@ -15,7 +15,7 @@
  * License along with mpv.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "libmpv_common.h"
+#include "libdomi_vid_common.h"
 
 static void test_lavfi_complex(char *file)
 {
@@ -24,9 +24,9 @@ static void test_lavfi_complex(char *file)
     bool finished = false;
     bool loaded = false;
     while (!finished) {
-        mpv_event *event = wrap_wait_event();
+        domi_vid_event *event = wrap_wait_event();
         switch (event->event_id) {
-        case MPV_EVENT_FILE_LOADED:
+        case domi_vid_EVENT_FILE_LOADED:
             // Add file as external and toggle lavfi-complex on.
             if (!loaded) {
                 set_property_string("external-files", file);
@@ -36,7 +36,7 @@ static void test_lavfi_complex(char *file)
             }
             loaded = true;
             break;
-        case MPV_EVENT_END_FILE:
+        case domi_vid_EVENT_END_FILE:
             if (loaded)
                 finished = true;
             break;
@@ -51,7 +51,7 @@ int main(int argc, char *argv[])
     if (argc != 2)
         return 1;
 
-    ctx = mpv_create();
+    ctx = domi_vid_create();
     if (!ctx)
         return 1;
 
@@ -65,7 +65,7 @@ int main(int argc, char *argv[])
     printf("================ SHUTDOWN ================\n");
 
     command_string("quit");
-    while (wrap_wait_event()->event_id != MPV_EVENT_SHUTDOWN) {}
+    while (wrap_wait_event()->event_id != domi_vid_EVENT_SHUTDOWN) {}
 
     return 0;
 }

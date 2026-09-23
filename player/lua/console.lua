@@ -382,7 +382,7 @@ local function should_highlight_completion(i)
            (i == 1 and selected_completion_index == 0 and autoselect_completion)
 end
 
-local function mpv_color_to_ass(color)
+local function domi_vid_color_to_ass(color)
     return color:sub(8,9) .. color:sub(6,7) ..  color:sub(4,5),
            string.format("%x", 255 - tonumber("0x" .. color:sub(2,3)))
 end
@@ -392,9 +392,9 @@ local function color_option_to_ass(color)
 end
 
 local function get_selected_ass()
-    local color, alpha = mpv_color_to_ass(mp.get_property("osd-selected-color"))
+    local color, alpha = domi_vid_color_to_ass(mp.get_property("osd-selected-color"))
     local outline_color, outline_alpha =
-        mpv_color_to_ass(mp.get_property("osd-selected-outline-color"))
+        domi_vid_color_to_ass(mp.get_property("osd-selected-outline-color"))
     return "{\\b1\\1c&H" .. color .. "&\\1a&H" .. alpha ..
            "&\\3c&H" .. outline_color .. "&\\3a&H" .. outline_alpha .. "&}"
 end
@@ -806,7 +806,7 @@ render = function()
     -- of the drawing. So the cursor doesn't affect layout too much, make it as
     -- thin as possible and make it appear to be 1px wide by giving it 0.5px
     -- horizontal borders.
-    local color, alpha = mpv_color_to_ass(mp.get_property("osd-color"))
+    local color, alpha = domi_vid_color_to_ass(mp.get_property("osd-color"))
     local cheight = opts.font_size * 8
     local cglyph = "{\\r\\blur0" ..
                    (get_property_cached("focused") == false
@@ -851,7 +851,7 @@ render = function()
     if selectable_items and
        (not searching_history or border_style == "background-box") then
         style = style .. "{\\bord0\\blur0\\4a&Hff&}"
-        local back_color, back_alpha = mpv_color_to_ass(mp.get_property(
+        local back_color, back_alpha = domi_vid_color_to_ass(mp.get_property(
             border_style == "background-box" and "osd-back-color" or "osd-outline-color"))
         if not searching_history then
             back_alpha = string.format("%x", opts.background_alpha)

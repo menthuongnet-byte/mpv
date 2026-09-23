@@ -55,7 +55,7 @@
 #include "video/mp_image.h"
 #include "present_sync.h"
 #include "x11_common.h"
-#include "mpv_talloc.h"
+#include "domi_vid_talloc.h"
 
 #include "vo.h"
 #include "win_state.h"
@@ -927,7 +927,7 @@ void vo_x11_uninit(struct vo *vo)
     vo->x11 = NULL;
 }
 
-#define DND_PROPERTY "mpv_dnd_selection"
+#define DND_PROPERTY "domi_vid_dnd_selection"
 
 static void vo_x11_dnd_init_window(struct vo *vo)
 {

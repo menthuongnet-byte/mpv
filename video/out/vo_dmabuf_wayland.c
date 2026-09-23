@@ -29,7 +29,7 @@
 
 #include "gpu/hwdec.h"
 #include "gpu/video.h"
-#include "mpv_talloc.h"
+#include "domi_vid_talloc.h"
 #include "present_sync.h"
 #include "sub/draw_bmp.h"
 #include "video/fmt-conversion.h"
@@ -79,7 +79,7 @@ struct osd_buffer {
 struct priv {
     struct mp_log *log;
     struct mp_rect src;
-    struct mpv_global *global;
+    struct domi_vid_global *global;
 
     struct ra_ctx *ctx;
     struct ra_hwdec_ctx hwdec_ctx;

@@ -26,7 +26,7 @@
 
 #include "common/common.h"
 #include "misc/bstr.h"
-#include "mpv_talloc.h"
+#include "domi_vid_talloc.h"
 
 #define BLOCKSIZE         16
 // In-place decrypt scratch. Holds unconsumed plaintext followed by at most one

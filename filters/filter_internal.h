@@ -134,7 +134,7 @@ struct mp_filter_params {
     struct mp_filter *parent;
 
     // Must be set if parent==NULL, can otherwise be NULL.
-    struct mpv_global *global;
+    struct domi_vid_global *global;
 
     // Filter specific parameters. Most filters will have a constructor
     // function, and pass in something internal.

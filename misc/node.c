@@ -7,56 +7,56 @@
 
 // Init a node with the given format. If parent is not NULL, it is set as
 // parent allocation according to m_option_type_node rules (which means
-// the mpv_node_list allocs are used for chaining the TA allocations).
-// format == MPV_FORMAT_NONE will simply initialize it with all-0.
-void node_init(struct mpv_node *dst, int format, struct mpv_node *parent)
+// the domi_vid_node_list allocs are used for chaining the TA allocations).
+// format == domi_vid_FORMAT_NONE will simply initialize it with all-0.
+void node_init(struct domi_vid_node *dst, int format, struct domi_vid_node *parent)
 {
     // Other formats need to be initialized manually.
-    mp_assert(format == MPV_FORMAT_NODE_MAP || format == MPV_FORMAT_NODE_ARRAY ||
-           format == MPV_FORMAT_FLAG || format == MPV_FORMAT_INT64 ||
-           format == MPV_FORMAT_DOUBLE || format == MPV_FORMAT_BYTE_ARRAY ||
-           format == MPV_FORMAT_NONE);
+    mp_assert(format == domi_vid_FORMAT_NODE_MAP || format == domi_vid_FORMAT_NODE_ARRAY ||
+           format == domi_vid_FORMAT_FLAG || format == domi_vid_FORMAT_INT64 ||
+           format == domi_vid_FORMAT_DOUBLE || format == domi_vid_FORMAT_BYTE_ARRAY ||
+           format == domi_vid_FORMAT_NONE);
 
     void *ta_parent = NULL;
     if (parent) {
-        mp_assert(parent->format == MPV_FORMAT_NODE_MAP ||
-               parent->format == MPV_FORMAT_NODE_ARRAY);
+        mp_assert(parent->format == domi_vid_FORMAT_NODE_MAP ||
+               parent->format == domi_vid_FORMAT_NODE_ARRAY);
         ta_parent = parent->u.list;
     }
 
-    *dst = (struct mpv_node){ .format = format };
-    if (format == MPV_FORMAT_NODE_MAP || format == MPV_FORMAT_NODE_ARRAY)
-        dst->u.list = talloc_zero(ta_parent, struct mpv_node_list);
-    if (format == MPV_FORMAT_BYTE_ARRAY)
-        dst->u.ba = talloc_zero(ta_parent, struct mpv_byte_array);
+    *dst = (struct domi_vid_node){ .format = format };
+    if (format == domi_vid_FORMAT_NODE_MAP || format == domi_vid_FORMAT_NODE_ARRAY)
+        dst->u.list = talloc_zero(ta_parent, struct domi_vid_node_list);
+    if (format == domi_vid_FORMAT_BYTE_ARRAY)
+        dst->u.ba = talloc_zero(ta_parent, struct domi_vid_byte_array);
 }
 
-// Add an entry to a MPV_FORMAT_NODE_ARRAY.
+// Add an entry to a domi_vid_FORMAT_NODE_ARRAY.
 // m_option_type_node memory management rules apply.
-struct mpv_node *node_array_add(struct mpv_node *dst, int format)
+struct domi_vid_node *node_array_add(struct domi_vid_node *dst, int format)
 {
-    struct mpv_node_list *list = dst->u.list;
-    mp_assert(dst->format == MPV_FORMAT_NODE_ARRAY && dst->u.list);
+    struct domi_vid_node_list *list = dst->u.list;
+    mp_assert(dst->format == domi_vid_FORMAT_NODE_ARRAY && dst->u.list);
     MP_TARRAY_GROW(list, list->values, list->num);
     node_init(&list->values[list->num], format, dst);
     return &list->values[list->num++];
 }
 
-// Add an entry to a MPV_FORMAT_NODE_MAP. Keep in mind that this does
+// Add an entry to a domi_vid_FORMAT_NODE_MAP. Keep in mind that this does
 // not check for already existing entries under the same key.
 // m_option_type_node memory management rules apply.
-struct mpv_node *node_map_add(struct mpv_node *dst, const char *key, int format)
+struct domi_vid_node *node_map_add(struct domi_vid_node *dst, const char *key, int format)
 {
     mp_assert(key);
     return node_map_badd(dst, bstr0(key), format);
 }
 
-struct mpv_node *node_map_badd(struct mpv_node *dst, struct bstr key, int format)
+struct domi_vid_node *node_map_badd(struct domi_vid_node *dst, struct bstr key, int format)
 {
     mp_assert(key.start);
 
-    struct mpv_node_list *list = dst->u.list;
-    mp_assert(dst->format == MPV_FORMAT_NODE_MAP && dst->u.list);
+    struct domi_vid_node_list *list = dst->u.list;
+    mp_assert(dst->format == domi_vid_FORMAT_NODE_MAP && dst->u.list);
     MP_TARRAY_GROW(list, list->values, list->num);
     MP_TARRAY_GROW(list, list->keys, list->num);
     list->keys[list->num] = bstrdup0(list, key);
@@ -64,50 +64,50 @@ struct mpv_node *node_map_badd(struct mpv_node *dst, struct bstr key, int format
     return &list->values[list->num++];
 }
 
-// Add a string entry to a MPV_FORMAT_NODE_MAP. Keep in mind that this does
+// Add a string entry to a domi_vid_FORMAT_NODE_MAP. Keep in mind that this does
 // not check for already existing entries under the same key.
 // m_option_type_node memory management rules apply.
-void node_map_add_string(struct mpv_node *dst, const char *key, const char *val)
+void node_map_add_string(struct domi_vid_node *dst, const char *key, const char *val)
 {
     mp_assert(val);
 
-    struct mpv_node *entry = node_map_add(dst, key, MPV_FORMAT_NONE);
-    entry->format = MPV_FORMAT_STRING;
+    struct domi_vid_node *entry = node_map_add(dst, key, domi_vid_FORMAT_NONE);
+    entry->format = domi_vid_FORMAT_STRING;
     entry->u.string = talloc_strdup(dst->u.list, val);
 }
 
-void node_map_add_bstr(struct mpv_node *dst, const char *key, bstr val)
+void node_map_add_bstr(struct domi_vid_node *dst, const char *key, bstr val)
 {
     mp_assert(val.start);
 
-    struct mpv_node *entry = node_map_add(dst, key, MPV_FORMAT_NONE);
-    entry->format = MPV_FORMAT_STRING;
+    struct domi_vid_node *entry = node_map_add(dst, key, domi_vid_FORMAT_NONE);
+    entry->format = domi_vid_FORMAT_STRING;
     entry->u.string = bstrto0(dst->u.list, val);
 }
 
-void node_map_add_int64(struct mpv_node *dst, const char *key, int64_t v)
+void node_map_add_int64(struct domi_vid_node *dst, const char *key, int64_t v)
 {
-    node_map_add(dst, key, MPV_FORMAT_INT64)->u.int64 = v;
+    node_map_add(dst, key, domi_vid_FORMAT_INT64)->u.int64 = v;
 }
 
-void node_map_add_double(struct mpv_node *dst, const char *key, double v)
+void node_map_add_double(struct domi_vid_node *dst, const char *key, double v)
 {
-    node_map_add(dst, key, MPV_FORMAT_DOUBLE)->u.double_ = v;
+    node_map_add(dst, key, domi_vid_FORMAT_DOUBLE)->u.double_ = v;
 }
 
-void node_map_add_flag(struct mpv_node *dst, const char *key, bool v)
+void node_map_add_flag(struct domi_vid_node *dst, const char *key, bool v)
 {
-    node_map_add(dst, key, MPV_FORMAT_FLAG)->u.flag = v;
+    node_map_add(dst, key, domi_vid_FORMAT_FLAG)->u.flag = v;
 }
 
-mpv_node *node_map_get(mpv_node *src, const char *key)
+domi_vid_node *node_map_get(domi_vid_node *src, const char *key)
 {
     return node_map_bget(src, bstr0(key));
 }
 
-mpv_node *node_map_bget(mpv_node *src, struct bstr key)
+domi_vid_node *node_map_bget(domi_vid_node *src, struct bstr key)
 {
-    if (src->format != MPV_FORMAT_NODE_MAP)
+    if (src->format != domi_vid_FORMAT_NODE_MAP)
         return NULL;
 
     for (int i = 0; i < src->u.list->num; i++) {
@@ -118,42 +118,42 @@ mpv_node *node_map_bget(mpv_node *src, struct bstr key)
     return NULL;
 }
 
-// Note: for MPV_FORMAT_NODE_MAP, this (incorrectly) takes the order into
+// Note: for domi_vid_FORMAT_NODE_MAP, this (incorrectly) takes the order into
 //       account, instead of treating it as set.
-bool equal_mpv_value(const void *a, const void *b, int format)
+bool equal_domi_vid_value(const void *a, const void *b, int format)
 {
     switch (format) {
-    case MPV_FORMAT_NONE:
+    case domi_vid_FORMAT_NONE:
         return true;
-    case MPV_FORMAT_STRING:
-    case MPV_FORMAT_OSD_STRING:
+    case domi_vid_FORMAT_STRING:
+    case domi_vid_FORMAT_OSD_STRING:
         return strcmp(*(char **)a, *(char **)b) == 0;
-    case MPV_FORMAT_FLAG:
+    case domi_vid_FORMAT_FLAG:
         return *(int *)a == *(int *)b;
-    case MPV_FORMAT_INT64:
+    case domi_vid_FORMAT_INT64:
         return *(int64_t *)a == *(int64_t *)b;
-    case MPV_FORMAT_DOUBLE:
+    case domi_vid_FORMAT_DOUBLE:
         return *(double *)a == *(double *)b;
-    case MPV_FORMAT_NODE:
-        return equal_mpv_node(a, b);
-    case MPV_FORMAT_BYTE_ARRAY: {
-        const struct mpv_byte_array *a_r = a, *b_r = b;
+    case domi_vid_FORMAT_NODE:
+        return equal_domi_vid_node(a, b);
+    case domi_vid_FORMAT_BYTE_ARRAY: {
+        const struct domi_vid_byte_array *a_r = a, *b_r = b;
         if (a_r->size != b_r->size)
             return false;
         return memcmp(a_r->data, b_r->data, a_r->size) == 0;
     }
-    case MPV_FORMAT_NODE_ARRAY:
-    case MPV_FORMAT_NODE_MAP:
+    case domi_vid_FORMAT_NODE_ARRAY:
+    case domi_vid_FORMAT_NODE_MAP:
     {
-        mpv_node_list *l_a = *(mpv_node_list **)a, *l_b = *(mpv_node_list **)b;
+        domi_vid_node_list *l_a = *(domi_vid_node_list **)a, *l_b = *(domi_vid_node_list **)b;
         if (l_a->num != l_b->num)
             return false;
         for (int n = 0; n < l_a->num; n++) {
-            if (format == MPV_FORMAT_NODE_MAP) {
+            if (format == domi_vid_FORMAT_NODE_MAP) {
                 if (strcmp(l_a->keys[n], l_b->keys[n]) != 0)
                     return false;
             }
-            if (!equal_mpv_node(&l_a->values[n], &l_b->values[n]))
+            if (!equal_domi_vid_node(&l_a->values[n], &l_b->values[n]))
                 return false;
         }
         return true;
@@ -162,10 +162,10 @@ bool equal_mpv_value(const void *a, const void *b, int format)
     MP_ASSERT_UNREACHABLE(); // supposed to be able to handle all defined types
 }
 
-// Remarks see equal_mpv_value().
-bool equal_mpv_node(const struct mpv_node *a, const struct mpv_node *b)
+// Remarks see equal_domi_vid_value().
+bool equal_domi_vid_node(const struct domi_vid_node *a, const struct domi_vid_node *b)
 {
     if (a->format != b->format)
         return false;
-    return equal_mpv_value(&a->u, &b->u, a->format);
+    return equal_domi_vid_value(&a->u, &b->u, a->format);
 }

@@ -26,7 +26,7 @@ struct mp_dispatch_queue;
 struct m_sub_options;
 struct m_option_type;
 struct m_option;
-struct mpv_global;
+struct domi_vid_global;
 
 // This can be used to create and synchronize per-thread option structs,
 // which then can be read without synchronization. No concurrent access to
@@ -66,7 +66,7 @@ struct m_config_cache {
 //  global: option data source
 //  group: the option group to return
 struct m_config_cache *m_config_cache_alloc(void *ta_parent,
-                                            struct mpv_global *global,
+                                            struct domi_vid_global *global,
                                             const struct m_sub_options *group);
 
 // If any of the options in the group possibly changes, call this callback. The
@@ -128,7 +128,7 @@ bool m_config_cache_write_opt(struct m_config_cache *cache, void *ptr);
 // Like m_config_cache_alloc(), but return the struct (m_config_cache->opts)
 // directly, with no way to update the config. Basically this returns a copy
 // with a snapshot of the current option values.
-void *mp_get_config_group(void *ta_parent, struct mpv_global *global,
+void *mp_get_config_group(void *ta_parent, struct domi_vid_global *global,
                           const struct m_sub_options *group);
 
 // Allocate a priv struct that is backed by global options (like AOs and VOs,
@@ -139,7 +139,7 @@ void *mp_get_config_group(void *ta_parent, struct mpv_global *global,
 // Bad function.
 struct m_obj_desc;
 void *m_config_group_from_desc(void *ta_parent, struct mp_log *log,
-        struct mpv_global *global, struct m_obj_desc *desc, const char *name);
+        struct domi_vid_global *global, struct m_obj_desc *desc, const char *name);
 
 // Allocate new option shadow storage with all options set to defaults.
 // root must stay valid for the lifetime of the return value.

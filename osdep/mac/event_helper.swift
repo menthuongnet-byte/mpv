@@ -31,13 +31,13 @@ extension EventHelper {
 
     struct Event {
         var id: String {
-            return name + (name.starts(with: "MPV_EVENT_") ? "" : String(format.rawValue))
+            return name + (name.starts(with: "domi_vid_EVENT_") ? "" : String(format.rawValue))
         }
         var idReset: String {
-            return name + (name.starts(with: "MPV_EVENT_") ? "" : String(MPV_FORMAT_NONE.rawValue))
+            return name + (name.starts(with: "domi_vid_EVENT_") ? "" : String(domi_vid_FORMAT_NONE.rawValue))
         }
         let name: String
-        let format: mpv_format
+        let format: domi_vid_format
         let string: String?
         let bool: Bool?
         let int: Int64?
@@ -46,7 +46,7 @@ extension EventHelper {
 
         init(
             name: String = "",
-            format: mpv_format = MPV_FORMAT_NONE,
+            format: domi_vid_format = domi_vid_FORMAT_NONE,
             string: String? = nil,
             bool: Bool? = nil,
             int: Int64? = nil,
@@ -72,13 +72,13 @@ class EventHelper {
 
     init?(_ appHub: AppHub, _ mpv: OpaquePointer) {
         if !appHub.isApplication {
-            mpv_destroy(mpv)
+            domi_vid_destroy(mpv)
             return nil
         }
 
         self.appHub = appHub
         self.mpv = mpv
-        mpv_set_wakeup_callback(mpv, wakeup, TypeHelper.bridge(obj: self))
+        domi_vid_set_wakeup_callback(mpv, wakeup, TypeHelper.bridge(obj: self))
     }
 
     func subscribe(_ subscriber: EventSubscriber, event: Event) {
@@ -89,7 +89,7 @@ class EventHelper {
                 events[event.idReset] = [:]
             }
             if !events.keys.contains(event.id) {
-                mpv_observe_property(mpv, 0, event.name, event.format)
+                domi_vid_observe_property(mpv, 0, event.name, event.format)
                 events[event.id] = [:]
             }
             events[event.idReset]?[subscriber.uid] = subscriber
@@ -103,15 +103,15 @@ class EventHelper {
     }
 
     func eventLoop() {
-        while let mpv = mpv, let event = mpv_wait_event(mpv, 0) {
-            if event.pointee.event_id == MPV_EVENT_NONE { break }
+        while let mpv = mpv, let event = domi_vid_wait_event(mpv, 0) {
+            if event.pointee.event_id == domi_vid_EVENT_NONE { break }
             handle(event: event)
         }
     }
 
-    func handle(event: UnsafeMutablePointer<mpv_event>) {
+    func handle(event: UnsafeMutablePointer<domi_vid_event>) {
         switch event.pointee.event_id {
-        case MPV_EVENT_PROPERTY_CHANGE:
+        case domi_vid_EVENT_PROPERTY_CHANGE:
             handle(property: event)
         default:
             for (_, subscriber) in events[String(describing: event.pointee.event_id)] ?? [:] {
@@ -119,15 +119,15 @@ class EventHelper {
             }
         }
 
-        if event.pointee.event_id == MPV_EVENT_SHUTDOWN {
-            mpv_destroy(mpv)
+        if event.pointee.event_id == domi_vid_EVENT_SHUTDOWN {
+            domi_vid_destroy(mpv)
             mpv = nil
         }
     }
 
-    func handle(property mpvEvent: UnsafeMutablePointer<mpv_event>) {
+    func handle(property mpvEvent: UnsafeMutablePointer<domi_vid_event>) {
         let pData = OpaquePointer(mpvEvent.pointee.data)
-        guard let property = UnsafePointer<mpv_event_property>(pData)?.pointee else {
+        guard let property = UnsafePointer<domi_vid_event_property>(pData)?.pointee else {
             return
         }
 
@@ -136,15 +136,15 @@ class EventHelper {
         for (_, subscriber) in events[name + String(format.rawValue)] ?? [:] {
             var event: Event?
             switch format {
-            case MPV_FORMAT_STRING:
+            case domi_vid_FORMAT_STRING:
                 event = .init(name: name, format: format, string: TypeHelper.toString(property.data))
-            case MPV_FORMAT_FLAG:
+            case domi_vid_FORMAT_FLAG:
                 event = .init(name: name, format: format, bool: TypeHelper.toBool(property.data))
-            case MPV_FORMAT_DOUBLE:
+            case domi_vid_FORMAT_DOUBLE:
                 event = .init(name: name, format: format, double: TypeHelper.toDouble(property.data))
-            case MPV_FORMAT_INT64:
+            case domi_vid_FORMAT_INT64:
                 event = .init(name: name, format: format, int: TypeHelper.toInt(property.data))
-            case MPV_FORMAT_NODE:
+            case domi_vid_FORMAT_NODE:
                 let node = TypeHelper.toNode(property.data)
                 event = .init(
                     name: name,
@@ -155,7 +155,7 @@ class EventHelper {
                     double: TypeHelper.nodeToDouble(node),
                     array: TypeHelper.nodeToArray(node)
                 )
-            case MPV_FORMAT_NONE:
+            case domi_vid_FORMAT_NONE:
                 event = .init(name: name, format: format)
             default: break
             }

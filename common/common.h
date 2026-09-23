@@ -33,7 +33,7 @@
 
 #include "misc/mp_assert.h"
 #include "osdep/compiler.h"
-#include "mpv_talloc.h"
+#include "domi_vid_talloc.h"
 
 // double should be able to represent this exactly
 #define MP_NOPTS_VALUE (-0x1p+63)
@@ -130,9 +130,9 @@ enum track_flags {
                        (x) == VS_DISP_VDROP ||          \
                        (x) == VS_DISP_NONE)
 
-extern const char mpv_version[];
-extern const char mpv_builddate[];
-extern const char mpv_copyright[];
+extern const char domi_vid_version[];
+extern const char domi_vid_builddate[];
+extern const char domi_vid_copyright[];
 
 char *mp_format_time(double time, bool fractions);
 char *mp_format_time_fmt(const char *fmt, double time);

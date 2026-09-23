@@ -80,7 +80,7 @@ void json_skip_whitespace(char **src)
     eat_ws(src);
 }
 
-static int read_id(void *ta_parent, struct mpv_node *dst, char **src)
+static int read_id(void *ta_parent, struct domi_vid_node *dst, char **src)
 {
     char *start = *src;
     if (!mp_isalpha(**src) && **src != '_')
@@ -93,12 +93,12 @@ static int read_id(void *ta_parent, struct mpv_node *dst, char **src)
     } else {
         start = talloc_strndup(ta_parent, start, *src - start);
     }
-    dst->format = MPV_FORMAT_STRING;
+    dst->format = domi_vid_FORMAT_STRING;
     dst->u.string = start;
     return 0;
 }
 
-static int read_str(void *ta_parent, struct mpv_node *dst, char **src)
+static int read_str(void *ta_parent, struct domi_vid_node *dst, char **src)
 {
     if (!eat_c(src, '"'))
         return -1; // not a string
@@ -127,12 +127,12 @@ static int read_str(void *ta_parent, struct mpv_node *dst, char **src)
             return -1; // broken escapes
         str = unescaped.start; // the function guarantees null-termination
     }
-    dst->format = MPV_FORMAT_STRING;
+    dst->format = domi_vid_FORMAT_STRING;
     dst->u.string = str;
     return 0;
 }
 
-static int read_sub(void *ta_parent, struct mpv_node *dst, char **src,
+static int read_sub(void *ta_parent, struct domi_vid_node *dst, char **src,
                     int max_depth)
 {
     bool is_arr = eat_c(src, '[');
@@ -140,7 +140,7 @@ static int read_sub(void *ta_parent, struct mpv_node *dst, char **src,
     if (!is_arr && !is_obj)
         return -1; // not an array or object
     char term = is_obj ? '}' : ']';
-    struct mpv_node_list *list = talloc_zero(ta_parent, struct mpv_node_list);
+    struct domi_vid_node_list *list = talloc_zero(ta_parent, struct domi_vid_node_list);
     while (1) {
         eat_ws(src);
         if (eat_c(src, term))
@@ -152,7 +152,7 @@ static int read_sub(void *ta_parent, struct mpv_node *dst, char **src,
         if (eat_c(src, term))
             break;
         if (is_obj) {
-            struct mpv_node keynode;
+            struct domi_vid_node keynode;
             // non-standard extension: allow unquoted strings as keys
             if (read_id(list, &keynode, src) < 0 &&
                 read_str(list, &keynode, src) < 0)
@@ -170,7 +170,7 @@ static int read_sub(void *ta_parent, struct mpv_node *dst, char **src,
             return -1;
         list->num++;
     }
-    dst->format = is_obj ? MPV_FORMAT_NODE_MAP : MPV_FORMAT_NODE_ARRAY;
+    dst->format = is_obj ? domi_vid_FORMAT_NODE_MAP : domi_vid_FORMAT_NODE_ARRAY;
     dst->u.list = list;
     return 0;
 }
@@ -186,7 +186,7 @@ static int read_sub(void *ta_parent, struct mpv_node *dst, char **src,
  * The input string can be mutated in both cases. *dst might contain string
  * elements, which point into the (mutated) input string.
  */
-int json_parse(void *ta_parent, struct mpv_node *dst, char **src, int max_depth)
+int json_parse(void *ta_parent, struct domi_vid_node *dst, char **src, int max_depth)
 {
     max_depth -= 1;
     if (max_depth < 0)
@@ -199,16 +199,16 @@ int json_parse(void *ta_parent, struct mpv_node *dst, char **src, int max_depth)
         return -1; // early EOF
     if (c == 'n' && strncmp(*src, "null", 4) == 0) {
         *src += 4;
-        dst->format = MPV_FORMAT_NONE;
+        dst->format = domi_vid_FORMAT_NONE;
         return 0;
     } else if (c == 't' && strncmp(*src, "true", 4) == 0) {
         *src += 4;
-        dst->format = MPV_FORMAT_FLAG;
+        dst->format = domi_vid_FORMAT_FLAG;
         dst->u.flag = 1;
         return 0;
     } else if (c == 'f' && strncmp(*src, "false", 5) == 0) {
         *src += 5;
-        dst->format = MPV_FORMAT_FLAG;
+        dst->format = domi_vid_FORMAT_FLAG;
         dst->u.flag = 0;
         return 0;
     } else if (c == '"') {
@@ -229,13 +229,13 @@ int json_parse(void *ta_parent, struct mpv_node *dst, char **src, int max_depth)
             nsrcf = *src;
         if (nsrci >= nsrcf) {
             *src = nsrci;
-            dst->format = MPV_FORMAT_INT64; // long long is usually 64 bits
+            dst->format = domi_vid_FORMAT_INT64; // long long is usually 64 bits
             dst->u.int64 = numi;
             return 0;
         }
         if (nsrcf > *src && isfinite(numf)) {
             *src = nsrcf;
-            dst->format = MPV_FORMAT_DOUBLE;
+            dst->format = domi_vid_FORMAT_DOUBLE;
             dst->u.double_ = numf;
             return 0;
         }
@@ -291,33 +291,33 @@ static void add_indent(bstr *b, int indent)
         bstr_xappend(NULL, b, bstr0(" "));
 }
 
-int json_append(bstr *b, const struct mpv_node *src, int indent)
+int json_append(bstr *b, const struct domi_vid_node *src, int indent)
 {
     switch (src->format) {
-    case MPV_FORMAT_NONE:
+    case domi_vid_FORMAT_NONE:
         APPEND(b, "null");
         return 0;
-    case MPV_FORMAT_FLAG:
+    case domi_vid_FORMAT_FLAG:
         APPEND(b, src->u.flag ? "true" : "false");
         return 0;
-    case MPV_FORMAT_INT64:
+    case domi_vid_FORMAT_INT64:
         bstr_xappend_asprintf(NULL, b, "%"PRId64, src->u.int64);
         return 0;
-    case MPV_FORMAT_DOUBLE: {
+    case domi_vid_FORMAT_DOUBLE: {
         const char *px = (isfinite(src->u.double_) || indent == 0) ? "" : "\"";
         bstr_xappend_asprintf(NULL, b, "%s%f%s", px, src->u.double_, px);
         return 0;
     }
-    case MPV_FORMAT_STRING:
+    case domi_vid_FORMAT_STRING:
         if (indent == 0)
             APPEND(b, src->u.string);
         else
             write_json_str(b, src->u.string);
         return 0;
-    case MPV_FORMAT_NODE_ARRAY:
-    case MPV_FORMAT_NODE_MAP: {
-        struct mpv_node_list *list = src->u.list;
-        bool is_obj = src->format == MPV_FORMAT_NODE_MAP;
+    case domi_vid_FORMAT_NODE_ARRAY:
+    case domi_vid_FORMAT_NODE_MAP: {
+        struct domi_vid_node_list *list = src->u.list;
+        bool is_obj = src->format == domi_vid_FORMAT_NODE_MAP;
         APPEND(b, is_obj ? "{" : "[");
         int next_indent = indent >= 0 ? indent + 1 : -1;
         for (int n = 0; n < list->num; n++) {
@@ -338,7 +338,7 @@ int json_append(bstr *b, const struct mpv_node *src, int indent)
     return -1; // unknown format
 }
 
-static int json_append_str(char **dst, struct mpv_node *src, int indent)
+static int json_append_str(char **dst, struct domi_vid_node *src, int indent)
 {
     bstr buffer = bstr0(*dst);
     int r = json_append(&buffer, src, indent);
@@ -351,13 +351,13 @@ static int json_append_str(char **dst, struct mpv_node *src, int indent)
  * and ta_realloc() to extend the memory allocation of *dst.
  * Returns: 0 on success, <0 on failure.
  */
-int json_write(char **dst, struct mpv_node *src)
+int json_write(char **dst, struct domi_vid_node *src)
 {
     return json_append_str(dst, src, -1);
 }
 
 // Same as json_write(), but add whitespace to make it readable.
-int json_write_pretty(char **dst, struct mpv_node *src)
+int json_write_pretty(char **dst, struct domi_vid_node *src)
 {
     return json_append_str(dst, src, 0);
 }

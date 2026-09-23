@@ -69,7 +69,7 @@ class Application: NSApplication, NSApplicationDelegate {
 
     // quit from App icon, external quit from NSWorkspace
     @objc func handleQuit(event: NSAppleEventDescriptor?, replyEvent: NSAppleEventDescriptor?) {
-        // send quit to core, terminates mpv_main called in playbackThread,
+        // send quit to core, terminates domi_vid_main called in playbackThread,
         if !appHub.input.command("quit") {
             appHub.log.warning("Could not properly shut down mpv")
             exit(1)
@@ -89,7 +89,7 @@ class Application: NSApplication, NSApplicationDelegate {
     let playbackThread: @convention(c) (UnsafeMutableRawPointer) -> UnsafeMutableRawPointer? = { (ptr: UnsafeMutableRawPointer) in
         let application: Application = TypeHelper.bridge(ptr: ptr)
         mp_thread_set_name("core/playback")
-        let exitCode: Int32 = mpv_main(application.argc ?? 1, application.argv)
+        let exitCode: Int32 = domi_vid_main(application.argc ?? 1, application.argv)
         // exit of any proper shut down
         exit(exitCode)
     }

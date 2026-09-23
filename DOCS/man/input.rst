@@ -237,7 +237,7 @@ Commands specified as arrays
 
 This applies to certain APIs, such as ``mp.commandv()`` or
 ``mp.command_native()`` (with array parameters) in Lua scripting, or
-``mpv_command()`` or ``mpv_command_node()`` (with MPV_FORMAT_NODE_ARRAY) in the
+``domi_vid_command()`` or ``domi_vid_command_node()`` (with domi_vid_FORMAT_NODE_ARRAY) in the
 C libmpv client API.
 
 The command as well as all arguments are passed as a single array. Similar to
@@ -268,8 +268,8 @@ Named arguments
 ---------------
 
 This applies to certain APIs, such as ``mp.command_native()`` (with tables that
-have string keys) in Lua scripting, or ``mpv_command_node()`` (with
-MPV_FORMAT_NODE_MAP) in the C libmpv client API.
+have string keys) in Lua scripting, or ``domi_vid_command_node()`` (with
+domi_vid_FORMAT_NODE_MAP) in the C libmpv client API.
 
 The name of the command is provided with a ``_name`` string field. The name of
 each command is defined in each command description in the
@@ -527,7 +527,7 @@ Playlist Manipulation
         Playback is stopped. If idle mode (``--idle``) is enabled, the player
         will enter idle mode, otherwise it will exit.
 
-    Setting ``preserve-options`` (``MPV_FORMAT_FLAG``) will not reset file-local
+    Setting ``preserve-options`` (``domi_vid_FORMAT_FLAG``) will not reset file-local
     options when the playback of the current playlist index is restarted.
 
     This command is similar to ``loadfile`` in that it only manipulates the
@@ -593,7 +593,7 @@ Playlist Manipulation
 
     The fourth argument is a list of options and values which should be set
     while the file is playing. It is of the form ``opt1=value1,opt2=value2,..``.
-    When using the client API, this can be a ``MPV_FORMAT_NODE_MAP`` (or a Lua
+    When using the client API, this can be a ``domi_vid_FORMAT_NODE_MAP`` (or a Lua
     table), however the values themselves must be strings currently. These
     options are set during playback, and restored to the previous value at end
     of playback (see `Per-File Options`_).
@@ -776,7 +776,7 @@ Track Manipulation
 ``video-add <url> [<flags> [<title> [<lang> [<albumart>]]]]``
     Load the given video file. See ``sub-add`` command for common options.
 
-    ``albumart`` (``MPV_FORMAT_FLAG``)
+    ``albumart`` (``domi_vid_FORMAT_FLAG``)
         If enabled, mpv will load the given video as album art.
 
 ``video-remove [<id>]``
@@ -1108,7 +1108,7 @@ OSD Commands
 
     .. note::
 
-        Always use named arguments (``mpv_command_node()``). Lua scripts should
+        Always use named arguments (``domi_vid_command_node()``). Lua scripts should
         use the ``mp.create_osd_overlay()`` helper instead of invoking this
         command directly.
 
@@ -1260,7 +1260,7 @@ Execution Commands
     This has the following named arguments. The order of them is not guaranteed,
     so you should always call them with named arguments, see `Named arguments`_.
 
-    ``args`` (``MPV_FORMAT_NODE_ARRAY[MPV_FORMAT_STRING]``)
+    ``args`` (``domi_vid_FORMAT_NODE_ARRAY[domi_vid_FORMAT_STRING]``)
         Array of strings with the command as first argument, and subsequent
         command line arguments following. This is just like the ``run`` command
         argument list.
@@ -1270,25 +1270,25 @@ Execution Commands
         searched in the directories in the ``PATH`` environment variable. On
         Unix, this is equivalent to ``posix_spawnp`` and ``execvp`` behavior.
 
-    ``playback_only`` (``MPV_FORMAT_FLAG``)
+    ``playback_only`` (``domi_vid_FORMAT_FLAG``)
         Boolean indicating whether the process should be killed when playback
         of the current playlist entry terminates (optional, default: true). If
         enabled, stopping playback will automatically kill the process, and you
         can't start it outside of playback.
 
-    ``capture_size`` (``MPV_FORMAT_INT64``)
+    ``capture_size`` (``domi_vid_FORMAT_INT64``)
         Integer setting the maximum number of stdout plus stderr bytes that can
         be captured (optional, default: 64MB). If the number of bytes exceeds
         this, capturing is stopped. The limit is per captured stream.
 
-    ``capture_stdout`` (``MPV_FORMAT_FLAG``)
+    ``capture_stdout`` (``domi_vid_FORMAT_FLAG``)
         Capture all data the process outputs to stdout and return it once the
         process ends (optional, default: no).
 
-    ``capture_stderr`` (``MPV_FORMAT_FLAG``)
+    ``capture_stderr`` (``domi_vid_FORMAT_FLAG``)
         Same as ``capture_stdout``, but for stderr.
 
-    ``detach`` (``MPV_FORMAT_FLAG``)
+    ``detach`` (``domi_vid_FORMAT_FLAG``)
         Whether to run the process in detached mode (optional, default: no). In
         this mode, the process is run in a new process session, and the command
         does not wait for the process to terminate. If neither
@@ -1296,7 +1296,7 @@ Execution Commands
         the command returns immediately after the new process has been started,
         otherwise the command will read as long as the pipes are open.
 
-    ``env`` (``MPV_FORMAT_NODE_ARRAY[MPV_FORMAT_STRING]``)
+    ``env`` (``domi_vid_FORMAT_NODE_ARRAY[domi_vid_FORMAT_STRING]``)
         Set a list of environment variables for the new process (default: empty).
         If an empty list is passed, the environment of the mpv process is used
         instead. (Unlike the underlying OS mechanisms, the mpv command cannot
@@ -1307,18 +1307,18 @@ Execution Commands
         On Lua, you may use ``utils.get_env_list()`` to retrieve the current
         environment if you e.g. simply want to add a new variable.
 
-    ``stdin_data`` (``MPV_FORMAT_STRING``)
+    ``stdin_data`` (``domi_vid_FORMAT_STRING``)
         Feed the given string to the new process' stdin. Since this is a string,
         you cannot pass arbitrary binary data. If the process terminates or
         closes the pipe before all data is written, the remaining data is
         silently discarded. Probably does not work on win32.
 
-    ``passthrough_stdin`` (``MPV_FORMAT_FLAG``)
+    ``passthrough_stdin`` (``domi_vid_FORMAT_FLAG``)
         If enabled, wire the new process' stdin to mpv's stdin (default: no).
 
-    The command returns the following result (as ``MPV_FORMAT_NODE_MAP``):
+    The command returns the following result (as ``domi_vid_FORMAT_NODE_MAP``):
 
-    ``status`` (``MPV_FORMAT_INT64``)
+    ``status`` (``domi_vid_FORMAT_INT64``)
         Typically this is the process exit code (0 or positive) if the process
         terminates normally, or negative for other errors (failed to start,
         terminated by mpv, and others).  The meaning of negative values is
@@ -1330,13 +1330,13 @@ Execution Commands
         code is assigned to an ``int`` variable before being set as ``int64_t``
         field in the result map. This might be fixed later.
 
-    ``stdout`` (``MPV_FORMAT_BYTE_ARRAY``)
+    ``stdout`` (``domi_vid_FORMAT_BYTE_ARRAY``)
         Captured stdout stream, limited to ``capture_size``.
 
-    ``stderr`` (``MPV_FORMAT_BYTE_ARRAY``)
+    ``stderr`` (``domi_vid_FORMAT_BYTE_ARRAY``)
         Same as ``stdout``, but for stderr.
 
-    ``error_string`` (``MPV_FORMAT_STRING``)
+    ``error_string`` (``domi_vid_FORMAT_STRING``)
         Empty string if the process terminated normally. The string ``killed``
         if the process was terminated in an unusual way. The string ``init`` if
         the process could not be started.
@@ -1344,7 +1344,7 @@ Execution Commands
         On Windows, ``killed`` is only returned when the process has been
         killed by mpv as a result of ``playback_only`` being set to true.
 
-    ``killed_by_us`` (``MPV_FORMAT_FLAG``)
+    ``killed_by_us`` (``domi_vid_FORMAT_FLAG``)
         Whether the process has been killed by mpv, for example as a result of
         ``playback_only`` being set to true, aborting the command (e.g. by
         ``mp.abort_async_command()``), or if the player is about to exit.
@@ -1466,14 +1466,14 @@ Scripting Commands
     the script to finish initialization or not changed multiple times, and the
     future behavior is left undefined.
 
-    On success, returns a ``mpv_node`` with a ``client_id`` field set to the
-    return value of the ``mpv_client_id()`` API call of the newly created script
+    On success, returns a ``domi_vid_node`` with a ``client_id`` field set to the
+    return value of the ``domi_vid_client_id()`` API call of the newly created script
     handle.
 
     ::
 
-        MPV_FORMAT_NODE_MAP
-            "client_id"    MPV_FORMAT_STRING
+        domi_vid_FORMAT_NODE_MAP
+            "client_id"    domi_vid_FORMAT_STRING
 
 Screenshot Commands
 ~~~~~~~~~~~~~~~~~~~
@@ -1517,13 +1517,13 @@ Screenshot Commands
     normal standalone commands, this is always asynchronous, and the flag has
     no effect.
 
-    On success, returns a ``mpv_node`` with a ``filename`` field set to the
+    On success, returns a ``domi_vid_node`` with a ``filename`` field set to the
     saved screenshot location.
 
     ::
 
-        MPV_FORMAT_NODE_MAP
-            "filename"    MPV_FORMAT_STRING
+        domi_vid_FORMAT_NODE_MAP
+            "filename"    domi_vid_FORMAT_STRING
 
 ``screenshot-to-file <filename> [<flags>]``
     Take a screenshot and save it to a given file. The format of the file will
@@ -1540,7 +1540,7 @@ Screenshot Commands
 
 ``screenshot-raw [<flags> [<format>]]``
     Return a screenshot in memory. This can be used only through the client API
-    or from a script using ``mp.command_native``. The MPV_FORMAT_NODE_MAP
+    or from a script using ``mp.command_native``. The domi_vid_FORMAT_NODE_MAP
     returned by this command has the ``w``, ``h``, ``stride`` fields set to
     obvious contents.
 
@@ -1561,8 +1561,8 @@ Screenshot Commands
         When this format is used, the image data will be high bit depth, and
         ``--screenshot-high-bit-depth`` is ignored.
 
-    The ``data`` field is of type MPV_FORMAT_BYTE_ARRAY with the actual image
-    data. The image is freed as soon as the result mpv_node is freed. As usual
+    The ``data`` field is of type domi_vid_FORMAT_BYTE_ARRAY with the actual image
+    data. The image is freed as soon as the result domi_vid_node is freed. As usual
     with client API semantics, you are not allowed to write to the image data.
 
     The ``stride`` is the number of bytes from a pixel at ``(x0, y0)`` to the
@@ -1577,12 +1577,12 @@ Screenshot Commands
 
     ::
 
-        MPV_FORMAT_NODE_MAP
-            "w"         MPV_FORMAT_INT64
-            "h"         MPV_FORMAT_INT64
-            "stride"    MPV_FORMAT_INT64
-            "format"    MPV_FORMAT_STRING
-            "data"      MPV_FORMAT_BYTE_ARRAY
+        domi_vid_FORMAT_NODE_MAP
+            "w"         domi_vid_FORMAT_INT64
+            "h"         domi_vid_FORMAT_INT64
+            "stride"    domi_vid_FORMAT_INT64
+            "format"    domi_vid_FORMAT_STRING
+            "data"      domi_vid_FORMAT_BYTE_ARRAY
 
 Filter Commands
 ~~~~~~~~~~~~~~~
@@ -1833,9 +1833,9 @@ List of events
 --------------
 
 This is a partial list of events. This section describes what
-``mpv_event_to_node()`` returns, and which is what scripting APIs and the JSON
+``domi_vid_event_to_node()`` returns, and which is what scripting APIs and the JSON
 IPC sees. Note that the C API has separate C-level declarations with
-``mpv_event``, which may be slightly different.
+``domi_vid_event``, which may be slightly different.
 
 Note that events are asynchronous: the player core continues running while
 events are delivered to scripts and other clients. In some cases, you can use
@@ -1844,20 +1844,20 @@ hooks to enforce synchronous execution.
 All events can have the following fields:
 
 ``event``
-    Name as the event (as returned by ``mpv_event_name()``).
+    Name as the event (as returned by ``domi_vid_event_name()``).
 
 ``id``
     The ``reply_userdata`` field (opaque user value). If ``reply_userdata`` is 0,
     the field is not added.
 
 ``error``
-    Set to an error string (as returned by ``mpv_error_string()``). This field
+    Set to an error string (as returned by ``domi_vid_error_string()``). This field
     is missing if no error happened, or the event type does not report error.
     Most events leave this unset.
 
 This list uses the event name field value, and the C API symbol in brackets:
 
-``start-file`` (``MPV_EVENT_START_FILE``)
+``start-file`` (``domi_vid_EVENT_START_FILE``)
     Happens right before a new file is loaded. When you receive this, the
     player is loading the file (or possibly already done with it).
 
@@ -1866,7 +1866,7 @@ This list uses the event name field value, and the C API symbol in brackets:
     ``playlist_entry_id``
         Playlist entry ID of the file being loaded now.
 
-``end-file`` (``MPV_EVENT_END_FILE``)
+``end-file`` (``domi_vid_EVENT_END_FILE``)
     Happens after a file was unloaded. Typically, the player will load the
     next file right away, or quit if this was the last file.
 
@@ -1891,7 +1891,7 @@ This list uses the event name field value, and the C API symbol in brackets:
 
         ``redirect``
             Happens with playlists and similar. Details see
-            ``MPV_END_FILE_REASON_REDIRECT`` in the C API.
+            ``domi_vid_END_FILE_REASON_REDIRECT`` in the C API.
 
         ``unknown``
             Unknown. Normally doesn't happen, unless the Lua API is out of sync
@@ -1911,7 +1911,7 @@ This list uses the event name field value, and the C API symbol in brackets:
     ``playlist_insert_id``
         If loading ended, because the playlist entry to be played was for example
         a playlist, and the current playlist entry is replaced with a number of
-        other entries. This may happen at least with MPV_END_FILE_REASON_REDIRECT
+        other entries. This may happen at least with domi_vid_END_FILE_REASON_REDIRECT
         (other event types may use this for similar but different purposes in the
         future). In this case, playlist_insert_id will be set to the playlist
         entry ID of the first inserted entry, and playlist_insert_num_entries to
@@ -1925,23 +1925,23 @@ This list uses the event name field value, and the C API symbol in brackets:
     ``playlist_insert_num_entries``
         See playlist_insert_id. Only present if playlist_insert_id is present.
 
-``file-loaded``  (``MPV_EVENT_FILE_LOADED``)
+``file-loaded``  (``domi_vid_EVENT_FILE_LOADED``)
     Happens after a file was loaded and begins playback.
 
-``seek`` (``MPV_EVENT_SEEK``)
+``seek`` (``domi_vid_EVENT_SEEK``)
     Happens on seeking. (This might include cases when the player seeks
     internally, even without user interaction. This includes e.g. segment
     changes when playing ordered chapters Matroska files.)
 
-``playback-restart`` (``MPV_EVENT_PLAYBACK_RESTART``)
+``playback-restart`` (``domi_vid_EVENT_PLAYBACK_RESTART``)
     Start of playback after seek or after file was loaded.
 
-``shutdown`` (``MPV_EVENT_SHUTDOWN``)
+``shutdown`` (``domi_vid_EVENT_SHUTDOWN``)
     Sent when the player quits, and the script should terminate. Normally
     handled automatically. See `Details on the script initialization and lifecycle`_.
 
-``log-message`` (``MPV_EVENT_LOG_MESSAGE``)
-    Receives messages enabled with ``mpv_request_log_messages()`` (Lua:
+``log-message`` (``domi_vid_EVENT_LOG_MESSAGE``)
+    Receives messages enabled with ``domi_vid_request_log_messages()`` (Lua:
     ``mp.enable_messages``).
 
     This contains, in addition to the default event fields, the following
@@ -1969,16 +1969,16 @@ This list uses the event name field value, and the C API symbol in brackets:
     The event has the following fields:
 
     ``hook_id``
-        ID to pass to ``mpv_hook_continue()``. The Lua scripting wrapper
+        ID to pass to ``domi_vid_hook_continue()``. The Lua scripting wrapper
         provides a better API around this with ``mp.add_hook()``.
 
-``get-property-reply`` (``MPV_EVENT_GET_PROPERTY_REPLY``)
+``get-property-reply`` (``domi_vid_EVENT_GET_PROPERTY_REPLY``)
     See C API.
 
-``set-property-reply`` (``MPV_EVENT_SET_PROPERTY_REPLY``)
+``set-property-reply`` (``domi_vid_EVENT_SET_PROPERTY_REPLY``)
     See C API.
 
-``command-reply`` (``MPV_EVENT_COMMAND_REPLY``)
+``command-reply`` (``domi_vid_EVENT_COMMAND_REPLY``)
     This is one of the commands for which the ```error`` field is meaningful.
 
     JSON IPC and Lua and possibly other backends treat this specially and may
@@ -1987,9 +1987,9 @@ This list uses the event name field value, and the C API symbol in brackets:
     The event has the following fields:
 
     ``result``
-        The result (on success) of any ``mpv_node`` type, if any.
+        The result (on success) of any ``domi_vid_node`` type, if any.
 
-``client-message`` (``MPV_EVENT_CLIENT_MESSAGE``)
+``client-message`` (``domi_vid_EVENT_CLIENT_MESSAGE``)
     Lua and possibly other backends treat this specially and may not pass the
     actual event to the user.
 
@@ -1998,13 +1998,13 @@ This list uses the event name field value, and the C API symbol in brackets:
     ``args``
         Array of strings with the message data.
 
-``video-reconfig`` (``MPV_EVENT_VIDEO_RECONFIG``)
+``video-reconfig`` (``domi_vid_EVENT_VIDEO_RECONFIG``)
     Happens on video output or filter reconfig.
 
-``audio-reconfig`` (``MPV_EVENT_AUDIO_RECONFIG``)
+``audio-reconfig`` (``domi_vid_EVENT_AUDIO_RECONFIG``)
     Happens on audio output or filter reconfig.
 
-``property-change`` (``MPV_EVENT_PROPERTY_CHANGE``)
+``property-change`` (``domi_vid_EVENT_PROPERTY_CHANGE``)
     Happens when a property that is being observed changes value.
 
     The event has the following fields:
@@ -2016,7 +2016,7 @@ This list uses the event name field value, and the C API symbol in brackets:
         The new value of the property.
 
 The following events also happen, but are deprecated: ``idle``, ``tick``
-Use ``mpv_observe_property()`` (Lua: ``mp.observe_property()``) instead.
+Use ``domi_vid_observe_property()`` (Lua: ``mp.observe_property()``) instead.
 
 Hooks
 -----
@@ -2167,11 +2167,11 @@ command behaves by itself. There are the following cases:
   ``async``, or async by default for some commands). The async commands are
   run in a detached manner, possibly in parallel to the remaining sync commands
   in the list.
-- Normal Lua and libmpv commands (e.g. ``mpv_command()``) are run in a blocking
+- Normal Lua and libmpv commands (e.g. ``domi_vid_command()``) are run in a blocking
   manner, unless the ``async`` prefix is used, or the command is async by
   default. This means in the sync case the caller will block, even if the core
   continues playback. Async mode runs the command in a detached manner.
-- Async libmpv command API (e.g. ``mpv_command_async()``) never blocks the
+- Async libmpv command API (e.g. ``domi_vid_command_async()``) never blocks the
   caller, and always notify their completion with a message. The ``sync`` and
   ``async`` prefixes make no difference.
 - Lua also provides APIs for running async commands, which behave similar to the
@@ -2190,18 +2190,18 @@ Asynchronous command details
 ----------------------------
 
 On the API level, every asynchronous command is bound to the context which
-started it. For example, an asynchronous command started by ``mpv_command_async``
-is bound to the ``mpv_handle`` passed to the function. Only this ``mpv_handle``
-receives the completion notification (``MPV_EVENT_COMMAND_REPLY``), and only
-this handle can abort a still running command directly. If the ``mpv_handle`` is
+started it. For example, an asynchronous command started by ``domi_vid_command_async``
+is bound to the ``domi_vid_handle`` passed to the function. Only this ``domi_vid_handle``
+receives the completion notification (``domi_vid_EVENT_COMMAND_REPLY``), and only
+this handle can abort a still running command directly. If the ``domi_vid_handle`` is
 destroyed, any still running async. commands started by it are terminated.
 
 The scripting APIs and JSON IPC give each script/connection its own implicit
-``mpv_handle``.
+``domi_vid_handle``.
 
 If the player is closed, the core may abort all pending async. commands on its
-own (like a forced ``mpv_abort_async_command()`` call for each pending command
-on behalf of the API user). This happens at the same time ``MPV_EVENT_SHUTDOWN``
+own (like a forced ``domi_vid_abort_async_command()`` call for each pending command
+on behalf of the API user). This happens at the same time ``domi_vid_EVENT_SHUTDOWN``
 is sent, and there is no way to prevent this.
 
 Input Sections
@@ -2519,25 +2519,25 @@ Property list
     ``edition-list/N/metadata``
         Per-edition metadata key/value pairs.
 
-    When querying the property with the client API using ``MPV_FORMAT_NODE``,
-    or with Lua ``mp.get_property_native``, this will return a mpv_node with
+    When querying the property with the client API using ``domi_vid_FORMAT_NODE``,
+    or with Lua ``mp.get_property_native``, this will return a domi_vid_node with
     the following contents:
 
     ::
 
-        MPV_FORMAT_NODE_ARRAY
-            MPV_FORMAT_NODE_MAP (for each edition)
-                "id"                MPV_FORMAT_INT64
-                "title"             MPV_FORMAT_STRING
-                "default"           MPV_FORMAT_FLAG
-                "metadata"          MPV_FORMAT_NODE_MAP
+        domi_vid_FORMAT_NODE_ARRAY
+            domi_vid_FORMAT_NODE_MAP (for each edition)
+                "id"                domi_vid_FORMAT_INT64
+                "title"             domi_vid_FORMAT_STRING
+                "default"           domi_vid_FORMAT_FLAG
+                "metadata"          domi_vid_FORMAT_NODE_MAP
 
 ``metadata``
     Metadata key/value pairs.
 
     If the property is accessed with Lua's ``mp.get_property_native``, this
     returns a table with metadata keys mapping to metadata values. If it is
-    accessed with the client API, this returns a ``MPV_FORMAT_NODE_MAP``,
+    accessed with the client API, this returns a ``domi_vid_FORMAT_NODE_MAP``,
     with tag keys mapping to tag values.
 
     For OSD, it returns a formatted list. Trying to retrieve this property as
@@ -2564,13 +2564,13 @@ Property list
     The layout of this property might be subject to change. Suggestions are
     welcome how exactly this property should work.
 
-    When querying the property with the client API using ``MPV_FORMAT_NODE``,
-    or with Lua ``mp.get_property_native``, this will return a mpv_node with
+    When querying the property with the client API using ``domi_vid_FORMAT_NODE``,
+    or with Lua ``mp.get_property_native``, this will return a domi_vid_node with
     the following contents:
 
     ::
 
-        MPV_FORMAT_NODE_MAP
+        domi_vid_FORMAT_NODE_MAP
             (key and string value for each metadata entry)
 
 ``filtered-metadata``
@@ -2625,7 +2625,7 @@ Property list
 ``cache-speed``
     Current I/O read speed between the cache and the lower layer (like network).
     This gives the number bytes per seconds over a 1 second window (using
-    the type ``MPV_FORMAT_INT64`` for the client API).
+    the type ``domi_vid_FORMAT_INT64`` for the client API).
 
     This is the same as ``demuxer-cache-state/raw-input-rate``.
 
@@ -2690,31 +2690,31 @@ Property list
     for that stream type are available as ``cache-duration``, ``reader-pts`` and
     ``cache-end``.
 
-    When querying the property with the client API using ``MPV_FORMAT_NODE``,
-    or with Lua ``mp.get_property_native``, this will return a mpv_node with
+    When querying the property with the client API using ``domi_vid_FORMAT_NODE``,
+    or with Lua ``mp.get_property_native``, this will return a domi_vid_node with
     the following contents:
 
     ::
 
-        MPV_FORMAT_NODE_MAP
-            "seekable-ranges"   MPV_FORMAT_NODE_ARRAY
-                MPV_FORMAT_NODE_MAP
-                    "start"           MPV_FORMAT_DOUBLE
-                    "end"             MPV_FORMAT_DOUBLE
-            "bof-cached"        MPV_FORMAT_FLAG
-            "eof-cached"        MPV_FORMAT_FLAG
-            "fw-bytes"          MPV_FORMAT_INT64
-            "file-cache-bytes"  MPV_FORMAT_INT64
-            "cache-end"         MPV_FORMAT_DOUBLE
-            "reader-pts"        MPV_FORMAT_DOUBLE
-            "cache-duration"    MPV_FORMAT_DOUBLE
-            "raw-input-rate"    MPV_FORMAT_INT64
-            "ts-per-stream"     MPV_FORMAT_NODE_ARRAY
-                MPV_FORMAT_NODE_MAP
-                    "type"            MPV_FORMAT_STRING
-                    "cache-duration"  MPV_FORMAT_DOUBLE
-                    "reader-pts"      MPV_FORMAT_DOUBLE
-                    "cache-end"       MPV_FORMAT_DOUBLE
+        domi_vid_FORMAT_NODE_MAP
+            "seekable-ranges"   domi_vid_FORMAT_NODE_ARRAY
+                domi_vid_FORMAT_NODE_MAP
+                    "start"           domi_vid_FORMAT_DOUBLE
+                    "end"             domi_vid_FORMAT_DOUBLE
+            "bof-cached"        domi_vid_FORMAT_FLAG
+            "eof-cached"        domi_vid_FORMAT_FLAG
+            "fw-bytes"          domi_vid_FORMAT_INT64
+            "file-cache-bytes"  domi_vid_FORMAT_INT64
+            "cache-end"         domi_vid_FORMAT_DOUBLE
+            "reader-pts"        domi_vid_FORMAT_DOUBLE
+            "cache-duration"    domi_vid_FORMAT_DOUBLE
+            "raw-input-rate"    domi_vid_FORMAT_INT64
+            "ts-per-stream"     domi_vid_FORMAT_NODE_ARRAY
+                domi_vid_FORMAT_NODE_MAP
+                    "type"            domi_vid_FORMAT_STRING
+                    "cache-duration"  domi_vid_FORMAT_DOUBLE
+                    "reader-pts"      domi_vid_FORMAT_DOUBLE
+                    "cache-end"       domi_vid_FORMAT_DOUBLE
 
     Other fields (might be changed or removed in the future):
 
@@ -2803,18 +2803,18 @@ Property list
         Number of audio channels. This is redundant to the ``channels`` field
         described above.
 
-    When querying the property with the client API using ``MPV_FORMAT_NODE``,
-    or with Lua ``mp.get_property_native``, this will return a mpv_node with
+    When querying the property with the client API using ``domi_vid_FORMAT_NODE``,
+    or with Lua ``mp.get_property_native``, this will return a domi_vid_node with
     the following contents:
 
     ::
 
-        MPV_FORMAT_NODE_MAP
-            "format"            MPV_FORMAT_STRING
-            "samplerate"        MPV_FORMAT_INT64
-            "channels"          MPV_FORMAT_STRING
-            "channel-count"     MPV_FORMAT_INT64
-            "hr-channels"       MPV_FORMAT_STRING
+        domi_vid_FORMAT_NODE_MAP
+            "format"            domi_vid_FORMAT_STRING
+            "samplerate"        domi_vid_FORMAT_INT64
+            "channels"          domi_vid_FORMAT_STRING
+            "channel-count"     domi_vid_FORMAT_INT64
+            "hr-channels"       domi_vid_FORMAT_STRING
 
 ``audio-out-params``
     Same as ``audio-params``, but the format of the data written to the audio
@@ -2983,50 +2983,50 @@ Property list
     ``video-params/prim-white-x``, ``video-params/prim-white-y``
         White point chromaticity coordinates, available only if differs from ``video-params/primaries``
 
-    When querying the property with the client API using ``MPV_FORMAT_NODE``,
-    or with Lua ``mp.get_property_native``, this will return a mpv_node with
+    When querying the property with the client API using ``domi_vid_FORMAT_NODE``,
+    or with Lua ``mp.get_property_native``, this will return a domi_vid_node with
     the following contents:
 
     ::
 
-        MPV_FORMAT_NODE_MAP
-            "pixelformat"       MPV_FORMAT_STRING
-            "hw-pixelformat"    MPV_FORMAT_STRING
-            "w"                 MPV_FORMAT_INT64
-            "h"                 MPV_FORMAT_INT64
-            "dw"                MPV_FORMAT_INT64
-            "dh"                MPV_FORMAT_INT64
-            "aspect"            MPV_FORMAT_DOUBLE
-            "aspect-name"       MPV_FORMAT_STRING
-            "par"               MPV_FORMAT_DOUBLE
-            "colormatrix"       MPV_FORMAT_STRING
-            "colorlevels"       MPV_FORMAT_STRING
-            "primaries"         MPV_FORMAT_STRING
-            "gamma"             MPV_FORMAT_STRING
-            "sig-peak"          MPV_FORMAT_DOUBLE
-            "light"             MPV_FORMAT_STRING
-            "chroma-location"   MPV_FORMAT_STRING
-            "rotate"            MPV_FORMAT_INT64
-            "stereo-in"         MPV_FORMAT_STRING
-            "average-bpp"       MPV_FORMAT_INT64
-            "alpha"             MPV_FORMAT_STRING
-            "min-luma"          MPV_FORMAT_DOUBLE
-            "max-luma"          MPV_FORMAT_DOUBLE
-            "max-cll"           MPV_FORMAT_DOUBLE
-            "max-fall"          MPV_FORMAT_DOUBLE
-            "scene-max-r"       MPV_FORMAT_DOUBLE
-            "scene-max-g"       MPV_FORMAT_DOUBLE
-            "scene-max-b"       MPV_FORMAT_DOUBLE
-            "max-pq-y"          MPV_FORMAT_DOUBLE
-            "avg-pq-y"          MPV_FORMAT_DOUBLE
-            "prim-red-x"        MPV_FORMAT_DOUBLE
-            "prim-red-y"        MPV_FORMAT_DOUBLE
-            "prim-green-x"      MPV_FORMAT_DOUBLE
-            "prim-green-y"      MPV_FORMAT_DOUBLE
-            "prim-blue-x"       MPV_FORMAT_DOUBLE
-            "prim-blue-y"       MPV_FORMAT_DOUBLE
-            "prim-white-x"      MPV_FORMAT_DOUBLE
-            "prim-white-y"      MPV_FORMAT_DOUBLE
+        domi_vid_FORMAT_NODE_MAP
+            "pixelformat"       domi_vid_FORMAT_STRING
+            "hw-pixelformat"    domi_vid_FORMAT_STRING
+            "w"                 domi_vid_FORMAT_INT64
+            "h"                 domi_vid_FORMAT_INT64
+            "dw"                domi_vid_FORMAT_INT64
+            "dh"                domi_vid_FORMAT_INT64
+            "aspect"            domi_vid_FORMAT_DOUBLE
+            "aspect-name"       domi_vid_FORMAT_STRING
+            "par"               domi_vid_FORMAT_DOUBLE
+            "colormatrix"       domi_vid_FORMAT_STRING
+            "colorlevels"       domi_vid_FORMAT_STRING
+            "primaries"         domi_vid_FORMAT_STRING
+            "gamma"             domi_vid_FORMAT_STRING
+            "sig-peak"          domi_vid_FORMAT_DOUBLE
+            "light"             domi_vid_FORMAT_STRING
+            "chroma-location"   domi_vid_FORMAT_STRING
+            "rotate"            domi_vid_FORMAT_INT64
+            "stereo-in"         domi_vid_FORMAT_STRING
+            "average-bpp"       domi_vid_FORMAT_INT64
+            "alpha"             domi_vid_FORMAT_STRING
+            "min-luma"          domi_vid_FORMAT_DOUBLE
+            "max-luma"          domi_vid_FORMAT_DOUBLE
+            "max-cll"           domi_vid_FORMAT_DOUBLE
+            "max-fall"          domi_vid_FORMAT_DOUBLE
+            "scene-max-r"       domi_vid_FORMAT_DOUBLE
+            "scene-max-g"       domi_vid_FORMAT_DOUBLE
+            "scene-max-b"       domi_vid_FORMAT_DOUBLE
+            "max-pq-y"          domi_vid_FORMAT_DOUBLE
+            "avg-pq-y"          domi_vid_FORMAT_DOUBLE
+            "prim-red-x"        domi_vid_FORMAT_DOUBLE
+            "prim-red-y"        domi_vid_FORMAT_DOUBLE
+            "prim-green-x"      domi_vid_FORMAT_DOUBLE
+            "prim-green-y"      domi_vid_FORMAT_DOUBLE
+            "prim-blue-x"       domi_vid_FORMAT_DOUBLE
+            "prim-blue-y"       domi_vid_FORMAT_DOUBLE
+            "prim-white-x"      domi_vid_FORMAT_DOUBLE
+            "prim-white-y"      domi_vid_FORMAT_DOUBLE
 
 ``dwidth``, ``dheight``
     Video display size. This is the video size after filters and aspect scaling
@@ -3168,7 +3168,7 @@ Property list
 ``osd-dimensions``
     Last known OSD dimensions.
 
-    Has the following sub-properties (which can be read as ``MPV_FORMAT_NODE``
+    Has the following sub-properties (which can be read as ``domi_vid_FORMAT_NODE``
     or Lua table with ``mp.get_property_native``):
 
     ``osd-dimensions/w``
@@ -3218,7 +3218,7 @@ Property list
 ``mouse-pos``
     Read-only - last known mouse position, normalized to OSD dimensions.
 
-    Has the following sub-properties (which can be read as ``MPV_FORMAT_NODE``
+    Has the following sub-properties (which can be read as ``domi_vid_FORMAT_NODE``
     or Lua table with ``mp.get_property_native``):
 
     ``mouse-pos/x``, ``mouse-pos/y``
@@ -3253,17 +3253,17 @@ Property list
         Unique identifier of the touch point. This can be used to identify
         individual touch points when their indexes change.
 
-    When querying the property with the client API using ``MPV_FORMAT_NODE``,
-    or with Lua ``mp.get_property_native``, this will return a mpv_node with
+    When querying the property with the client API using ``domi_vid_FORMAT_NODE``,
+    or with Lua ``mp.get_property_native``, this will return a domi_vid_node with
     the following contents:
 
     ::
 
-        MPV_FORMAT_NODE_ARRAY
-            MPV_FORMAT_NODE_MAP (for each touch point)
-                "x"        MPV_FORMAT_INT64
-                "y"        MPV_FORMAT_INT64
-                "id"       MPV_FORMAT_INT64
+        domi_vid_FORMAT_NODE_ARRAY
+            domi_vid_FORMAT_NODE_MAP (for each touch point)
+                "x"        domi_vid_FORMAT_INT64
+                "y"        domi_vid_FORMAT_INT64
+                "id"       domi_vid_FORMAT_INT64
 
 ``tablet-pos``
     Read-only - last known tablet tool (pen) position, normalized to OSD dimensions,
@@ -3287,16 +3287,16 @@ Property list
 
     ::
 
-        MPV_FORMAT_NODE_MAP
-            "x"                  MPV_FORMAT_INT64
-            "y"                  MPV_FORMAT_INT64
-            "tool-in-proximity"  MPV_FORMAT_FLAG
-            "tool-tip"           MPV_FORMAT_STRING
-            "tool-stylus-btn1"   MPV_FORMAT_STRING
-            "tool-stylus-btn2"   MPV_FORMAT_STRING
-            "tool-stylus-btn3"   MPV_FORMAT_STRING
-            "pad-focus"          MPV_FORMAT_FLAG
-            "pad-btns"           MPV_FORMAT_NODE_MAP
+        domi_vid_FORMAT_NODE_MAP
+            "x"                  domi_vid_FORMAT_INT64
+            "y"                  domi_vid_FORMAT_INT64
+            "tool-in-proximity"  domi_vid_FORMAT_FLAG
+            "tool-tip"           domi_vid_FORMAT_STRING
+            "tool-stylus-btn1"   domi_vid_FORMAT_STRING
+            "tool-stylus-btn2"   domi_vid_FORMAT_STRING
+            "tool-stylus-btn3"   domi_vid_FORMAT_STRING
+            "pad-focus"          domi_vid_FORMAT_FLAG
+            "pad-btns"           domi_vid_FORMAT_NODE_MAP
                (key and string value for each pad-btn entry)
 
 ``dropped-files``
@@ -3309,7 +3309,7 @@ Property list
 
     ``dropped-files/time``
         The timestamp of the last drag-and-drop event mpv received, in
-        nanoseconds. This uses the same clock as ``mpv_get_time_ns()``.
+        nanoseconds. This uses the same clock as ``domi_vid_get_time_ns()``.
 
     ``dropped-files/action``
         The action of the drag-and-drop event. This is normally ``replace``.
@@ -3319,17 +3319,17 @@ Property list
     ``dropped-files/files``
         The dropped file names of the drag-and-drop event.
 
-    When querying the property with the client API using ``MPV_FORMAT_NODE``,
-    or with Lua ``mp.get_property_native``, this will return a mpv_node with
+    When querying the property with the client API using ``domi_vid_FORMAT_NODE``,
+    or with Lua ``mp.get_property_native``, this will return a domi_vid_node with
     the following contents:
 
     ::
 
-        MPV_FORMAT_NODE_MAP
-            "time"    MPV_FORMAT_INT64
-            "action"  MPV_FORMAT_STRING
-            "files"   MPV_FORMAT_NODE_ARRAY
-                MPV_FORMAT_STRING
+        domi_vid_FORMAT_NODE_MAP
+            "time"    domi_vid_FORMAT_INT64
+            "action"  domi_vid_FORMAT_STRING
+            "files"   domi_vid_FORMAT_NODE_ARRAY
+                domi_vid_FORMAT_STRING
 
 ``sub-ass-extradata``
     The current ASS subtitle track's extradata. There is no formatting done.
@@ -3394,17 +3394,17 @@ Property list
     The list of subtitle lines in memory. Not available if the subtitle is not
     text-based (i.e. DVD/BD subtitles).
 
-    When querying the property with the client API using ``MPV_FORMAT_NODE``,
-    or with Lua ``mp.get_property_native``, this will return a mpv_node with
+    When querying the property with the client API using ``domi_vid_FORMAT_NODE``,
+    or with Lua ``mp.get_property_native``, this will return a domi_vid_node with
     the following contents:
 
     ::
 
-        MPV_FORMAT_NODE_ARRAY
-            MPV_FORMAT_NODE_MAP (for each subtitle line)
-                "text"  MPV_FORMAT_STRING
-                "start" MPV_FORMAT_DOUBLE
-                "end"   MPV_FORMAT_DOUBLE
+        domi_vid_FORMAT_NODE_ARRAY
+            domi_vid_FORMAT_NODE_MAP (for each subtitle line)
+                "text"  domi_vid_FORMAT_STRING
+                "start" domi_vid_FORMAT_DOUBLE
+                "end"   domi_vid_FORMAT_DOUBLE
 
     ASS tags are stripped from ``text``.
 
@@ -3456,8 +3456,8 @@ Property list
 ``playlist-playing-pos``
     Index of the "playing" item on playlist. A playlist item is "playing" if
     it's being loaded, actually playing, or being unloaded. This property is set
-    during the ``MPV_EVENT_START_FILE`` (``start-file``) and the
-    ``MPV_EVENT_START_END`` (``end-file``) events. Outside of that, it returns
+    during the ``domi_vid_EVENT_START_FILE`` (``start-file``) and the
+    ``domi_vid_EVENT_START_END`` (``end-file``) events. Outside of that, it returns
     -1. If the playlist entry was somehow removed during playback, but playback
     hasn't stopped yet, or is in progress of being stopped, it also returns -1.
     (This can happen at least during state transitions.)
@@ -3511,20 +3511,20 @@ Property list
         it. Unavailable if the file was not originally associated with a playlist
         in some way.
 
-    When querying the property with the client API using ``MPV_FORMAT_NODE``,
-    or with Lua ``mp.get_property_native``, this will return a mpv_node with
+    When querying the property with the client API using ``domi_vid_FORMAT_NODE``,
+    or with Lua ``mp.get_property_native``, this will return a domi_vid_node with
     the following contents:
 
     ::
 
-        MPV_FORMAT_NODE_ARRAY
-            MPV_FORMAT_NODE_MAP (for each playlist entry)
-                "filename"      MPV_FORMAT_STRING
-                "current"       MPV_FORMAT_FLAG (might be missing)
-                "playing"       MPV_FORMAT_FLAG (same)
-                "title"         MPV_FORMAT_STRING (optional)
-                "id"            MPV_FORMAT_INT64
-                "playlist-path" MPV_FORMAT_STRING (optional)
+        domi_vid_FORMAT_NODE_ARRAY
+            domi_vid_FORMAT_NODE_MAP (for each playlist entry)
+                "filename"      domi_vid_FORMAT_STRING
+                "current"       domi_vid_FORMAT_FLAG (might be missing)
+                "playing"       domi_vid_FORMAT_FLAG (same)
+                "title"         domi_vid_FORMAT_STRING (optional)
+                "id"            domi_vid_FORMAT_INT64
+                "playlist-path" domi_vid_FORMAT_STRING (optional)
 
 ``track-list``
     List of audio/video/sub tracks, current entry marked. When the file has
@@ -3713,61 +3713,61 @@ Property list
         Works like the ``metadata`` property, but it accesses metadata that is
         set per track/stream instead of global values for the entire file.
 
-    When querying the property with the client API using ``MPV_FORMAT_NODE``,
-    or with Lua ``mp.get_property_native``, this will return a mpv_node with
+    When querying the property with the client API using ``domi_vid_FORMAT_NODE``,
+    or with Lua ``mp.get_property_native``, this will return a domi_vid_node with
     the following contents:
 
     ::
 
-        MPV_FORMAT_NODE_ARRAY
-            MPV_FORMAT_NODE_MAP (for each track)
-                "id"                MPV_FORMAT_INT64
-                "type"              MPV_FORMAT_STRING
-                "src-id"            MPV_FORMAT_INT64
-                "title"             MPV_FORMAT_STRING
-                "lang"              MPV_FORMAT_STRING
-                "image"             MPV_FORMAT_FLAG
-                "albumart"          MPV_FORMAT_FLAG
-                "default"           MPV_FORMAT_FLAG
-                "forced"            MPV_FORMAT_FLAG
-                "dependent"         MPV_FORMAT_FLAG
-                "visual-impaired"   MPV_FORMAT_FLAG
-                "hearing-impaired"  MPV_FORMAT_FLAG
-                "hls-bitrate"       MPV_FORMAT_INT64
-                "program-id"        MPV_FORMAT_INT64
-                "program-ids"       MPV_FORMAT_NODE_ARRAY[MPV_FORMAT_INT64]
-                "selected"          MPV_FORMAT_FLAG
-                "main-selection"    MPV_FORMAT_INT64
-                "external"          MPV_FORMAT_FLAG
-                "external-filename" MPV_FORMAT_STRING
-                "codec"             MPV_FORMAT_STRING
-                "codec-desc"        MPV_FORMAT_STRING
-                "codec-profile"     MPV_FORMAT_STRING
-                "ff-index"          MPV_FORMAT_INT64
-                "decoder"           MPV_FORMAT_STRING
-                "decoder-desc"      MPV_FORMAT_STRING
-                "demux-w"           MPV_FORMAT_INT64
-                "demux-h"           MPV_FORMAT_INT64
-                "demux-crop-x"      MPV_FORMAT_INT64
-                "demux-crop-y"      MPV_FORMAT_INT64
-                "demux-crop-w"      MPV_FORMAT_INT64
-                "demux-crop-h"      MPV_FORMAT_INT64
-                "demux-channel-count" MPV_FORMAT_INT64
-                "demux-channels"    MPV_FORMAT_STRING
-                "demux-samplerate"  MPV_FORMAT_INT64
-                "demux-fps"         MPV_FORMAT_DOUBLE
-                "demux-bitrate"     MPV_FORMAT_INT64
-                "demux-rotation"    MPV_FORMAT_INT64
-                "demux-par"         MPV_FORMAT_DOUBLE
-                "format-name"       MPV_FORMAT_STRING
-                "audio-channels"    MPV_FORMAT_INT64
-                "replaygain-track-peak" MPV_FORMAT_DOUBLE
-                "replaygain-track-gain" MPV_FORMAT_DOUBLE
-                "replaygain-album-peak" MPV_FORMAT_DOUBLE
-                "replaygain-album-gain" MPV_FORMAT_DOUBLE
-                "dolby-vision-profile" MPV_FORMAT_INT64
-                "dolby-vision-level" MPV_FORMAT_INT64
-                "metadata"           MPV_FORMAT_NODE_MAP
+        domi_vid_FORMAT_NODE_ARRAY
+            domi_vid_FORMAT_NODE_MAP (for each track)
+                "id"                domi_vid_FORMAT_INT64
+                "type"              domi_vid_FORMAT_STRING
+                "src-id"            domi_vid_FORMAT_INT64
+                "title"             domi_vid_FORMAT_STRING
+                "lang"              domi_vid_FORMAT_STRING
+                "image"             domi_vid_FORMAT_FLAG
+                "albumart"          domi_vid_FORMAT_FLAG
+                "default"           domi_vid_FORMAT_FLAG
+                "forced"            domi_vid_FORMAT_FLAG
+                "dependent"         domi_vid_FORMAT_FLAG
+                "visual-impaired"   domi_vid_FORMAT_FLAG
+                "hearing-impaired"  domi_vid_FORMAT_FLAG
+                "hls-bitrate"       domi_vid_FORMAT_INT64
+                "program-id"        domi_vid_FORMAT_INT64
+                "program-ids"       domi_vid_FORMAT_NODE_ARRAY[domi_vid_FORMAT_INT64]
+                "selected"          domi_vid_FORMAT_FLAG
+                "main-selection"    domi_vid_FORMAT_INT64
+                "external"          domi_vid_FORMAT_FLAG
+                "external-filename" domi_vid_FORMAT_STRING
+                "codec"             domi_vid_FORMAT_STRING
+                "codec-desc"        domi_vid_FORMAT_STRING
+                "codec-profile"     domi_vid_FORMAT_STRING
+                "ff-index"          domi_vid_FORMAT_INT64
+                "decoder"           domi_vid_FORMAT_STRING
+                "decoder-desc"      domi_vid_FORMAT_STRING
+                "demux-w"           domi_vid_FORMAT_INT64
+                "demux-h"           domi_vid_FORMAT_INT64
+                "demux-crop-x"      domi_vid_FORMAT_INT64
+                "demux-crop-y"      domi_vid_FORMAT_INT64
+                "demux-crop-w"      domi_vid_FORMAT_INT64
+                "demux-crop-h"      domi_vid_FORMAT_INT64
+                "demux-channel-count" domi_vid_FORMAT_INT64
+                "demux-channels"    domi_vid_FORMAT_STRING
+                "demux-samplerate"  domi_vid_FORMAT_INT64
+                "demux-fps"         domi_vid_FORMAT_DOUBLE
+                "demux-bitrate"     domi_vid_FORMAT_INT64
+                "demux-rotation"    domi_vid_FORMAT_INT64
+                "demux-par"         domi_vid_FORMAT_DOUBLE
+                "format-name"       domi_vid_FORMAT_STRING
+                "audio-channels"    domi_vid_FORMAT_INT64
+                "replaygain-track-peak" domi_vid_FORMAT_DOUBLE
+                "replaygain-track-gain" domi_vid_FORMAT_DOUBLE
+                "replaygain-album-peak" domi_vid_FORMAT_DOUBLE
+                "replaygain-album-gain" domi_vid_FORMAT_DOUBLE
+                "dolby-vision-profile" domi_vid_FORMAT_INT64
+                "dolby-vision-level" domi_vid_FORMAT_INT64
+                "metadata"           domi_vid_FORMAT_NODE_MAP
                     (key and string value for each metadata entry)
 
 ``current-tracks/...``
@@ -3800,32 +3800,32 @@ Property list
     ``chapter-list/N/time``
         Chapter start time in seconds as float.
 
-    When querying the property with the client API using ``MPV_FORMAT_NODE``,
-    or with Lua ``mp.get_property_native``, this will return a mpv_node with
+    When querying the property with the client API using ``domi_vid_FORMAT_NODE``,
+    or with Lua ``mp.get_property_native``, this will return a domi_vid_node with
     the following contents:
 
     ::
 
-        MPV_FORMAT_NODE_ARRAY
-            MPV_FORMAT_NODE_MAP (for each chapter)
-                "title" MPV_FORMAT_STRING
-                "time"  MPV_FORMAT_DOUBLE
+        domi_vid_FORMAT_NODE_ARRAY
+            domi_vid_FORMAT_NODE_MAP (for each chapter)
+                "title" domi_vid_FORMAT_STRING
+                "time"  domi_vid_FORMAT_DOUBLE
 
 ``af``, ``vf`` (RW)
     See ``--vf``/``--af`` and the ``vf``/``af`` command.
 
-    When querying the property with the client API using ``MPV_FORMAT_NODE``,
-    or with Lua ``mp.get_property_native``, this will return a mpv_node with
+    When querying the property with the client API using ``domi_vid_FORMAT_NODE``,
+    or with Lua ``mp.get_property_native``, this will return a domi_vid_node with
     the following contents:
 
     ::
 
-        MPV_FORMAT_NODE_ARRAY
-            MPV_FORMAT_NODE_MAP (for each filter entry)
-                "name"      MPV_FORMAT_STRING
-                "label"     MPV_FORMAT_STRING [optional]
-                "enabled"   MPV_FORMAT_FLAG [optional]
-                "params"    MPV_FORMAT_NODE_MAP [optional]
+        domi_vid_FORMAT_NODE_ARRAY
+            domi_vid_FORMAT_NODE_MAP (for each filter entry)
+                "name"      domi_vid_FORMAT_STRING
+                "label"     domi_vid_FORMAT_STRING [optional]
+                "enabled"   domi_vid_FORMAT_FLAG [optional]
+                "params"    domi_vid_FORMAT_NODE_MAP [optional]
                     (key and string value for each param entry)
 
     It's also possible to write the property using this format.
@@ -3925,26 +3925,26 @@ Property list
         The raw execution time of a specific sample for this pass, in
         nanoseconds.
 
-    When querying the property with the client API using ``MPV_FORMAT_NODE``,
-    or with Lua ``mp.get_property_native``, this will return a mpv_node with
+    When querying the property with the client API using ``domi_vid_FORMAT_NODE``,
+    or with Lua ``mp.get_property_native``, this will return a domi_vid_node with
     the following contents:
 
     ::
 
-        MPV_FORMAT_NODE_MAP
+        domi_vid_FORMAT_NODE_MAP
             (key and array value for each TYPE entry)
-            MPV_FORMAT_NODE_ARRAY (for each pass entry)
-                MPV_FORMAT_NODE_MAP
-                    "desc"    MPV_FORMAT_STRING
-                    "last"    MPV_FORMAT_INT64
-                    "avg"     MPV_FORMAT_INT64
-                    "peak"    MPV_FORMAT_INT64
-                    "count"   MPV_FORMAT_INT64
-                    "samples" MPV_FORMAT_NODE_ARRAY
-                         MPV_FORMAT_INT64
+            domi_vid_FORMAT_NODE_ARRAY (for each pass entry)
+                domi_vid_FORMAT_NODE_MAP
+                    "desc"    domi_vid_FORMAT_STRING
+                    "last"    domi_vid_FORMAT_INT64
+                    "avg"     domi_vid_FORMAT_INT64
+                    "peak"    domi_vid_FORMAT_INT64
+                    "count"   domi_vid_FORMAT_INT64
+                    "samples" domi_vid_FORMAT_NODE_ARRAY
+                         domi_vid_FORMAT_INT64
 
     Note that directly accessing this structure via subkeys is not supported,
-    the only access is through aforementioned ``MPV_FORMAT_NODE``.
+    the only access is through aforementioned ``domi_vid_FORMAT_NODE``.
 
 ``perf-info``
     Further performance data. Querying this property triggers internal
@@ -3984,16 +3984,16 @@ Property list
     client API, and reflects what ``--audio-device=help`` with the command line
     player returns.
 
-    When querying the property with the client API using ``MPV_FORMAT_NODE``,
-    or with Lua ``mp.get_property_native``, this will return a mpv_node with
+    When querying the property with the client API using ``domi_vid_FORMAT_NODE``,
+    or with Lua ``mp.get_property_native``, this will return a domi_vid_node with
     the following contents:
 
     ::
 
-        MPV_FORMAT_NODE_ARRAY
-            MPV_FORMAT_NODE_MAP (for each device entry)
-                "name"          MPV_FORMAT_STRING
-                "description"   MPV_FORMAT_STRING
+        domi_vid_FORMAT_NODE_ARRAY
+            domi_vid_FORMAT_NODE_MAP (for each device entry)
+                "name"          domi_vid_FORMAT_STRING
+                "description"   domi_vid_FORMAT_STRING
 
     The ``name`` is what is to be passed to the ``--audio-device`` option (and
     often a rather cryptic audio API-specific ID), while ``description`` is
@@ -4106,22 +4106,22 @@ Property list
     ``submenu``
         Submenu items, which is required if type is ``submenu``.
 
-    When querying the property with the client API using ``MPV_FORMAT_NODE``, or with
-    Lua ``mp.get_property_native``, this will return a mpv_node with the following
+    When querying the property with the client API using ``domi_vid_FORMAT_NODE``, or with
+    Lua ``mp.get_property_native``, this will return a domi_vid_node with the following
     contents:
 
     ::
 
-        MPV_FORMAT_NODE_ARRAY
-            MPV_FORMAT_NODE_MAP (menu item)
-                "type"           MPV_FORMAT_STRING
-                "title"          MPV_FORMAT_STRING
-                "cmd"            MPV_FORMAT_STRING
-                "shortcut"       MPV_FORMAT_STRING
-                "state"          MPV_FORMAT_NODE_ARRAY[MPV_FORMAT_STRING]
-                "submenu"        MPV_FORMAT_NODE_ARRAY[menu item]
+        domi_vid_FORMAT_NODE_ARRAY
+            domi_vid_FORMAT_NODE_MAP (menu item)
+                "type"           domi_vid_FORMAT_STRING
+                "title"          domi_vid_FORMAT_STRING
+                "cmd"            domi_vid_FORMAT_STRING
+                "shortcut"       domi_vid_FORMAT_STRING
+                "state"          domi_vid_FORMAT_NODE_ARRAY[domi_vid_FORMAT_STRING]
+                "submenu"        domi_vid_FORMAT_NODE_ARRAY[menu item]
 
-    Writing to this property with the client API using ``MPV_FORMAT_NODE`` or with
+    Writing to this property with the client API using ``domi_vid_FORMAT_NODE`` or with
     Lua ``mp.set_property_native`` will trigger an immediate update of the menu if
     mpv video output is currently active. You may observe the ``current-vo``
     property to check if this is the case.
@@ -4157,17 +4157,17 @@ Property list
     ``description``
         Human readable description of the decoder and codec.
 
-    When querying the property with the client API using ``MPV_FORMAT_NODE``,
-    or with Lua ``mp.get_property_native``, this will return a mpv_node with
+    When querying the property with the client API using ``domi_vid_FORMAT_NODE``,
+    or with Lua ``mp.get_property_native``, this will return a domi_vid_node with
     the following contents:
 
     ::
 
-        MPV_FORMAT_NODE_ARRAY
-            MPV_FORMAT_NODE_MAP (for each decoder entry)
-                "codec"         MPV_FORMAT_STRING
-                "driver"        MPV_FORMAT_STRING
-                "description"   MPV_FORMAT_STRING
+        domi_vid_FORMAT_NODE_ARRAY
+            domi_vid_FORMAT_NODE_MAP (for each decoder entry)
+                "codec"         domi_vid_FORMAT_STRING
+                "driver"        domi_vid_FORMAT_STRING
+                "description"   domi_vid_FORMAT_STRING
 
 ``encoder-list``
     List of libavcodec encoders. This has the same format as ``decoder-list``.
@@ -4288,17 +4288,17 @@ Property list
 
     ::
 
-        MPV_FORMAT_NODE_MAP
-            "name"                    MPV_FORMAT_STRING
-            "type"                    MPV_FORMAT_STRING
-            "set-from-commandline"    MPV_FORMAT_FLAG
-            "set-locally"             MPV_FORMAT_FLAG
-            "expects-file"            MPV_FORMAT_FLAG
-            "default-value"           MPV_FORMAT_NODE (optional, value of "type")
-            "min"                     MPV_FORMAT_DOUBLE (optional)
-            "max"                     MPV_FORMAT_DOUBLE (optional)
-            "choices"                 MPV_FORMAT_NODE_ARRAY (optional)
-                MPV_FORMAT_STRING
+        domi_vid_FORMAT_NODE_MAP
+            "name"                    domi_vid_FORMAT_STRING
+            "type"                    domi_vid_FORMAT_STRING
+            "set-from-commandline"    domi_vid_FORMAT_FLAG
+            "set-locally"             domi_vid_FORMAT_FLAG
+            "expects-file"            domi_vid_FORMAT_FLAG
+            "default-value"           domi_vid_FORMAT_NODE (optional, value of "type")
+            "min"                     domi_vid_FORMAT_DOUBLE (optional)
+            "max"                     domi_vid_FORMAT_DOUBLE (optional)
+            "choices"                 domi_vid_FORMAT_NODE_ARRAY (optional)
+                domi_vid_FORMAT_STRING
 
 ``property-list``
     The list of top-level properties.
@@ -4317,13 +4317,13 @@ Property list
 
     ::
 
-        MPV_FORMAT_NODE_ARRAY
-            MPV_FORMAT_NODE_MAP (for each profile entry)
-                "name"       MPV_FORMAT_STRING
-                "options"    MPV_FORMAT_NODE_ARRAY (for each option entry)
-                    MPV_FORMAT_NODE_MAP
-                        "key"      MPV_FORMAT_STRING
-                        "value"    MPV_FORMAT_STRING
+        domi_vid_FORMAT_NODE_ARRAY
+            domi_vid_FORMAT_NODE_MAP (for each profile entry)
+                "name"       domi_vid_FORMAT_STRING
+                "options"    domi_vid_FORMAT_NODE_ARRAY (for each option entry)
+                    domi_vid_FORMAT_NODE_MAP
+                        "key"      domi_vid_FORMAT_STRING
+                        "value"    domi_vid_FORMAT_STRING
 
 ``command-list``
     The list of input commands. This returns an array of maps, where each map
@@ -4348,24 +4348,24 @@ Property list
         ``optional``
             Whether the argument is optional.
 
-    When querying the property with the client API using ``MPV_FORMAT_NODE``,
-    or with Lua ``mp.get_property_native``, this will return a mpv_node with
+    When querying the property with the client API using ``domi_vid_FORMAT_NODE``,
+    or with Lua ``mp.get_property_native``, this will return a domi_vid_node with
     the following contents:
 
     ::
 
-        MPV_FORMAT_NODE_ARRAY
-            MPV_FORMAT_NODE_MAP (for each command entry)
-                "name"    MPV_FORMAT_STRING
-                "vararg"  MPV_FORMAT_FLAG
-                "args"    MPV_FORMAT_NODE_ARRAY
-                    MPV_FORMAT_NODE_MAP
-                        "name"           MPV_FORMAT_STRING
-                        "type"           MPV_FORMAT_STRING
-                        "optional"       MPV_FORMAT_FLAG
-                        "default-value"  MPV_FORMAT_NODE (optional, value of "type")
-                        "choices"        MPV_FORMAT_NODE_ARRAY (optional)
-                            MPV_FORMAT_STRING
+        domi_vid_FORMAT_NODE_ARRAY
+            domi_vid_FORMAT_NODE_MAP (for each command entry)
+                "name"    domi_vid_FORMAT_STRING
+                "vararg"  domi_vid_FORMAT_FLAG
+                "args"    domi_vid_FORMAT_NODE_ARRAY
+                    domi_vid_FORMAT_NODE_MAP
+                        "name"           domi_vid_FORMAT_STRING
+                        "type"           domi_vid_FORMAT_STRING
+                        "optional"       domi_vid_FORMAT_FLAG
+                        "default-value"  domi_vid_FORMAT_NODE (optional, value of "type")
+                        "choices"        domi_vid_FORMAT_NODE_ARRAY (optional)
+                            domi_vid_FORMAT_STRING
 
 ``input-bindings``
     The list of current input key bindings. This returns an array of maps,
@@ -4407,15 +4407,15 @@ Property list
 
     ::
 
-        MPV_FORMAT_NODE_ARRAY
-            MPV_FORMAT_NODE_MAP
-                "key"         MPV_FORMAT_STRING
-                "cmd"         MPV_FORMAT_STRING
-                "is_weak"     MPV_FORMAT_FLAG
-                "owner"       MPV_FORMAT_STRING (optional)
-                "section"     MPV_FORMAT_STRING
-                "priority"    MPV_FORMAT_INT64
-                "comment"     MPV_FORMAT_STRING (optional)
+        domi_vid_FORMAT_NODE_ARRAY
+            domi_vid_FORMAT_NODE_MAP
+                "key"         domi_vid_FORMAT_STRING
+                "cmd"         domi_vid_FORMAT_STRING
+                "is_weak"     domi_vid_FORMAT_FLAG
+                "owner"       domi_vid_FORMAT_STRING (optional)
+                "section"     domi_vid_FORMAT_STRING
+                "priority"    domi_vid_FORMAT_INT64
+                "comment"     domi_vid_FORMAT_STRING (optional)
 
     This property is read-only, and change notification is not supported.
 
@@ -4451,9 +4451,9 @@ Property list
 
     ::
 
-        MPV_FORMAT_NODE_MAP
-            "text"            MPV_FORMAT_STRING
-            "text-primary"    MPV_FORMAT_STRING
+        domi_vid_FORMAT_NODE_MAP
+            "text"            domi_vid_FORMAT_STRING
+            "text-primary"    domi_vid_FORMAT_STRING
 
 ``current-clipboard-backend``
     A string containing the currently active clipboard backend.
@@ -4497,10 +4497,10 @@ caveats with some properties (due to historical reasons):
 ``profile``, ``include``
     These are write-only, and will perform actions as they are written to,
     exactly as if they were used on the mpv CLI commandline. Their only use is
-    when using libmpv before ``mpv_initialize()``, which in turn is probably
+    when using libmpv before ``domi_vid_initialize()``, which in turn is probably
     only useful in encoding mode. Normal libmpv users should use other
     mechanisms, such as the ``apply-profile`` command, and the
-    ``mpv_load_config_file`` API function. Avoid these properties.
+    ``domi_vid_load_config_file`` API function. Avoid these properties.
 
 Property Expansion
 ------------------

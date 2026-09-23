@@ -43,7 +43,7 @@
 #define GET_SYM dlsym
 #endif
 
-#define INIT_SYM(name) __typeof__(&mpv_##name) name = (void *) GET_SYM(lib, "mpv_" #name); \
+#define INIT_SYM(name) __typeof__(&domi_vid_##name) name = (void *) GET_SYM(lib, "domi_vid_" #name); \
                        if (!name) exit(1)
 
 #define REPEAT 2
@@ -58,7 +58,7 @@ static void exit_log(const char *fmt, ...)
 }
 
 #define check_error(status) check_error_(status, error_string)
-static inline void check_error_(int status, __typeof__(&mpv_error_string) error_string)
+static inline void check_error_(int status, __typeof__(&domi_vid_error_string) error_string)
 {
     if (status < 0)
         exit_log("mpv API error: %s\n", error_string(status));
@@ -86,7 +86,7 @@ int main(void)
         INIT_SYM(wait_event);
 
         for (int j = 0; j < REPEAT; ++j) {
-            mpv_handle *ctx = create();
+            domi_vid_handle *ctx = create();
             if (!ctx)
                 exit_log("Failed to create mpv context!\n");
 
@@ -101,10 +101,10 @@ int main(void)
                                                           NULL}));
                 bool loaded = false;
                 while (true) {
-                    mpv_event *event = wait_event(ctx, -1);
-                    if (event->event_id == MPV_EVENT_START_FILE)
+                    domi_vid_event *event = wait_event(ctx, -1);
+                    if (event->event_id == domi_vid_EVENT_START_FILE)
                         loaded = true;
-                    if (loaded && event->event_id == MPV_EVENT_IDLE)
+                    if (loaded && event->event_id == domi_vid_EVENT_IDLE)
                         break;
                 }
             }

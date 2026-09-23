@@ -35,7 +35,7 @@
 #include "mpv/client.h"
 #include "player/client.h"
 
-#include "mpv_talloc.h"
+#include "domi_vid_talloc.h"
 #include "common/common.h"
 #include "common/msg.h"
 #include "common/msg_control.h"
@@ -120,9 +120,9 @@ int m_option_required_params(const m_option_t *opt)
 }
 
 int m_option_set_node_or_string(struct mp_log *log, const m_option_t *opt,
-                                struct bstr name, void *dst, struct mpv_node *src)
+                                struct bstr name, void *dst, struct domi_vid_node *src)
 {
-    if (src->format == MPV_FORMAT_STRING) {
+    if (src->format == domi_vid_FORMAT_STRING) {
         return m_option_parse(log, opt, name, bstr0(src->u.string), dst);
     } else {
         return m_option_set_node(opt, dst, src);
@@ -182,18 +182,18 @@ static void add_bool(const m_option_t *opt, void *val, double add, bool wrap)
     VAL(val) = state ? 1 : 0;
 }
 
-static int bool_set(const m_option_t *opt, void *dst, struct mpv_node *src)
+static int bool_set(const m_option_t *opt, void *dst, struct domi_vid_node *src)
 {
-    if (src->format != MPV_FORMAT_FLAG)
+    if (src->format != domi_vid_FORMAT_FLAG)
         return M_OPT_UNKNOWN;
     VAL(dst) = !!src->u.flag;
     return 1;
 }
 
 static int bool_get(const m_option_t *opt, void *ta_parent,
-                    struct mpv_node *dst, void *src)
+                    struct domi_vid_node *dst, void *src)
 {
-    dst->format = MPV_FORMAT_FLAG;
+    dst->format = domi_vid_FORMAT_FLAG;
     dst->u.flag = !!VAL(src);
     return 1;
 }
@@ -244,7 +244,7 @@ static void add_flag(const m_option_t *opt, void *val, double add, bool wrap)
     VAL(val) = bval;
 }
 
-static int flag_set(const m_option_t *opt, void *dst, struct mpv_node *src)
+static int flag_set(const m_option_t *opt, void *dst, struct domi_vid_node *src)
 {
     bool bdst = false;
     int r = bool_set(opt, &bdst, src);
@@ -254,7 +254,7 @@ static int flag_set(const m_option_t *opt, void *dst, struct mpv_node *src)
 }
 
 static int flag_get(const m_option_t *opt, void *ta_parent,
-                    struct mpv_node *dst, void *src)
+                    struct domi_vid_node *dst, void *src)
 {
     return bool_get(opt, ta_parent, dst, &(bool){VAL(src)});
 }
@@ -423,9 +423,9 @@ static void multiply_int(const m_option_t *opt, void *val, double f)
     *(int *)val = MPCLAMP(tmp, INT_MIN, INT_MAX);
 }
 
-static int int64_set(const m_option_t *opt, void *dst, struct mpv_node *src)
+static int int64_set(const m_option_t *opt, void *dst, struct domi_vid_node *src)
 {
-    if (src->format != MPV_FORMAT_INT64)
+    if (src->format != domi_vid_FORMAT_INT64)
         return M_OPT_UNKNOWN;
     int64_t val = src->u.int64;
     if (val < OPT_INT_MIN(opt, int64_t, INT64_MIN))
@@ -436,7 +436,7 @@ static int int64_set(const m_option_t *opt, void *dst, struct mpv_node *src)
     return 1;
 }
 
-static int int_set(const m_option_t *opt, void *dst, struct mpv_node *src)
+static int int_set(const m_option_t *opt, void *dst, struct domi_vid_node *src)
 {
     int64_t val;
     int r = int64_set(opt, &val, src);
@@ -449,17 +449,17 @@ static int int_set(const m_option_t *opt, void *dst, struct mpv_node *src)
 }
 
 static int int64_get(const m_option_t *opt, void *ta_parent,
-                     struct mpv_node *dst, void *src)
+                     struct domi_vid_node *dst, void *src)
 {
-    dst->format = MPV_FORMAT_INT64;
+    dst->format = domi_vid_FORMAT_INT64;
     dst->u.int64 = *(int64_t *)src;
     return 1;
 }
 
 static int int_get(const m_option_t *opt, void *ta_parent,
-                   struct mpv_node *dst, void *src)
+                   struct domi_vid_node *dst, void *src)
 {
-    dst->format = MPV_FORMAT_INT64;
+    dst->format = domi_vid_FORMAT_INT64;
     dst->u.int64 = *(int *)src;
     return 1;
 }
@@ -737,16 +737,16 @@ static void add_choice(const m_option_t *opt, void *val, double add, bool wrap)
     *(int *)val = best;
 }
 
-static int choice_set(const m_option_t *opt, void *dst, struct mpv_node *src)
+static int choice_set(const m_option_t *opt, void *dst, struct domi_vid_node *src)
 {
     char buf[80];
     char *src_str = NULL;
-    if (src->format == MPV_FORMAT_INT64) {
+    if (src->format == domi_vid_FORMAT_INT64) {
         snprintf(buf, sizeof(buf), "%" PRId64, src->u.int64);
         src_str = buf;
-    } else if (src->format == MPV_FORMAT_STRING) {
+    } else if (src->format == domi_vid_FORMAT_STRING) {
         src_str = src->u.string;
-    } else if (src->format == MPV_FORMAT_FLAG) {
+    } else if (src->format == domi_vid_FORMAT_FLAG) {
         src_str = src->u.flag ? "yes" : "no";
     }
     if (!src_str)
@@ -778,7 +778,7 @@ static const struct m_opt_choice_alternatives *get_choice(const m_option_t *opt,
 }
 
 static int choice_get(const m_option_t *opt, void *ta_parent,
-                      struct mpv_node *dst, void *src)
+                      struct domi_vid_node *dst, void *src)
 {
     int ival = 0;
     const struct m_opt_choice_alternatives *alt = get_choice(opt, src, &ival);
@@ -797,14 +797,14 @@ static int choice_get(const m_option_t *opt, void *ta_parent,
             b = 0;
         }
         if (b >= 0) {
-            dst->format = MPV_FORMAT_FLAG;
+            dst->format = domi_vid_FORMAT_FLAG;
             dst->u.flag = b;
         } else {
-            dst->format = MPV_FORMAT_STRING;
+            dst->format = domi_vid_FORMAT_STRING;
             dst->u.string = talloc_strdup(ta_parent, alt->name);
         }
     } else {
-        dst->format = MPV_FORMAT_INT64;
+        dst->format = domi_vid_FORMAT_INT64;
         dst->u.int64 = ival;
     }
     return 1;
@@ -891,14 +891,14 @@ static int parse_flags(struct mp_log *log, const struct m_option *opt,
     return 1;
 }
 
-static int flags_set(const m_option_t *opt, void *dst, struct mpv_node *src)
+static int flags_set(const m_option_t *opt, void *dst, struct domi_vid_node *src)
 {
     int value = 0;
-    if (src->format != MPV_FORMAT_NODE_ARRAY)
+    if (src->format != domi_vid_FORMAT_NODE_ARRAY)
         return M_OPT_UNKNOWN;
-    struct mpv_node_list *srclist = src->u.list;
+    struct domi_vid_node_list *srclist = src->u.list;
     for (int n = 0; n < srclist->num; n++) {
-        if (srclist->values[n].format != MPV_FORMAT_STRING)
+        if (srclist->values[n].format != domi_vid_FORMAT_STRING)
             return M_OPT_INVALID;
         if (apply_flag(opt, &value, bstr0(srclist->values[n].u.string)) < 0)
             return M_OPT_INVALID;
@@ -908,20 +908,20 @@ static int flags_set(const m_option_t *opt, void *dst, struct mpv_node *src)
 }
 
 static int flags_get(const m_option_t *opt, void *ta_parent,
-                     struct mpv_node *dst, void *src)
+                     struct domi_vid_node *dst, void *src)
 {
     int value = *(int *)src;
 
-    dst->format = MPV_FORMAT_NODE_ARRAY;
-    dst->u.list = talloc_zero(ta_parent, struct mpv_node_list);
-    struct mpv_node_list *list = dst->u.list;
+    dst->format = domi_vid_FORMAT_NODE_ARRAY;
+    dst->u.list = talloc_zero(ta_parent, struct domi_vid_node_list);
+    struct domi_vid_node_list *list = dst->u.list;
     while (1) {
         const char *flag = find_next_flag(opt, &value);
         if (!flag)
             break;
 
-        struct mpv_node node;
-        node.format = MPV_FORMAT_STRING;
+        struct domi_vid_node node;
+        node.format = domi_vid_FORMAT_STRING;
         node.u.string = (char *)flag;
         MP_TARRAY_APPEND(list, list->values, list->num, node);
     }
@@ -1065,13 +1065,13 @@ static void multiply_double(const m_option_t *opt, void *val, double f)
     clamp_double(opt, &VAL(val));
 }
 
-static int double_set(const m_option_t *opt, void *dst, struct mpv_node *src)
+static int double_set(const m_option_t *opt, void *dst, struct domi_vid_node *src)
 {
     double val;
-    if (src->format == MPV_FORMAT_INT64) {
+    if (src->format == domi_vid_FORMAT_INT64) {
         // Can't always be represented exactly, but don't care.
         val = src->u.int64;
-    } else if (src->format == MPV_FORMAT_DOUBLE) {
+    } else if (src->format == domi_vid_FORMAT_DOUBLE) {
         val = src->u.double_;
     } else {
         return M_OPT_UNKNOWN;
@@ -1083,14 +1083,14 @@ static int double_set(const m_option_t *opt, void *dst, struct mpv_node *src)
 }
 
 static int double_get(const m_option_t *opt, void *ta_parent,
-                      struct mpv_node *dst, void *src)
+                      struct domi_vid_node *dst, void *src)
 {
     double f = VAL(src);
     if (isnan(f) && (opt->flags & M_OPT_DEFAULT_NAN)) {
-        dst->format = MPV_FORMAT_STRING;
+        dst->format = domi_vid_FORMAT_STRING;
         dst->u.string = talloc_strdup(ta_parent, "default");
     } else {
-        dst->format = MPV_FORMAT_DOUBLE;
+        dst->format = domi_vid_FORMAT_DOUBLE;
         dst->u.double_ = f;
     }
     return 1;
@@ -1205,7 +1205,7 @@ static void multiply_float(const m_option_t *opt, void *val, double f)
     VAL(val) = tmp;
 }
 
-static int float_set(const m_option_t *opt, void *dst, struct mpv_node *src)
+static int float_set(const m_option_t *opt, void *dst, struct domi_vid_node *src)
 {
     double tmp;
     int r = double_set(opt, &tmp, src);
@@ -1217,7 +1217,7 @@ static int float_set(const m_option_t *opt, void *dst, struct mpv_node *src)
 }
 
 static int float_get(const m_option_t *opt, void *ta_parent,
-                     struct mpv_node *dst, void *src)
+                     struct domi_vid_node *dst, void *src)
 {
     double tmp = VAL(src);
     return double_get(opt, ta_parent, dst, &tmp);
@@ -1271,9 +1271,9 @@ static void copy_str(const m_option_t *opt, void *dst, const void *src)
         talloc_replace(NULL, VAL(dst), VAL(src));
 }
 
-static int str_set(const m_option_t *opt, void *dst, struct mpv_node *src)
+static int str_set(const m_option_t *opt, void *dst, struct domi_vid_node *src)
 {
-    if (src->format != MPV_FORMAT_STRING)
+    if (src->format != domi_vid_FORMAT_STRING)
         return M_OPT_UNKNOWN;
     char *s = src->u.string;
     int r = s ? 0 : M_OPT_INVALID;
@@ -1283,9 +1283,9 @@ static int str_set(const m_option_t *opt, void *dst, struct mpv_node *src)
 }
 
 static int str_get(const m_option_t *opt, void *ta_parent,
-                   struct mpv_node *dst, void *src)
+                   struct domi_vid_node *dst, void *src)
 {
-    dst->format = MPV_FORMAT_STRING;
+    dst->format = domi_vid_FORMAT_STRING;
     dst->u.string = talloc_strdup(ta_parent, VAL(src) ? VAL(src) : "");
     return 1;
 }
@@ -1583,13 +1583,13 @@ static char *print_str_list(const m_option_t *opt, const void *src)
     return ret;
 }
 
-static int str_list_set(const m_option_t *opt, void *dst, struct mpv_node *src)
+static int str_list_set(const m_option_t *opt, void *dst, struct domi_vid_node *src)
 {
-    if (src->format != MPV_FORMAT_NODE_ARRAY)
+    if (src->format != domi_vid_FORMAT_NODE_ARRAY)
         return M_OPT_UNKNOWN;
-    struct mpv_node_list *srclist = src->u.list;
+    struct domi_vid_node_list *srclist = src->u.list;
     for (int n = 0; n < srclist->num; n++) {
-        if (srclist->values[n].format != MPV_FORMAT_STRING)
+        if (srclist->values[n].format != domi_vid_FORMAT_STRING)
             return M_OPT_INVALID;
     }
     free_str_list(dst);
@@ -1603,14 +1603,14 @@ static int str_list_set(const m_option_t *opt, void *dst, struct mpv_node *src)
 }
 
 static int str_list_get(const m_option_t *opt, void *ta_parent,
-                        struct mpv_node *dst, void *src)
+                        struct domi_vid_node *dst, void *src)
 {
-    dst->format = MPV_FORMAT_NODE_ARRAY;
-    dst->u.list = talloc_zero(ta_parent, struct mpv_node_list);
-    struct mpv_node_list *list = dst->u.list;
+    dst->format = domi_vid_FORMAT_NODE_ARRAY;
+    dst->u.list = talloc_zero(ta_parent, struct domi_vid_node_list);
+    struct domi_vid_node_list *list = dst->u.list;
     for (int n = 0; VAL(src) && VAL(src)[n]; n++) {
-        struct mpv_node node;
-        node.format = MPV_FORMAT_STRING;
+        struct domi_vid_node node;
+        node.format = domi_vid_FORMAT_STRING;
         node.u.string = talloc_strdup(list, VAL(src)[n]);
         MP_TARRAY_APPEND(list, list->values, list->num, node);
     }
@@ -1667,21 +1667,21 @@ const m_option_type_t m_option_type_string_list = {
 };
 
 //////////// Property array
-// Adaptor that converts a typed C array into a MPV_FORMAT_NODE_ARRAY
+// Adaptor that converts a typed C array into a domi_vid_FORMAT_NODE_ARRAY
 // sub-property. This is for read-only access, parse/set are not intentionally
 // omitted.
 
 static int prop_array_get(const m_option_t *opt, void *ta_parent,
-                          struct mpv_node *dst, void *src)
+                          struct domi_vid_node *dst, void *src)
 {
     struct m_prop_arr *arr = src;
     mp_assert(arr->elem_type);
     mp_assert(arr->elem_type->size > 0);
     size_t elem_size = arr->elem_type->size;
     const char *base = arr->data;
-    dst->format = MPV_FORMAT_NODE_ARRAY;
-    dst->u.list = talloc_zero(ta_parent, mpv_node_list);
-    struct mpv_node_list *list = dst->u.list;
+    dst->format = domi_vid_FORMAT_NODE_ARRAY;
+    dst->u.list = talloc_zero(ta_parent, domi_vid_node_list);
+    struct domi_vid_node_list *list = dst->u.list;
     struct m_option elem_opt = {.type = arr->elem_type};
     for (int i = 0; i < arr->count; i++) {
         MP_TARRAY_GROW(list, list->values, list->num);
@@ -1910,13 +1910,13 @@ static char *print_keyvalue_list(const m_option_t *opt, const void *src)
 }
 
 static int keyvalue_list_set(const m_option_t *opt, void *dst,
-                             struct mpv_node *src)
+                             struct domi_vid_node *src)
 {
-    if (src->format != MPV_FORMAT_NODE_MAP)
+    if (src->format != domi_vid_FORMAT_NODE_MAP)
         return M_OPT_UNKNOWN;
-    struct mpv_node_list *srclist = src->u.list;
+    struct domi_vid_node_list *srclist = src->u.list;
     for (int n = 0; n < srclist->num; n++) {
-        if (srclist->values[n].format != MPV_FORMAT_STRING)
+        if (srclist->values[n].format != domi_vid_FORMAT_STRING)
             return M_OPT_INVALID;
     }
     free_str_list(dst);
@@ -1933,17 +1933,17 @@ static int keyvalue_list_set(const m_option_t *opt, void *dst,
 }
 
 static int keyvalue_list_get(const m_option_t *opt, void *ta_parent,
-                             struct mpv_node *dst, void *src)
+                             struct domi_vid_node *dst, void *src)
 {
-    dst->format = MPV_FORMAT_NODE_MAP;
-    dst->u.list = talloc_zero(ta_parent, struct mpv_node_list);
-    struct mpv_node_list *list = dst->u.list;
+    dst->format = domi_vid_FORMAT_NODE_MAP;
+    dst->u.list = talloc_zero(ta_parent, struct domi_vid_node_list);
+    struct domi_vid_node_list *list = dst->u.list;
     for (int n = 0; VAL(src) && VAL(src)[n * 2 + 0]; n++) {
         MP_TARRAY_GROW(list, list->values, list->num);
         MP_TARRAY_GROW(list, list->keys, list->num);
         list->keys[list->num] = talloc_strdup(list, VAL(src)[n * 2 + 0]);
-        list->values[list->num] = (struct mpv_node){
-            .format = MPV_FORMAT_STRING,
+        list->values[list->num] = (struct domi_vid_node){
+            .format = domi_vid_FORMAT_STRING,
             .u.string = talloc_strdup(list, VAL(src)[n * 2 + 1]),
         };
         list->num++;
@@ -2014,7 +2014,7 @@ static int parse_msglevels(struct mp_log *log, const m_option_t *opt,
 }
 
 static int set_msglevels(const m_option_t *opt, void *dst,
-                             struct mpv_node *src)
+                             struct domi_vid_node *src)
 {
     char **dst_copy = NULL;
     int r = m_option_type_keyvalue_list.set(opt, &dst_copy, src);
@@ -2910,9 +2910,9 @@ static char *pretty_print_time(const m_option_t *opt, const void *val)
     return mp_format_time(pts, false);
 }
 
-static int time_set(const m_option_t *opt, void *dst, struct mpv_node *src)
+static int time_set(const m_option_t *opt, void *dst, struct domi_vid_node *src)
 {
-    if (HAS_NOPTS(opt) && src->format == MPV_FORMAT_STRING) {
+    if (HAS_NOPTS(opt) && src->format == domi_vid_FORMAT_STRING) {
         if (strcmp(src->u.string, "no") == 0) {
             *(double *)dst = MP_NOPTS_VALUE;
             return 1;
@@ -2922,10 +2922,10 @@ static int time_set(const m_option_t *opt, void *dst, struct mpv_node *src)
 }
 
 static int time_get(const m_option_t *opt, void *ta_parent,
-                      struct mpv_node *dst, void *src)
+                      struct domi_vid_node *dst, void *src)
 {
     if (HAS_NOPTS(opt) && *(double *)src == MP_NOPTS_VALUE) {
-        dst->format = MPV_FORMAT_STRING;
+        dst->format = domi_vid_FORMAT_STRING;
         dst->u.string = talloc_strdup(ta_parent, "no");
         return 1;
     }
@@ -3756,41 +3756,41 @@ static char *print_obj_settings_list(const m_option_t *opt, const void *val)
 }
 
 static int set_obj_settings_list(const m_option_t *opt, void *dst,
-                                 struct mpv_node *src)
+                                 struct domi_vid_node *src)
 {
-    if (src->format != MPV_FORMAT_NODE_ARRAY)
+    if (src->format != domi_vid_FORMAT_NODE_ARRAY)
         return M_OPT_INVALID;
     m_obj_settings_t *entries =
         talloc_zero_array(NULL, m_obj_settings_t, src->u.list->num + 1);
     for (int n = 0; n < src->u.list->num; n++) {
         m_obj_settings_t *entry = &entries[n];
         entry->enabled = true;
-        if (src->u.list->values[n].format != MPV_FORMAT_NODE_MAP)
+        if (src->u.list->values[n].format != domi_vid_FORMAT_NODE_MAP)
             goto error;
-        struct mpv_node_list *src_entry = src->u.list->values[n].u.list;
+        struct domi_vid_node_list *src_entry = src->u.list->values[n].u.list;
         for (int i = 0; i < src_entry->num; i++) {
             const char *key = src_entry->keys[i];
-            struct mpv_node *val = &src_entry->values[i];
+            struct domi_vid_node *val = &src_entry->values[i];
             if (strcmp(key, "name") == 0) {
-                if (val->format != MPV_FORMAT_STRING)
+                if (val->format != domi_vid_FORMAT_STRING)
                     goto error;
                 entry->name = talloc_strdup(NULL, val->u.string);
             } else if (strcmp(key, "label") == 0) {
-                if (val->format != MPV_FORMAT_STRING)
+                if (val->format != domi_vid_FORMAT_STRING)
                     goto error;
                 entry->label = talloc_strdup(NULL, val->u.string);
             } else if (strcmp(key, "enabled") == 0) {
-                if (val->format != MPV_FORMAT_FLAG)
+                if (val->format != domi_vid_FORMAT_FLAG)
                     goto error;
                 entry->enabled = val->u.flag;
             } else if (strcmp(key, "params") == 0) {
-                if (val->format != MPV_FORMAT_NODE_MAP)
+                if (val->format != domi_vid_FORMAT_NODE_MAP)
                     goto error;
-                struct mpv_node_list *src_params = val->u.list;
+                struct domi_vid_node_list *src_params = val->u.list;
                 entry->attribs =
                     talloc_zero_array(NULL, char*, (src_params->num + 1) * 2);
                 for (int x = 0; x < src_params->num; x++) {
-                    if (src_params->values[x].format != MPV_FORMAT_STRING)
+                    if (src_params->values[x].format != domi_vid_FORMAT_STRING)
                         goto error;
                     entry->attribs[x * 2 + 0] =
                         talloc_strdup(NULL, src_params->keys[x]);
@@ -3808,52 +3808,52 @@ error:
     return M_OPT_INVALID;
 }
 
-static struct mpv_node *add_array_entry(struct mpv_node *dst)
+static struct domi_vid_node *add_array_entry(struct domi_vid_node *dst)
 {
-    struct mpv_node_list *list = dst->u.list;
-    mp_assert(dst->format == MPV_FORMAT_NODE_ARRAY&& dst->u.list);
+    struct domi_vid_node_list *list = dst->u.list;
+    mp_assert(dst->format == domi_vid_FORMAT_NODE_ARRAY&& dst->u.list);
     MP_TARRAY_GROW(list, list->values, list->num);
     return &list->values[list->num++];
 }
 
-static struct mpv_node *add_map_entry(struct mpv_node *dst, const char *key)
+static struct domi_vid_node *add_map_entry(struct domi_vid_node *dst, const char *key)
 {
-    struct mpv_node_list *list = dst->u.list;
-    mp_assert(dst->format == MPV_FORMAT_NODE_MAP && dst->u.list);
+    struct domi_vid_node_list *list = dst->u.list;
+    mp_assert(dst->format == domi_vid_FORMAT_NODE_MAP && dst->u.list);
     MP_TARRAY_GROW(list, list->values, list->num);
     MP_TARRAY_GROW(list, list->keys, list->num);
     list->keys[list->num] = talloc_strdup(list, key);
     return &list->values[list->num++];
 }
 
-static void add_map_string(struct mpv_node *dst, const char *key, const char *val)
+static void add_map_string(struct domi_vid_node *dst, const char *key, const char *val)
 {
-    struct mpv_node *entry = add_map_entry(dst, key);
-    entry->format = MPV_FORMAT_STRING;
+    struct domi_vid_node *entry = add_map_entry(dst, key);
+    entry->format = domi_vid_FORMAT_STRING;
     entry->u.string = talloc_strdup(dst->u.list, val);
 }
 
 static int get_obj_settings_list(const m_option_t *opt, void *ta_parent,
-                                 struct mpv_node *dst, void *val)
+                                 struct domi_vid_node *dst, void *val)
 {
     m_obj_settings_t *list = VAL(val);
-    dst->format = MPV_FORMAT_NODE_ARRAY;
-    dst->u.list = talloc_zero(ta_parent, struct mpv_node_list);
+    dst->format = domi_vid_FORMAT_NODE_ARRAY;
+    dst->u.list = talloc_zero(ta_parent, struct domi_vid_node_list);
     ta_parent = dst->u.list;
     for (int n = 0; list && list[n].name; n++) {
         m_obj_settings_t *entry = &list[n];
-        struct mpv_node *nentry = add_array_entry(dst);
-        nentry->format = MPV_FORMAT_NODE_MAP;
-        nentry->u.list = talloc_zero(ta_parent, struct mpv_node_list);
+        struct domi_vid_node *nentry = add_array_entry(dst);
+        nentry->format = domi_vid_FORMAT_NODE_MAP;
+        nentry->u.list = talloc_zero(ta_parent, struct domi_vid_node_list);
         add_map_string(nentry, "name", entry->name);
         if (entry->label && entry->label[0])
             add_map_string(nentry, "label", entry->label);
-        struct mpv_node *enabled = add_map_entry(nentry, "enabled");
-        enabled->format = MPV_FORMAT_FLAG;
+        struct domi_vid_node *enabled = add_map_entry(nentry, "enabled");
+        enabled->format = domi_vid_FORMAT_FLAG;
         enabled->u.flag = entry->enabled;
-        struct mpv_node *params = add_map_entry(nentry, "params");
-        params->format = MPV_FORMAT_NODE_MAP;
-        params->u.list = talloc_zero(ta_parent, struct mpv_node_list);
+        struct domi_vid_node *params = add_map_entry(nentry, "params");
+        params->format = domi_vid_FORMAT_NODE_MAP;
+        params->u.list = talloc_zero(ta_parent, struct domi_vid_node_list);
         for (int i = 0; entry->attribs && entry->attribs[i * 2 + 0]; i++) {
             add_map_string(params, entry->attribs[i * 2 + 0],
                                    entry->attribs[i * 2 + 1]);
@@ -3918,7 +3918,7 @@ const m_option_type_t m_option_type_obj_settings_list = {
 };
 
 #undef VAL
-#define VAL(x) (*(struct mpv_node *)(x))
+#define VAL(x) (*(struct domi_vid_node *)(x))
 
 static int parse_node(struct mp_log *log, const m_option_t *opt,
                       struct bstr name, struct bstr param, void *dst)
@@ -3948,25 +3948,25 @@ static char *pretty_print_node(const m_option_t *opt, const void *val)
     return t;
 }
 
-static void dup_node(void *ta_parent, struct mpv_node *node)
+static void dup_node(void *ta_parent, struct domi_vid_node *node)
 {
     switch (node->format) {
-    case MPV_FORMAT_STRING:
+    case domi_vid_FORMAT_STRING:
         node->u.string = talloc_strdup(ta_parent, node->u.string);
         break;
-    case MPV_FORMAT_NODE_ARRAY:
-    case MPV_FORMAT_NODE_MAP: {
-        struct mpv_node_list *oldlist = node->u.list;
-        struct mpv_node_list *new = talloc_zero(ta_parent, struct mpv_node_list);
+    case domi_vid_FORMAT_NODE_ARRAY:
+    case domi_vid_FORMAT_NODE_MAP: {
+        struct domi_vid_node_list *oldlist = node->u.list;
+        struct domi_vid_node_list *new = talloc_zero(ta_parent, struct domi_vid_node_list);
         node->u.list = new;
         if (oldlist->num > 0) {
             *new = *oldlist;
-            new->values = talloc_array(new, struct mpv_node, new->num);
+            new->values = talloc_array(new, struct domi_vid_node, new->num);
             for (int n = 0; n < new->num; n++) {
                 new->values[n] = oldlist->values[n];
                 dup_node(new, &new->values[n]);
             }
-            if (node->format == MPV_FORMAT_NODE_MAP) {
+            if (node->format == domi_vid_FORMAT_NODE_MAP) {
                 new->keys = talloc_array(new, char*, new->num);
                 for (int n = 0; n < new->num; n++)
                     new->keys[n] = talloc_strdup(new, oldlist->keys[n]);
@@ -3974,9 +3974,9 @@ static void dup_node(void *ta_parent, struct mpv_node *node)
         }
         break;
     }
-    case MPV_FORMAT_BYTE_ARRAY: {
-        struct mpv_byte_array *old = node->u.ba;
-        struct mpv_byte_array *new = talloc_zero(ta_parent, struct mpv_byte_array);
+    case domi_vid_FORMAT_BYTE_ARRAY: {
+        struct domi_vid_byte_array *old = node->u.ba;
+        struct domi_vid_byte_array *new = talloc_zero(ta_parent, struct domi_vid_byte_array);
         node->u.ba = new;
         if (old->size > 0) {
             *new = *old;
@@ -3984,20 +3984,20 @@ static void dup_node(void *ta_parent, struct mpv_node *node)
         }
         break;
     }
-    case MPV_FORMAT_NONE:
-    case MPV_FORMAT_FLAG:
-    case MPV_FORMAT_INT64:
-    case MPV_FORMAT_DOUBLE:
+    case domi_vid_FORMAT_NONE:
+    case domi_vid_FORMAT_FLAG:
+    case domi_vid_FORMAT_INT64:
+    case domi_vid_FORMAT_DOUBLE:
         break;
     default:
         // unknown entry - mark as invalid
-        node->format = (mpv_format)-1;
+        node->format = (domi_vid_format)-1;
     }
 }
 
 static void copy_node(const m_option_t *opt, void *dst, const void *src)
 {
-    static_assert(sizeof(struct mpv_node) <= sizeof(union m_option_value), "");
+    static_assert(sizeof(struct domi_vid_node) <= sizeof(union m_option_value), "");
 
     if (!(dst && src))
         return;
@@ -4007,15 +4007,15 @@ static void copy_node(const m_option_t *opt, void *dst, const void *src)
     dup_node(NULL, &VAL(dst));
 }
 
-void *node_get_alloc(struct mpv_node *node)
+void *node_get_alloc(struct domi_vid_node *node)
 {
     // Assume it was allocated with copy_node(), which allocates all
     // sub-nodes with the parent node as talloc parent.
     switch (node->format) {
-    case MPV_FORMAT_STRING:
+    case domi_vid_FORMAT_STRING:
         return node->u.string;
-    case MPV_FORMAT_NODE_ARRAY:
-    case MPV_FORMAT_NODE_MAP:
+    case domi_vid_FORMAT_NODE_ARRAY:
+    case domi_vid_FORMAT_NODE_MAP:
         return node->u.list;
     default:
         return NULL;
@@ -4025,21 +4025,21 @@ void *node_get_alloc(struct mpv_node *node)
 static void free_node(void *src)
 {
     if (src) {
-        struct mpv_node *node = &VAL(src);
+        struct domi_vid_node *node = &VAL(src);
         talloc_free(node_get_alloc(node));
-        *node = (struct mpv_node){{0}};
+        *node = (struct domi_vid_node){{0}};
     }
 }
 
 // idempotent functions for convenience
-static int node_set(const m_option_t *opt, void *dst, struct mpv_node *src)
+static int node_set(const m_option_t *opt, void *dst, struct domi_vid_node *src)
 {
     copy_node(opt, dst, src);
     return 1;
 }
 
 static int node_get(const m_option_t *opt, void *ta_parent,
-                    struct mpv_node *dst, void *src)
+                    struct domi_vid_node *dst, void *src)
 {
     *dst = VAL(src);
     dup_node(ta_parent, dst);
@@ -4048,12 +4048,12 @@ static int node_get(const m_option_t *opt, void *ta_parent,
 
 static bool node_equal(const m_option_t *opt, void *a, void *b)
 {
-    return equal_mpv_node(&VAL(a), &VAL(b));
+    return equal_domi_vid_node(&VAL(a), &VAL(b));
 }
 
 const m_option_type_t m_option_type_node = {
     .name  = "Complex",
-    .size  = sizeof(struct mpv_node),
+    .size  = sizeof(struct domi_vid_node),
     .parse = parse_node,
     .print = print_node,
     .pretty_print = pretty_print_node,

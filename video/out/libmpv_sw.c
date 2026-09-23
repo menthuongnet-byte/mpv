@@ -4,7 +4,7 @@
 #include "video/sws_utils.h"
 
 struct priv {
-    struct libmpv_gpu_context *context;
+    struct libdomi_vid_gpu_context *context;
 
     struct mp_sws_context *sws;
     struct osd_state *osd;
@@ -15,17 +15,17 @@ struct priv {
     bool anything_changed;
 };
 
-static int init(struct render_backend *ctx, mpv_render_param *params)
+static int init(struct render_backend *ctx, domi_vid_render_param *params)
 {
     ctx->priv = talloc_zero(NULL, struct priv);
     struct priv *p = ctx->priv;
 
-    char *api = get_mpv_render_param(params, MPV_RENDER_PARAM_API_TYPE, NULL);
+    char *api = get_domi_vid_render_param(params, domi_vid_RENDER_PARAM_API_TYPE, NULL);
     if (!api)
-        return MPV_ERROR_INVALID_PARAMETER;
+        return domi_vid_ERROR_INVALID_PARAMETER;
 
-    if (strcmp(api, MPV_RENDER_API_TYPE_SW) != 0)
-        return MPV_ERROR_NOT_IMPLEMENTED;
+    if (strcmp(api, domi_vid_RENDER_API_TYPE_SW) != 0)
+        return domi_vid_ERROR_NOT_IMPLEMENTED;
 
     p->sws = mp_sws_alloc(p);
     mp_sws_enable_cmdline_opts(p->sws, ctx->global);
@@ -45,9 +45,9 @@ static bool check_format(struct render_backend *ctx, int imgfmt)
     return mp_sws_supports_formats(p->sws, IMGFMT_RGB0, imgfmt);
 }
 
-static int set_parameter(struct render_backend *ctx, mpv_render_param param)
+static int set_parameter(struct render_backend *ctx, domi_vid_render_param param)
 {
-    return MPV_ERROR_NOT_IMPLEMENTED;
+    return domi_vid_ERROR_NOT_IMPLEMENTED;
 }
 
 static void reconfig(struct render_backend *ctx, struct mp_image_params *params)
@@ -81,30 +81,30 @@ static void resize(struct render_backend *ctx, struct mp_rect *src,
     p->anything_changed = true;
 }
 
-static int get_target_size(struct render_backend *ctx, mpv_render_param *params,
+static int get_target_size(struct render_backend *ctx, domi_vid_render_param *params,
                            int *out_w, int *out_h)
 {
-    int *sz = get_mpv_render_param(params, MPV_RENDER_PARAM_SW_SIZE, NULL);
+    int *sz = get_domi_vid_render_param(params, domi_vid_RENDER_PARAM_SW_SIZE, NULL);
     if (!sz)
-        return MPV_ERROR_INVALID_PARAMETER;
+        return domi_vid_ERROR_INVALID_PARAMETER;
 
     *out_w = sz[0];
     *out_h = sz[1];
     return 0;
 }
 
-static int render(struct render_backend *ctx, mpv_render_param *params,
+static int render(struct render_backend *ctx, domi_vid_render_param *params,
                   struct vo_frame *frame)
 {
     struct priv *p = ctx->priv;
 
-    int *sz = get_mpv_render_param(params, MPV_RENDER_PARAM_SW_SIZE, NULL);
-    char *fmt = get_mpv_render_param(params, MPV_RENDER_PARAM_SW_FORMAT, NULL);
-    size_t *stride = get_mpv_render_param(params, MPV_RENDER_PARAM_SW_STRIDE, NULL);
-    void *ptr = get_mpv_render_param(params, MPV_RENDER_PARAM_SW_POINTER, NULL);
+    int *sz = get_domi_vid_render_param(params, domi_vid_RENDER_PARAM_SW_SIZE, NULL);
+    char *fmt = get_domi_vid_render_param(params, domi_vid_RENDER_PARAM_SW_FORMAT, NULL);
+    size_t *stride = get_domi_vid_render_param(params, domi_vid_RENDER_PARAM_SW_STRIDE, NULL);
+    void *ptr = get_domi_vid_render_param(params, domi_vid_RENDER_PARAM_SW_POINTER, NULL);
 
     if (!sz || !fmt || !stride || !ptr)
-        return MPV_ERROR_INVALID_PARAMETER;
+        return domi_vid_ERROR_INVALID_PARAMETER;
 
     char *prev_fmt = mp_imgfmt_to_name(p->dst_params.imgfmt);
     if (strcmp(prev_fmt, fmt) != 0)
@@ -129,7 +129,7 @@ static int render(struct render_backend *ctx, mpv_render_param *params,
             (desc.flags & MP_IMGFLAG_TYPE_PAL8) ||
             !(desc.flags & MP_IMGFLAG_BYTE_ALIGNED) ||
             desc.num_planes != 1)
-            return MPV_ERROR_UNSUPPORTED;
+            return domi_vid_ERROR_UNSUPPORTED;
 
         mp_image_params_guess_csp(&p->dst_params);
 
@@ -144,7 +144,7 @@ static int render(struct render_backend *ctx, mpv_render_param *params,
             p->sws->dst.h = mp_rect_h(p->dst_rc);
 
             if (mp_sws_reinit(p->sws) < 0)
-                return MPV_ERROR_UNSUPPORTED; // probably
+                return domi_vid_ERROR_UNSUPPORTED; // probably
         }
 
         p->anything_changed = false;
@@ -155,7 +155,7 @@ static int render(struct render_backend *ctx, mpv_render_param *params,
 
     size_t bpp = wrap_img.fmt.bpp[0] / 8;
     if (!bpp || bpp * wrap_img.w > *stride || *stride % bpp)
-        return MPV_ERROR_INVALID_PARAMETER;
+        return domi_vid_ERROR_INVALID_PARAMETER;
 
     wrap_img.planes[0] = ptr;
     wrap_img.stride[0] = *stride;
@@ -177,7 +177,7 @@ static int render(struct render_backend *ctx, mpv_render_param *params,
 
         if (mp_sws_scale(p->sws, &dst, &src) < 0) {
             mp_image_clear(&wrap_img, 0, 0, wrap_img.w, wrap_img.h);
-            return MPV_ERROR_GENERIC;
+            return domi_vid_ERROR_GENERIC;
         }
     } else {
         mp_image_clear(&wrap_img, 0, 0, wrap_img.w, wrap_img.h);

@@ -37,7 +37,7 @@
 
 struct encode_lavc_context {
     // --- Immutable after init
-    struct mpv_global *global;
+    struct domi_vid_global *global;
     struct encode_opts *options;
     struct mp_log *log;
     struct encode_priv *priv;
@@ -68,7 +68,7 @@ struct encoder_stream_info {
 // The encoder parts for each stream (no muxing parts included).
 // This is private to each stream.
 struct encoder_context {
-    struct mpv_global *global;
+    struct domi_vid_global *global;
     struct encode_opts *options;
     struct mp_log *log;
     const AVOutputFormat *oformat;
@@ -105,6 +105,6 @@ bool encoder_encode(struct encoder_context *p, AVFrame *frame);
 // Return muxer timebase (only available if p->mux_stream is initialized).
 AVRational encoder_get_mux_timebase_unlocked(struct encoder_context *p);
 
-void encoder_update_log(struct mpv_global *global);
+void encoder_update_log(struct domi_vid_global *global);
 
 #endif

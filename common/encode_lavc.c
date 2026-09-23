@@ -34,7 +34,7 @@
 #include "options/path.h"
 #include "osdep/timer.h"
 #include "video/out/vo.h"
-#include "mpv_talloc.h"
+#include "domi_vid_talloc.h"
 #include "stream/stream.h"
 
 struct encode_priv {
@@ -94,7 +94,7 @@ const struct m_sub_options encode_config = {
     },
 };
 
-struct encode_lavc_context *encode_lavc_init(struct mpv_global *global)
+struct encode_lavc_context *encode_lavc_init(struct domi_vid_global *global)
 {
     struct encode_lavc_context *ctx = talloc_ptrtype(NULL, ctx);
     *ctx = (struct encode_lavc_context){
@@ -929,7 +929,7 @@ fail:
     return false;
 }
 
-void encoder_update_log(struct mpv_global *global)
+void encoder_update_log(struct domi_vid_global *global)
 {
     struct encode_opts *options = mp_get_config_group(NULL, global, &encode_config);
     if (options->file && (!strcmp(options->file, "-") ||

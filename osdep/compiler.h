@@ -1,5 +1,5 @@
-#ifndef MPV_COMPILER_H
-#define MPV_COMPILER_H
+#ifndef domi_vid_COMPILER_H
+#define domi_vid_COMPILER_H
 
 #include <assert.h>
 #include <stdio.h>

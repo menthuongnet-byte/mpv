@@ -60,7 +60,7 @@ struct slice {
 
 struct mp_draw_sub_cache
 {
-    struct mpv_global *global;
+    struct domi_vid_global *global;
 
     // Possibly cached parts. Also implies what's in the video_overlay.
     struct part parts[MAX_OSD_PARTS];
@@ -841,7 +841,7 @@ char *mp_draw_sub_get_dbg_info(struct mp_draw_sub_cache *p)
         mp_imgfmt_to_name(p->calpha_tmp ? p->calpha_tmp->imgfmt : 0));
 }
 
-struct mp_draw_sub_cache *mp_draw_sub_alloc(void *ta_parent, struct mpv_global *g)
+struct mp_draw_sub_cache *mp_draw_sub_alloc(void *ta_parent, struct domi_vid_global *g)
 {
     struct mp_draw_sub_cache *c = talloc_zero(ta_parent, struct mp_draw_sub_cache);
     c->global = g;

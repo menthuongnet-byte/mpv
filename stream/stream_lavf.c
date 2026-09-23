@@ -32,7 +32,7 @@
 #include "cookies.h"
 
 #include "misc/bstr.h"
-#include "mpv_talloc.h"
+#include "domi_vid_talloc.h"
 
 #define OPT_BASE_STRUCT struct stream_lavf_opts
 
@@ -154,7 +154,7 @@ static int interrupt_cb(void *ctx)
 static const char * const prefix[] = { "lavf://", "ffmpeg://" };
 
 void mp_setup_av_network_options(AVDictionary **dict, const char *target_fmt,
-                                 struct mpv_global *global, struct mp_log *log)
+                                 struct domi_vid_global *global, struct mp_log *log)
 {
     void *temp = talloc_new(NULL);
     struct mp_network_opts *opts =

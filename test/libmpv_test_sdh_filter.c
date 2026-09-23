@@ -21,7 +21,7 @@
 #include <unistd.h>
 #endif
 
-#include "libmpv_common.h"
+#include "libdomi_vid_common.h"
 
 #ifndef F_OK
 #define F_OK 0
@@ -59,11 +59,11 @@ static void test_sdh_filter(char *file, char *path, char *harder)
     reload_file(path);
     bool sub_text = false;
     while (!sub_text) {
-        mpv_event *event = wrap_wait_event();
+        domi_vid_event *event = wrap_wait_event();
         switch (event->event_id) {
-        case MPV_EVENT_PROPERTY_CHANGE: {
-            mpv_event_property *prop = event->data;
-            if (prop->format == MPV_FORMAT_STRING && strcmp(prop->name, "sub-text") == 0) {
+        case domi_vid_EVENT_PROPERTY_CHANGE: {
+            domi_vid_event_property *prop = event->data;
+            if (prop->format == domi_vid_FORMAT_STRING && strcmp(prop->name, "sub-text") == 0) {
                 char *value = *(char **)(prop->data);
                 if (!value || strcmp(expect, value) != 0)
                     fail("String: expected '%s' but got '%s'!\n", expect, value);
@@ -80,7 +80,7 @@ int main(int argc, char *argv[])
     if (argc < 3)
         return 1;
 
-    ctx = mpv_create();
+    ctx = domi_vid_create();
     if (!ctx)
         return 1;
 
@@ -93,12 +93,12 @@ int main(int argc, char *argv[])
     // Set pause and start from 1 second to ensure the subtitle is loaded.
     set_property_string("pause", "yes");
     set_property_string("start", "1");
-    mpv_observe_property(ctx, 0, "sub-text", MPV_FORMAT_STRING);
+    domi_vid_observe_property(ctx, 0, "sub-text", domi_vid_FORMAT_STRING);
     test_sdh_filter(argv[1], argv[2], argv[3]);
     printf("================ SHUTDOWN ================\n");
 
     command_string("quit");
-    while (wrap_wait_event()->event_id != MPV_EVENT_SHUTDOWN) {}
+    while (wrap_wait_event()->event_id != domi_vid_EVENT_SHUTDOWN) {}
 
     return 0;
 }

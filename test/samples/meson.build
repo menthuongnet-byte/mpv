@@ -88,8 +88,8 @@ foreach name, cmd: samples
     )
     env = name.startswith('locale') ? 'LANG=C' : []
     testname = 'libmpv-test-' + name
-    exe = executable(testname, '../libmpv_test_track_selection.c',
-                     include_directories: incdir, dependencies: libmpv_dep)
+    exe = executable(testname, '../libdomi_vid_test_track_selection.c',
+                     include_directories: incdir, dependencies: libdomi_vid_dep)
     test(testname, exe, args: [name, target.full_path()],
          depends: target, env: env, suite: 'libmpv')
 endforeach
@@ -126,8 +126,8 @@ foreach name, cmd: sdh_samples
         command: cmd,
     )
     defaultname = 'libmpv-test-' + name
-    exe = executable(defaultname, '../libmpv_test_sdh_filter.c',
-                     include_directories: incdir, dependencies: libmpv_dep)
+    exe = executable(defaultname, '../libdomi_vid_test_sdh_filter.c',
+                     include_directories: incdir, dependencies: libdomi_vid_dep)
     hardername = 'libmpv-test-' + name + '_harder'
     test(defaultname, exe, args: [name, target.full_path()],
          depends: target, suite: 'libmpv')

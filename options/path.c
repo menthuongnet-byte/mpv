@@ -34,7 +34,7 @@
 #include "common/msg.h"
 #include "options/options.h"
 #include "options/path.h"
-#include "mpv_talloc.h"
+#include "domi_vid_talloc.h"
 #include "osdep/io.h"
 #include "osdep/path.h"
 #include "misc/ctype.h"
@@ -69,7 +69,7 @@ static const char *const config_dirs[] = {
 // Keep in mind that the only way to free the return value is freeing talloc_ctx
 // (or its children), as this function can return a statically allocated string.
 static const char *mp_get_platform_path(void *talloc_ctx,
-                                        struct mpv_global *global,
+                                        struct domi_vid_global *global,
                                         const char *type)
 {
     mp_assert(talloc_ctx);
@@ -105,11 +105,11 @@ static const char *mp_get_platform_path(void *talloc_ctx,
     return NULL;
 }
 
-void mp_init_paths(struct mpv_global *global, struct MPOpts *opts)
+void mp_init_paths(struct domi_vid_global *global, struct MPOpts *opts)
 {
     TA_FREEP(&global->configdir);
 
-    const char *force_configdir = getenv("MPV_HOME");
+    const char *force_configdir = getenv("domi_vid_HOME");
     if (opts->force_configdir && opts->force_configdir[0])
         force_configdir = opts->force_configdir;
     if (!opts->load_config)
@@ -118,7 +118,7 @@ void mp_init_paths(struct mpv_global *global, struct MPOpts *opts)
     global->configdir = mp_get_user_path(global, global, force_configdir);
 }
 
-char *mp_find_user_file(void *talloc_ctx, struct mpv_global *global,
+char *mp_find_user_file(void *talloc_ctx, struct domi_vid_global *global,
                         const char *type, const char *filename)
 {
     void *tmp = talloc_new(NULL);
@@ -131,7 +131,7 @@ char *mp_find_user_file(void *talloc_ctx, struct mpv_global *global,
 }
 
 static char **mp_find_all_config_files_limited(void *talloc_ctx,
-                                               struct mpv_global *global,
+                                               struct domi_vid_global *global,
                                                int max_files,
                                                const char *filename)
 {
@@ -165,13 +165,13 @@ static char **mp_find_all_config_files_limited(void *talloc_ctx,
     return ret;
 }
 
-char **mp_find_all_config_files(void *talloc_ctx, struct mpv_global *global,
+char **mp_find_all_config_files(void *talloc_ctx, struct domi_vid_global *global,
                                 const char *filename)
 {
     return mp_find_all_config_files_limited(talloc_ctx, global, 64, filename);
 }
 
-char *mp_find_config_file(void *talloc_ctx, struct mpv_global *global,
+char *mp_find_config_file(void *talloc_ctx, struct domi_vid_global *global,
                           const char *filename)
 {
     char **l = mp_find_all_config_files_limited(talloc_ctx, global, 1, filename);
@@ -180,7 +180,7 @@ char *mp_find_config_file(void *talloc_ctx, struct mpv_global *global,
     return r;
 }
 
-char *mp_get_user_path(void *talloc_ctx, struct mpv_global *global,
+char *mp_get_user_path(void *talloc_ctx, struct domi_vid_global *global,
                        const char *path)
 {
     if (!path)
@@ -223,7 +223,7 @@ char *mp_get_user_path(void *talloc_ctx, struct mpv_global *global,
     return res;
 }
 
-char *mp_normalize_user_path(void *talloc_ctx, struct mpv_global *global,
+char *mp_normalize_user_path(void *talloc_ctx, struct domi_vid_global *global,
                              const char *path)
 {
     char *expanded = mp_get_user_path(NULL, global, path);
@@ -232,7 +232,7 @@ char *mp_normalize_user_path(void *talloc_ctx, struct mpv_global *global,
     return normalized;
 }
 
-void mp_mk_user_dir(struct mpv_global *global, const char *type, char *subdir)
+void mp_mk_user_dir(struct domi_vid_global *global, const char *type, char *subdir)
 {
     char *dir = mp_find_user_file(NULL, global, type, subdir);
     if (dir)

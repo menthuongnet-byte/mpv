@@ -137,7 +137,7 @@ Terminal and log output
 -----------------------
 
 There are no compatibility guarantees for the terminal output, or the text
-logged via ``MPV_EVENT_LOG_MESSAGE`` and similar APIs. In particular, scripts
+logged via ``domi_vid_EVENT_LOG_MESSAGE`` and similar APIs. In particular, scripts
 invoking mpv CLI are extremely discouraged from trying to parse text output,
 and should use other mechanisms such as the JSON IPC.
 
@@ -163,17 +163,17 @@ API compatibility
 ^^^^^^^^^^^^^^^^^
 
 The API is *always* compatible. Incompatible changes are only allowed on major
-API version changes (see ``MPV_CLIENT_API_VERSION``). A major version change is
+API version changes (see ``domi_vid_CLIENT_API_VERSION``). A major version change is
 an extremely rare event, which means usually no API symbols are ever removed.
 
 Essentially removing API functions by making them always return an error, or
 making it do nothing is allowed in cases where it is unlikely to break most
 clients, but requires a deprecation period of 2 releases. (This has happened to
-``mpv_suspend()`` for example.)
+``domi_vid_suspend()`` for example.)
 
 API symbols can be deprecated. This should be clearly marked in the doxygen
 with ``@deprecated``, and if possible, the affected API symbols should not be
-visible if the API user defines ``MPV_ENABLE_DEPRECATED`` to 0.
+visible if the API user defines ``domi_vid_ENABLE_DEPRECATED`` to 0.
 
 ABI compatibility
 ^^^^^^^^^^^^^^^^^
@@ -181,11 +181,11 @@ ABI compatibility
 The ABI must never be broken, except on major API version changes. For example,
 constants don't change their values.
 
-Structs are tricky. If a struct can be allocated by a user (such as ``mpv_node``),
+Structs are tricky. If a struct can be allocated by a user (such as ``domi_vid_node``),
 no fields can be added. (Unless it's an union, and the addition does not change
 the offset or alignment of any of the fields or the struct itself. This has
-happened to ``mpv_node`` in the past.) If a struct is allocated by libmpv only,
-new fields can be appended to the end (for example ``mpv_event``).
+happened to ``domi_vid_node`` in the past.) If a struct is allocated by libmpv only,
+new fields can be appended to the end (for example ``domi_vid_event``).
 
 The ABI is only backward compatible. This means if a host application is linked
 to an older libmpv, and libmpv is updated to a newer version, it will still

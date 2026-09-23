@@ -143,7 +143,7 @@ break character (``\n``).
 
 If the first character (after skipping whitespace) is not ``{``, the command
 will be interpreted as non-JSON text command, as they are used in input.conf
-(or ``mpv_command_string()`` in the client API). Additionally, lines starting
+(or ``domi_vid_command_string()`` in the client API). Additionally, lines starting
 with ``#`` and empty lines are ignored.
 
 Currently, embedded 0 bytes terminate the current line, but you should not
@@ -208,8 +208,8 @@ Commands with named arguments
 -----------------------------
 
 If the ``command`` field is a JSON object, named arguments are expected. This
-is described in the C API ``mpv_command_node()`` documentation (the
-``MPV_FORMAT_NODE_MAP`` case). In some cases, this may make commands more
+is described in the C API ``domi_vid_command_node()`` documentation (the
+``domi_vid_FORMAT_NODE_MAP`` case). In some cases, this may make commands more
 readable, while some obscure commands basically require using named arguments.
 
 Currently, only "proper" commands (as listed by `List of Input Commands`_)
@@ -308,7 +308,7 @@ extra commands can also be used as part of the protocol:
 
 ``request_log_messages``
     Enable output of mpv log messages. They will be received as events. The
-    parameter to this command is the log-level (see ``mpv_request_log_messages``
+    parameter to this command is the log-level (see ``domi_vid_request_log_messages``
     C API function).
 
     Log message output is meant for humans only (mostly for debugging).
@@ -317,7 +317,7 @@ extra commands can also be used as part of the protocol:
     and ask for a proper event that returns the information you need.
 
 ``enable_event``, ``disable_event``
-    Enables or disables the named event. Mirrors the ``mpv_request_event`` C
+    Enables or disables the named event. Mirrors the ``domi_vid_request_event`` C
     API function. If the string ``all`` is used instead of an event name, all
     events are enabled or disabled.
 

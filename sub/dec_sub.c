@@ -53,7 +53,7 @@ struct dec_sub {
     mp_mutex lock;
 
     struct mp_log *log;
-    struct mpv_global *global;
+    struct domi_vid_global *global;
     struct demux_packet_pool *packet_pool;
     struct mp_subtitle_opts *opts;
     struct mp_subtitle_shared_opts *shared_opts;
@@ -192,7 +192,7 @@ static struct sd *init_decoder(struct dec_sub *sub)
 // do not need to acquire locks.
 // Ownership of attachments goes to the callee, and is released with
 // talloc_free() (even on failure).
-struct dec_sub *sub_create(struct mpv_global *global, struct track *track,
+struct dec_sub *sub_create(struct domi_vid_global *global, struct track *track,
                            struct attachment_list *attachments, int order)
 {
     mp_assert(track->stream && track->stream->type == STREAM_SUB);

@@ -86,7 +86,7 @@ static bool check_mimetype(struct stream *s, const char *const *list)
 }
 
 struct pl_parser {
-    struct mpv_global *global;
+    struct domi_vid_global *global;
     struct mp_log *log;
     struct stream *s;
     char buffer[2 * 1024 * 1024];

@@ -25,9 +25,9 @@
 
 static mp_once path_init_once = MP_STATIC_ONCE_INITIALIZER;
 
-static char mpv_home[512];
+static char domi_vid_home[512];
 static char old_home[512];
-static char mpv_cache[512];
+static char domi_vid_cache[512];
 static char old_cache[512];
 
 static void path_init(void)
@@ -36,9 +36,9 @@ static void path_init(void)
     char *xdg_config = getenv("XDG_CONFIG_HOME");
 
     if (xdg_config && xdg_config[0] == '/') {
-        snprintf(mpv_home, sizeof(mpv_home), "%s/mpv", xdg_config);
+        snprintf(domi_vid_home, sizeof(domi_vid_home), "%s/mpv", xdg_config);
     } else if (home && home[0]) {
-        snprintf(mpv_home, sizeof(mpv_home), "%s/.config/mpv", home);
+        snprintf(domi_vid_home, sizeof(domi_vid_home), "%s/.config/mpv", home);
     }
 
     // Maintain compatibility with old ~/.mpv
@@ -48,13 +48,13 @@ static void path_init(void)
     }
 
     if (home && home[0])
-        snprintf(mpv_cache, sizeof(mpv_cache), "%s/Library/Caches/io.mpv", home);
+        snprintf(domi_vid_cache, sizeof(domi_vid_cache), "%s/Library/Caches/io.mpv", home);
 
     // If the old ~/.mpv exists, and the XDG config dir doesn't, use the old
     // config dir only.
-    if (mp_path_exists(old_home) && !mp_path_exists(mpv_home)) {
-        snprintf(mpv_home, sizeof(mpv_home), "%s", old_home);
-        snprintf(mpv_cache, sizeof(mpv_cache), "%s", old_cache);
+    if (mp_path_exists(old_home) && !mp_path_exists(domi_vid_home)) {
+        snprintf(domi_vid_home, sizeof(domi_vid_home), "%s", old_home);
+        snprintf(domi_vid_cache, sizeof(domi_vid_cache), "%s", old_cache);
         old_home[0] = '\0';
         old_cache[0] = '\0';
     }
@@ -64,13 +64,13 @@ const char *mp_get_platform_path_darwin(void *talloc_ctx, const char *type)
 {
     mp_exec_once(&path_init_once, path_init);
     if (strcmp(type, "home") == 0)
-        return mpv_home;
+        return domi_vid_home;
     if (strcmp(type, "old_home") == 0)
         return old_home;
     if (strcmp(type, "cache") == 0)
-        return mpv_cache;
+        return domi_vid_cache;
     if (strcmp(type, "global") == 0)
-        return MPV_CONFDIR;
+        return domi_vid_CONFDIR;
     if (strcmp(type, "desktop") == 0)
         return getenv("HOME");
     return NULL;

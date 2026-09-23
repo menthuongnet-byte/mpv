@@ -21,7 +21,7 @@
 #include <stdbool.h>
 #include <stddef.h>
 
-#include "mpv_talloc.h"
+#include "domi_vid_talloc.h"
 
 #include "osdep/io.h"
 #include "osdep/timer.h"
@@ -270,7 +270,7 @@ void error_on_track(struct MPContext *mpctx, struct track *track)
         if (!mpctx->stop_play)
             mpctx->stop_play = PT_ERROR;
         if (mpctx->error_playing >= 0)
-            mpctx->error_playing = MPV_ERROR_NOTHING_TO_PLAY;
+            mpctx->error_playing = domi_vid_ERROR_NOTHING_TO_PLAY;
     }
     mp_wakeup_core(mpctx);
 }

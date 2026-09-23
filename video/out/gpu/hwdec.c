@@ -85,7 +85,7 @@ const struct ra_hwdec_driver *const ra_hwdec_drivers[] = {
 
 struct ra_hwdec *ra_hwdec_load_driver(struct ra_ctx *ra_ctx,
                                       struct mp_log *log,
-                                      struct mpv_global *global,
+                                      struct domi_vid_global *global,
                                       struct mp_hwdec_devices *devs,
                                       const struct ra_hwdec_driver *drv,
                                       bool is_auto)

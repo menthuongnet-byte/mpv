@@ -23,11 +23,11 @@
 #include "osdep/threads.h"
 #include "player/client.h"
 
-static bool might_be_subtitle_file(mpv_node *sub_exts, char *file)
+static bool might_be_subtitle_file(domi_vid_node *sub_exts, char *file)
 {
     for (int i = 0; i < sub_exts->u.list->num; i++) {
-         mpv_node sub_ext = sub_exts->u.list->values[i];
-         if (sub_ext.format != MPV_FORMAT_STRING)
+         domi_vid_node sub_ext = sub_exts->u.list->values[i];
+         if (sub_ext.format != domi_vid_FORMAT_STRING)
              continue;
          if (!bstrcasecmp0(mp_get_ext(bstr0(file)), sub_ext.u.string))
              return true;
@@ -35,25 +35,25 @@ static bool might_be_subtitle_file(mpv_node *sub_exts, char *file)
     return false;
 }
 
-static void handle_dnd(mpv_handle *mpv, mpv_node *files, char *action)
+static void handle_dnd(domi_vid_handle *mpv, domi_vid_node *files, char *action)
 {
-    mpv_node sub_exts = {0};
-    mpv_node drop_type = {0};
-    if (mpv_get_property(mpv, "sub-auto-exts", MPV_FORMAT_NODE, &sub_exts) != MPV_ERROR_SUCCESS ||
-        sub_exts.format != MPV_FORMAT_NODE_ARRAY)
+    domi_vid_node sub_exts = {0};
+    domi_vid_node drop_type = {0};
+    if (domi_vid_get_property(mpv, "sub-auto-exts", domi_vid_FORMAT_NODE, &sub_exts) != domi_vid_ERROR_SUCCESS ||
+        sub_exts.format != domi_vid_FORMAT_NODE_ARRAY)
         goto end;
-    if (mpv_get_property(mpv, "drag-and-drop", MPV_FORMAT_NODE, &drop_type) != MPV_ERROR_SUCCESS ||
-        drop_type.format != MPV_FORMAT_STRING)
+    if (domi_vid_get_property(mpv, "drag-and-drop", domi_vid_FORMAT_NODE, &drop_type) != domi_vid_ERROR_SUCCESS ||
+        drop_type.format != domi_vid_FORMAT_STRING)
         goto end;
     if (!strcmp(drop_type.u.string, "no"))
         goto end;
     if (strcmp(drop_type.u.string, "auto"))
         action = drop_type.u.string;
 
-    struct mpv_node_list *list = files->u.list;
+    struct domi_vid_node_list *list = files->u.list;
     for (int i = 0; i < list->num; i++) {
-          mpv_node file = list->values[i];
-          if (file.format != MPV_FORMAT_STRING)
+          domi_vid_node file = list->values[i];
+          if (file.format != domi_vid_FORMAT_STRING)
               goto end;
     }
 
@@ -69,7 +69,7 @@ static void handle_dnd(mpv_handle *mpv, mpv_node *files, char *action)
                 list->values[i].u.string,
                 NULL
             };
-            mpv_command(mpv, cmd);
+            domi_vid_command(mpv, cmd);
         }
     } else if (!strcmp(action, "insert-next")) {
         /* To insert the entries in the correct order, we iterate over them
@@ -84,7 +84,7 @@ static void handle_dnd(mpv_handle *mpv, mpv_node *files, char *action)
                 (i > 0) ? "insert-next" : "insert-next-play",
                 NULL
             };
-            mpv_command(mpv, cmd);
+            domi_vid_command(mpv, cmd);
         }
     } else {
         for (int i = 0; i < list->num; i++) {
@@ -97,54 +97,54 @@ static void handle_dnd(mpv_handle *mpv, mpv_node *files, char *action)
                 (i == 0 && !strcmp(action, "replace")) ? "replace" : "append-play",
                 NULL
             };
-            mpv_command(mpv, cmd);
+            domi_vid_command(mpv, cmd);
         }
     }
 
 end:
-    mpv_free_node_contents(&sub_exts);
-    mpv_free_node_contents(&drop_type);
+    domi_vid_free_node_contents(&sub_exts);
+    domi_vid_free_node_contents(&drop_type);
 }
 
-static MP_THREAD_VOID mpv_event_loop_fn(void *arg)
+static MP_THREAD_VOID domi_vid_event_loop_fn(void *arg)
 {
     mp_thread_set_name("dnd");
-    mpv_handle *mpv = arg;
+    domi_vid_handle *mpv = arg;
     bool enabled = false;
-    mpv_observe_property(mpv, 0, "dropped-files", MPV_FORMAT_NODE);
-    mpv_observe_property(mpv, 0, "input-builtin-drag-and-drop", MPV_FORMAT_FLAG);
+    domi_vid_observe_property(mpv, 0, "dropped-files", domi_vid_FORMAT_NODE);
+    domi_vid_observe_property(mpv, 0, "input-builtin-drag-and-drop", domi_vid_FORMAT_FLAG);
 
     while (1) {
-        mpv_event *event = mpv_wait_event(mpv, -1);
-        if (event->event_id == MPV_EVENT_SHUTDOWN)
+        domi_vid_event *event = domi_vid_wait_event(mpv, -1);
+        if (event->event_id == domi_vid_EVENT_SHUTDOWN)
             break;
-        if (event->event_id == MPV_EVENT_PROPERTY_CHANGE) {
-            mpv_event_property *prop = event->data;
-            if (enabled && !strcmp(prop->name, "dropped-files") && prop->format == MPV_FORMAT_NODE) {
-                mpv_node *node = prop->data;
-                mpv_node *action = node_map_get(node, "action");
-                if (!action || action->format != MPV_FORMAT_STRING)
+        if (event->event_id == domi_vid_EVENT_PROPERTY_CHANGE) {
+            domi_vid_event_property *prop = event->data;
+            if (enabled && !strcmp(prop->name, "dropped-files") && prop->format == domi_vid_FORMAT_NODE) {
+                domi_vid_node *node = prop->data;
+                domi_vid_node *action = node_map_get(node, "action");
+                if (!action || action->format != domi_vid_FORMAT_STRING)
                     continue;
 
-                mpv_node *files = node_map_get(node, "files");
-                if (!files || files->format != MPV_FORMAT_NODE_ARRAY)
+                domi_vid_node *files = node_map_get(node, "files");
+                if (!files || files->format != domi_vid_FORMAT_NODE_ARRAY)
                     continue;
                 handle_dnd(mpv, files, action->u.string);
             }
-            if (!strcmp(prop->name, "input-builtin-drag-and-drop") && prop->format == MPV_FORMAT_FLAG)
+            if (!strcmp(prop->name, "input-builtin-drag-and-drop") && prop->format == domi_vid_FORMAT_FLAG)
                 enabled = *(int *)prop->data;
         }
     }
 
-    mpv_destroy(mpv);
+    domi_vid_destroy(mpv);
     MP_THREAD_RETURN();
 }
 
-void mp_dnd_init(mpv_handle *mpv)
+void mp_dnd_init(domi_vid_handle *mpv)
 {
-    mp_thread mpv_event_loop;
-    if (!mp_thread_create(&mpv_event_loop, mpv_event_loop_fn, mpv))
-        mp_thread_detach(mpv_event_loop);
+    mp_thread domi_vid_event_loop;
+    if (!mp_thread_create(&domi_vid_event_loop, domi_vid_event_loop_fn, mpv))
+        mp_thread_detach(domi_vid_event_loop);
     else
-        mpv_destroy(mpv);
+        domi_vid_destroy(mpv);
 }

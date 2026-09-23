@@ -18,7 +18,7 @@
 #include <string.h>
 #include <math.h>
 
-#include "mpv_talloc.h"
+#include "domi_vid_talloc.h"
 
 #include "config.h"
 
@@ -52,7 +52,7 @@ struct gl_lcms {
     enum pl_color_transfer current_trc;
 
     struct mp_log *log;
-    struct mpv_global *global;
+    struct domi_vid_global *global;
     struct mp_icc_opts *opts;
 };
 
@@ -97,7 +97,7 @@ static void gl_lcms_destructor(void *ptr)
 }
 
 struct gl_lcms *gl_lcms_init(void *talloc_ctx, struct mp_log *log,
-                             struct mpv_global *global,
+                             struct domi_vid_global *global,
                              struct mp_icc_opts *opts)
 {
     struct gl_lcms *p = talloc_ptrtype(talloc_ctx, p);
@@ -458,7 +458,7 @@ error_exit:
 #else /* HAVE_LCMS2 */
 
 struct gl_lcms *gl_lcms_init(void *talloc_ctx, struct mp_log *log,
-                             struct mpv_global *global,
+                             struct domi_vid_global *global,
                              struct mp_icc_opts *opts)
 {
     return (struct gl_lcms *) talloc_new(talloc_ctx);

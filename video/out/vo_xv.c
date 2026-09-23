@@ -39,7 +39,7 @@
 #include <X11/extensions/Xvlib.h>
 
 #include "options/options.h"
-#include "mpv_talloc.h"
+#include "domi_vid_talloc.h"
 #include "common/msg.h"
 #include "vo.h"
 #include "video/mp_image.h"

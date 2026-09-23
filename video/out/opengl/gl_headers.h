@@ -9,8 +9,8 @@
  * - probably Mesa GL headers (MIT)
  */
 
-#ifndef MPV_GL_HEADERS_H
-#define MPV_GL_HEADERS_H
+#ifndef domi_vid_GL_HEADERS_H
+#define domi_vid_GL_HEADERS_H
 
 #include <stdint.h>
 

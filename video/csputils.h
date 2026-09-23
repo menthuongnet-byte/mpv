@@ -107,9 +107,9 @@ extern const struct m_opt_choice_alternatives pl_alpha_names[];
 
 extern const struct m_sub_options mp_csp_equalizer_conf;
 
-struct mpv_global;
+struct domi_vid_global;
 struct mp_csp_equalizer_state *mp_csp_equalizer_create(void *ta_parent,
-                                                    struct mpv_global *global);
+                                                    struct domi_vid_global *global);
 bool mp_csp_equalizer_state_changed(struct mp_csp_equalizer_state *state);
 void mp_csp_equalizer_state_get(struct mp_csp_equalizer_state *state,
                                 struct mp_csp_params *params);

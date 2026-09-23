@@ -42,7 +42,7 @@
 #include "misc/dispatch.h"
 #include "misc/path_utils.h"
 #include "misc/thread_tools.h"
-#include "mpv_talloc.h"
+#include "domi_vid_talloc.h"
 #include "network.h"
 #include "options/m_config.h"
 #include "options/m_option.h"
@@ -152,7 +152,7 @@ struct curl_ctx {
 // Per-stream state, owned by the curl thread.
 struct priv {
     struct mp_log *log;
-    struct mpv_global *global;
+    struct domi_vid_global *global;
     struct curl_ctx *ctx;
     struct stream *s;
 
@@ -347,7 +347,7 @@ static void mp_curl_destroy(void *ptr)
     mp_thread_join(ctx->thread);
 }
 
-void mp_curl_global_init(struct mpv_global *global)
+void mp_curl_global_init(struct domi_vid_global *global)
 {
     struct curl_ctx *ctx = talloc_zero(global, struct curl_ctx);
     talloc_set_destructor(ctx, mp_curl_destroy);
@@ -1077,7 +1077,7 @@ struct curl_avio_cookie {
 };
 
 static const AVClass curl_avio_cookie_class = {
-    .class_name = "mpv_curl_avio",
+    .class_name = "domi_vid_curl_avio",
     .item_name  = av_default_item_name,
     .option     = (const AVOption[]) {
         {"location", "The actual location of the data received",
@@ -1095,7 +1095,7 @@ static void *curl_avio_child_next(void *obj, void *prev)
 }
 
 static const AVClass curl_avio_class = {
-    .class_name = "mpv_curl_avio",
+    .class_name = "domi_vid_curl_avio",
     .item_name  = av_default_item_name,
     .child_next = curl_avio_child_next,
     .version    = LIBAVUTIL_VERSION_INT,

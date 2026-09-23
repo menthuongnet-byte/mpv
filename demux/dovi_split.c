@@ -30,7 +30,7 @@
 #include "demux/packet_pool.h"
 #include "demux/stheader.h"
 #include "dovi_split.h"
-#include "mpv_talloc.h"
+#include "domi_vid_talloc.h"
 
 struct mp_dovi_split {
     struct mp_log *log;

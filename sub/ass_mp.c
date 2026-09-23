@@ -77,7 +77,7 @@ void mp_ass_set_style(ASS_Style *style, double res_y,
 }
 
 void mp_ass_configure_fonts(ASS_Renderer *priv, struct osd_style_opts *opts,
-                            struct mpv_global *global, struct mp_log *log)
+                            struct domi_vid_global *global, struct mp_log *log)
 {
     void *tmp = talloc_new(NULL);
     char *default_font = mp_find_config_file(tmp, global, "subfont.ttf");
@@ -122,7 +122,7 @@ static void message_callback(int level, const char *format, va_list va, void *ct
     mp_msg(log, level, "\n");
 }
 
-ASS_Library *mp_ass_init(struct mpv_global *global,
+ASS_Library *mp_ass_init(struct domi_vid_global *global,
                          struct osd_style_opts *opts, struct mp_log *log)
 {
     char *path = opts->fonts_dir && opts->fonts_dir[0] ?

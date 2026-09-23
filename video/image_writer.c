@@ -41,7 +41,7 @@
 #include "common/av_common.h"
 #include "common/msg.h"
 #include "image_writer.h"
-#include "mpv_talloc.h"
+#include "domi_vid_talloc.h"
 #include "misc/lavc_compat.h"
 #include "video/fmt-conversion.h"
 #include "video/img_format.h"
@@ -596,7 +596,7 @@ int image_writer_format_from_ext(bstr ext)
 static struct mp_image *convert_image(struct mp_image *image, int destfmt,
                                       enum pl_color_levels yuv_levels,
                                       const struct image_writer_opts *opts,
-                                      struct mpv_global *global,
+                                      struct domi_vid_global *global,
                                       struct mp_log *log)
 {
     int d_w, d_h;
@@ -676,7 +676,7 @@ static struct mp_image *convert_image(struct mp_image *image, int destfmt,
 }
 
 bool write_image(struct mp_image *image, const struct image_writer_opts *opts,
-                 const char *filename, struct mpv_global *global,
+                 const char *filename, struct domi_vid_global *global,
                  struct mp_log *log, bool overwrite)
 {
     struct image_writer_opts defs = image_writer_opts_defaults;

@@ -18,4 +18,4 @@
 
 #include "player/client.h"
 
-void mp_dnd_init(mpv_handle *mpv);
+void mp_dnd_init(domi_vid_handle *mpv);

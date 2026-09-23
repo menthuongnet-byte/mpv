@@ -21,8 +21,8 @@
 extern "C" {
 #endif
 
-typedef struct mpv_handle mpv_handle;
-void mp_smtc_init(mpv_handle *client);
+typedef struct domi_vid_handle domi_vid_handle;
+void mp_smtc_init(domi_vid_handle *client);
 
 #ifdef __cplusplus
 }

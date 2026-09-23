@@ -435,7 +435,7 @@ bool mp_archive_next_entry(struct mp_archive *mpa)
         if (!fn || bstr_validate_utf8(bstr0(fn)) < 0)
             fn = archive_entry_pathname_utf8(entry);
         if (!fn || bstr_validate_utf8(bstr0(fn)) < 0) {
-            snprintf(buf, sizeof(buf), "mpv_unknown#%d", mpa->entry_num);
+            snprintf(buf, sizeof(buf), "domi_vid_unknown#%d", mpa->entry_num);
             fn = buf;
         }
         mpa->entry = entry;

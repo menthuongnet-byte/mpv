@@ -13,8 +13,8 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#ifndef MPV_CLIENT_API_RENDER_H_
-#define MPV_CLIENT_API_RENDER_H_
+#ifndef domi_vid_CLIENT_API_RENDER_H_
+#define domi_vid_CLIENT_API_RENDER_H_
 
 #include "client.h"
 
@@ -29,10 +29,10 @@ extern "C" {
  * This API can be used to make mpv render using supported graphic APIs (such
  * as OpenGL). It can be used to handle video display.
  *
- * The renderer needs to be created with mpv_render_context_create() before
+ * The renderer needs to be created with domi_vid_render_context_create() before
  * you start playback (or otherwise cause a VO to be created). Then (with most
- * backends) mpv_render_context_render() can be used to explicitly render the
- * current video frame. Use mpv_render_context_set_update_callback() to get
+ * backends) domi_vid_render_context_render() can be used to explicitly render the
+ * current video frame. Use domi_vid_render_context_set_update_callback() to get
  * notified when there is a new frame to draw.
  *
  * Preferably rendering should be done in a separate thread. If you call
@@ -49,8 +49,8 @@ extern "C" {
  * Supported backends
  * ------------------
  *
- * OpenGL: via MPV_RENDER_API_TYPE_OPENGL, see render_gl.h header.
- * Software: via MPV_RENDER_API_TYPE_SW, see section "Software renderer"
+ * OpenGL: via domi_vid_RENDER_API_TYPE_OPENGL, see render_gl.h header.
+ * Software: via domi_vid_RENDER_API_TYPE_SW, see section "Software renderer"
  *
  * Threading
  * ---------
@@ -58,17 +58,17 @@ extern "C" {
  * You are recommended to do rendering on a separate thread than normal libmpv
  * use.
  *
- * The mpv_render_* functions can be called from any thread, under the
+ * The domi_vid_render_* functions can be called from any thread, under the
  * following conditions:
- *  - only one of the mpv_render_* functions can be called at the same time
- *    (unless they belong to different mpv cores created by mpv_create())
+ *  - only one of the domi_vid_render_* functions can be called at the same time
+ *    (unless they belong to different mpv cores created by domi_vid_create())
  *  - never can be called from within the callbacks set with
- *    mpv_set_wakeup_callback() or mpv_render_context_set_update_callback()
+ *    domi_vid_set_wakeup_callback() or domi_vid_render_context_set_update_callback()
  *  - if the OpenGL backend is used, for all functions the OpenGL context
  *    must be "current" in the calling thread, and it must be the same OpenGL
- *    context as the mpv_render_context was created with. Otherwise, undefined
+ *    context as the domi_vid_render_context was created with. Otherwise, undefined
  *    behavior will occur.
- *  - the thread does not call libmpv API functions other than the mpv_render_*
+ *  - the thread does not call libmpv API functions other than the domi_vid_render_*
  *    functions, except APIs which are declared as safe (see below). Likewise,
  *    there must be no lock or wait dependency from the render thread to a
  *    thread using other libmpv functions. Basically, the situation that your
@@ -76,33 +76,33 @@ extern "C" {
  *    not happen. If you ignore this requirement, deadlocks can happen, which
  *    are made non-fatal with timeouts; then playback quality will be degraded,
  *    and the message
- *          mpv_render_context_render() not being called or stuck.
- *    is logged. If you set MPV_RENDER_PARAM_ADVANCED_CONTROL, you promise that
+ *          domi_vid_render_context_render() not being called or stuck.
+ *    is logged. If you set domi_vid_RENDER_PARAM_ADVANCED_CONTROL, you promise that
  *    this won't happen, and must absolutely guarantee it, or a real deadlock
  *    will freeze the mpv core thread forever.
  *
  * libmpv functions which are safe to call from a render thread are:
  *  - functions marked with "Safe to be called from mpv render API threads."
- *  - client.h functions which don't have an explicit or implicit mpv_handle
+ *  - client.h functions which don't have an explicit or implicit domi_vid_handle
  *    parameter
- *  - mpv_render_* functions; but only for the same mpv_render_context pointer.
- *    If the pointer is different, mpv_render_context_free() is not safe. (The
- *    reason is that if MPV_RENDER_PARAM_ADVANCED_CONTROL is set, it may have
+ *  - domi_vid_render_* functions; but only for the same domi_vid_render_context pointer.
+ *    If the pointer is different, domi_vid_render_context_free() is not safe. (The
+ *    reason is that if domi_vid_RENDER_PARAM_ADVANCED_CONTROL is set, it may have
  *    to process still queued requests from the core, which it can do only for
  *    the current context, while requests for other contexts would deadlock.
  *    Also, it may have to wait and block for the core to terminate the video
  *    chain to make sure no resources are used after context destruction.)
- *  - if the mpv_handle parameter refers to a different mpv core than the one
+ *  - if the domi_vid_handle parameter refers to a different mpv core than the one
  *    you're rendering for (very obscure, but allowed)
  *
  * Note about old libmpv version:
  *
  *      Before API version 1.105 (basically in mpv 0.29.x), simply enabling
- *      MPV_RENDER_PARAM_ADVANCED_CONTROL could cause deadlock issues. This can
+ *      domi_vid_RENDER_PARAM_ADVANCED_CONTROL could cause deadlock issues. This can
  *      be worked around by setting the "vd-lavc-dr" option to "no".
- *      In addition, you were required to call all mpv_render*() API functions
- *      from the same thread on which mpv_render_context_create() was originally
- *      run (for the same the mpv_render_context). Not honoring it led to UB
+ *      In addition, you were required to call all domi_vid_render*() API functions
+ *      from the same thread on which domi_vid_render_context_create() was originally
+ *      run (for the same the domi_vid_render_context). Not honoring it led to UB
  *      (deadlocks, use of invalid mp_thread handles), even if you moved your GL
  *      context to a different thread correctly.
  *      These problems were addressed in API version 1.105 (mpv 0.30.0).
@@ -111,31 +111,31 @@ extern "C" {
  * ----------------------------
  *
  * Video initialization will fail if the render context was not initialized yet
- * (with mpv_render_context_create()), or it will revert to a VO that creates
+ * (with domi_vid_render_context_create()), or it will revert to a VO that creates
  * its own window.
  *
- * Currently, there can be only 1 mpv_render_context at a time per mpv core.
+ * Currently, there can be only 1 domi_vid_render_context at a time per mpv core.
  *
- * Calling mpv_render_context_free() while a VO is using the render context is
+ * Calling domi_vid_render_context_free() while a VO is using the render context is
  * active will disable video.
  *
- * You must free the context with mpv_render_context_free() before the mpv core
+ * You must free the context with domi_vid_render_context_free() before the mpv core
  * is destroyed. If this doesn't happen, undefined behavior will result.
  *
  * Software renderer
  * -----------------
  *
- * MPV_RENDER_API_TYPE_SW provides an extremely simple (but slow) renderer to
+ * domi_vid_RENDER_API_TYPE_SW provides an extremely simple (but slow) renderer to
  * memory surfaces. You probably don't want to use this. Use other render API
  * types, or other methods of video embedding.
  *
- * Use mpv_render_context_create() with MPV_RENDER_PARAM_API_TYPE set to
- * MPV_RENDER_API_TYPE_SW.
+ * Use domi_vid_render_context_create() with domi_vid_RENDER_PARAM_API_TYPE set to
+ * domi_vid_RENDER_API_TYPE_SW.
  *
- * Call mpv_render_context_render() with various MPV_RENDER_PARAM_SW_* fields
+ * Call domi_vid_render_context_render() with various domi_vid_RENDER_PARAM_SW_* fields
  * to render the video frame to an in-memory surface. The following fields are
- * required: MPV_RENDER_PARAM_SW_SIZE, MPV_RENDER_PARAM_SW_FORMAT,
- * MPV_RENDER_PARAM_SW_STRIDE, MPV_RENDER_PARAM_SW_POINTER.
+ * required: domi_vid_RENDER_PARAM_SW_SIZE, domi_vid_RENDER_PARAM_SW_FORMAT,
+ * domi_vid_RENDER_PARAM_SW_STRIDE, domi_vid_RENDER_PARAM_SW_POINTER.
  *
  * This method of rendering is very slow, because everything, including color
  * conversion, scaling, and OSD rendering, is done on the CPU, single-threaded.
@@ -153,115 +153,115 @@ extern "C" {
  * be used this way, but it may be clunky and tricky.
  *
  * Further notes:
- * - MPV_RENDER_PARAM_FLIP_Y is currently ignored (unsupported)
- * - MPV_RENDER_PARAM_DEPTH is ignored (meaningless)
+ * - domi_vid_RENDER_PARAM_FLIP_Y is currently ignored (unsupported)
+ * - domi_vid_RENDER_PARAM_DEPTH is ignored (meaningless)
  */
 
 /**
- * Opaque context, returned by mpv_render_context_create().
+ * Opaque context, returned by domi_vid_render_context_create().
  */
-typedef struct mpv_render_context mpv_render_context;
+typedef struct domi_vid_render_context domi_vid_render_context;
 
 /**
- * Parameters for mpv_render_param (which is used in a few places such as
- * mpv_render_context_create().
+ * Parameters for domi_vid_render_param (which is used in a few places such as
+ * domi_vid_render_context_create().
  *
- * Also see mpv_render_param for conventions and how to use it.
+ * Also see domi_vid_render_param for conventions and how to use it.
  */
-typedef enum mpv_render_param_type {
+typedef enum domi_vid_render_param_type {
     /**
      * Not a valid value, but also used to terminate a params array. Its value
      * is always guaranteed to be 0 (even if the ABI changes in the future).
      */
-    MPV_RENDER_PARAM_INVALID = 0,
+    domi_vid_RENDER_PARAM_INVALID = 0,
     /**
-     * The render API to use. Valid for mpv_render_context_create().
+     * The render API to use. Valid for domi_vid_render_context_create().
      *
      * Type: char*
      *
      * Defined APIs:
      *
-     *   MPV_RENDER_API_TYPE_OPENGL:
+     *   domi_vid_RENDER_API_TYPE_OPENGL:
      *      OpenGL desktop 2.1 or later (preferably core profile compatible to
      *      OpenGL 3.2), or OpenGLES 2.0 or later.
-     *      Providing MPV_RENDER_PARAM_OPENGL_INIT_PARAMS is required.
+     *      Providing domi_vid_RENDER_PARAM_OPENGL_INIT_PARAMS is required.
      *      It is expected that an OpenGL context is valid and "current" when
-     *      calling mpv_render_* functions (unless specified otherwise). It
-     *      must be the same context for the same mpv_render_context.
+     *      calling domi_vid_render_* functions (unless specified otherwise). It
+     *      must be the same context for the same domi_vid_render_context.
      */
-    MPV_RENDER_PARAM_API_TYPE = 1,
+    domi_vid_RENDER_PARAM_API_TYPE = 1,
     /**
      * Required parameters for initializing the OpenGL renderer. Valid for
-     * mpv_render_context_create().
-     * Type: mpv_opengl_init_params*
+     * domi_vid_render_context_create().
+     * Type: domi_vid_opengl_init_params*
      */
-    MPV_RENDER_PARAM_OPENGL_INIT_PARAMS = 2,
+    domi_vid_RENDER_PARAM_OPENGL_INIT_PARAMS = 2,
     /**
-     * Describes a GL render target. Valid for mpv_render_context_render().
-     * Type: mpv_opengl_fbo*
+     * Describes a GL render target. Valid for domi_vid_render_context_render().
+     * Type: domi_vid_opengl_fbo*
      */
-    MPV_RENDER_PARAM_OPENGL_FBO = 3,
+    domi_vid_RENDER_PARAM_OPENGL_FBO = 3,
     /**
-     * Control flipped rendering. Valid for mpv_render_context_render().
+     * Control flipped rendering. Valid for domi_vid_render_context_render().
      * Type: int*
      * If the value is set to 0, render normally. Otherwise, render it flipped,
      * which is needed e.g. when rendering to an OpenGL default framebuffer
      * (which has a flipped coordinate system).
      */
-    MPV_RENDER_PARAM_FLIP_Y = 4,
+    domi_vid_RENDER_PARAM_FLIP_Y = 4,
     /**
-     * Control surface depth. Valid for mpv_render_context_render().
+     * Control surface depth. Valid for domi_vid_render_context_render().
      * Type: int*
      * This implies the depth of the surface passed to the render function in
      * bits per channel. If omitted or set to 0, the renderer will assume 8.
      * Typically used to control dithering.
      */
-    MPV_RENDER_PARAM_DEPTH = 5,
+    domi_vid_RENDER_PARAM_DEPTH = 5,
     /**
-     * ICC profile blob. Valid for mpv_render_context_set_parameter().
-     * Type: mpv_byte_array*
+     * ICC profile blob. Valid for domi_vid_render_context_set_parameter().
+     * Type: domi_vid_byte_array*
      * Set an ICC profile for use with the "icc-profile-auto" option. (If the
      * option is not enabled, the ICC data will not be used.)
      */
-    MPV_RENDER_PARAM_ICC_PROFILE = 6,
+    domi_vid_RENDER_PARAM_ICC_PROFILE = 6,
     /**
      * Deprecated
-     * Ambient light in lux. Valid for mpv_render_context_set_parameter().
+     * Ambient light in lux. Valid for domi_vid_render_context_set_parameter().
      * Type: int*
      * This can be used for automatic gamma correction.
      */
-    MPV_RENDER_PARAM_AMBIENT_LIGHT = 7,
+    domi_vid_RENDER_PARAM_AMBIENT_LIGHT = 7,
     /**
      * X11 Display, sometimes used for hwdec. Valid for
-     * mpv_render_context_create(). The Display must stay valid for the lifetime
-     * of the mpv_render_context.
+     * domi_vid_render_context_create(). The Display must stay valid for the lifetime
+     * of the domi_vid_render_context.
      * Type: Display*
      */
-    MPV_RENDER_PARAM_X11_DISPLAY = 8,
+    domi_vid_RENDER_PARAM_X11_DISPLAY = 8,
     /**
      * Wayland display, sometimes used for hwdec. Valid for
-     * mpv_render_context_create(). The wl_display must stay valid for the
-     * lifetime of the mpv_render_context.
+     * domi_vid_render_context_create(). The wl_display must stay valid for the
+     * lifetime of the domi_vid_render_context.
      * Type: struct wl_display*
      */
-    MPV_RENDER_PARAM_WL_DISPLAY = 9,
+    domi_vid_RENDER_PARAM_WL_DISPLAY = 9,
     /**
      * Better control about rendering and enabling some advanced features. Valid
-     * for mpv_render_context_create().
+     * for domi_vid_render_context_create().
      *
      * This conflates multiple requirements the API user promises to abide if
      * this option is enabled:
      *
-     *  - The API user's render thread, which is calling the mpv_render_*()
+     *  - The API user's render thread, which is calling the domi_vid_render_*()
      *    functions, never waits for the core. Otherwise deadlocks can happen.
      *    See "Threading" section.
-     *  - The callback set with mpv_render_context_set_update_callback() can now
+     *  - The callback set with domi_vid_render_context_set_update_callback() can now
      *    be called even if there is no new frame. The API user should call the
-     *    mpv_render_context_update() function, and interpret the return value
+     *    domi_vid_render_context_update() function, and interpret the return value
      *    for whether a new frame should be rendered.
      *  - Correct functionality is impossible if the update callback is not set,
-     *    or not set soon enough after mpv_render_context_create() (the core can
-     *    block while waiting for you to call mpv_render_context_update(), and
+     *    or not set soon enough after domi_vid_render_context_create() (the core can
+     *    block while waiting for you to call domi_vid_render_context_update(), and
      *    if the update callback is not correctly set, it will deadlock, or
      *    block for too long).
      *
@@ -284,39 +284,39 @@ typedef enum mpv_render_param_type {
      *
      * Type: int*: 0 for disable (default), 1 for enable
      */
-    MPV_RENDER_PARAM_ADVANCED_CONTROL = 10,
+    domi_vid_RENDER_PARAM_ADVANCED_CONTROL = 10,
     /**
      * Return information about the next frame to render. Valid for
-     * mpv_render_context_get_info().
+     * domi_vid_render_context_get_info().
      *
-     * Type: mpv_render_frame_info*
+     * Type: domi_vid_render_frame_info*
      *
      * It strictly returns information about the _next_ frame. The implication
-     * is that e.g. mpv_render_context_update()'s return value will have
-     * MPV_RENDER_UPDATE_FRAME set, and the user is supposed to call
-     * mpv_render_context_render(). If there is no next frame, then the
+     * is that e.g. domi_vid_render_context_update()'s return value will have
+     * domi_vid_RENDER_UPDATE_FRAME set, and the user is supposed to call
+     * domi_vid_render_context_render(). If there is no next frame, then the
      * return value will have is_valid set to 0.
      */
-    MPV_RENDER_PARAM_NEXT_FRAME_INFO = 11,
+    domi_vid_RENDER_PARAM_NEXT_FRAME_INFO = 11,
     /**
-     * Enable or disable video timing. Valid for mpv_render_context_render().
+     * Enable or disable video timing. Valid for domi_vid_render_context_render().
      *
      * Type: int*: 0 for disable, 1 for enable (default)
      *
      * When video is timed to audio, the player attempts to render video a bit
      * ahead, and then do a blocking wait until the target display time is
-     * reached. This blocks mpv_render_context_render() for up to the amount
+     * reached. This blocks domi_vid_render_context_render() for up to the amount
      * specified with the "video-timing-offset" global option. You can set
      * this parameter to 0 to disable this kind of waiting. If you do, it's
-     * recommended to use the target time value in mpv_render_frame_info to
+     * recommended to use the target time value in domi_vid_render_frame_info to
      * wait yourself, or to set the "video-timing-offset" to 0 instead.
      *
      * Disabling this without doing anything in addition will result in A/V sync
      * being slightly off.
      */
-    MPV_RENDER_PARAM_BLOCK_FOR_TARGET_TIME = 12,
+    domi_vid_RENDER_PARAM_BLOCK_FOR_TARGET_TIME = 12,
     /**
-     * Use to skip rendering in mpv_render_context_render().
+     * Use to skip rendering in domi_vid_render_context_render().
      *
      * Type: int*: 0 for rendering (default), 1 for skipping
      *
@@ -327,41 +327,41 @@ typedef enum mpv_render_param_type {
      *
      * Be aware that the render API will consider this frame as having been
      * rendered. All other normal rules also apply, for example about whether
-     * you have to call mpv_render_context_report_swap(). It also does timing
+     * you have to call domi_vid_render_context_report_swap(). It also does timing
      * in the same way.
      */
-    MPV_RENDER_PARAM_SKIP_RENDERING = 13,
+    domi_vid_RENDER_PARAM_SKIP_RENDERING = 13,
     /**
-     * Deprecated. Not supported. Use MPV_RENDER_PARAM_DRM_DISPLAY_V2 instead.
-     * Type : struct mpv_opengl_drm_params*
+     * Deprecated. Not supported. Use domi_vid_RENDER_PARAM_DRM_DISPLAY_V2 instead.
+     * Type : struct domi_vid_opengl_drm_params*
      */
-    MPV_RENDER_PARAM_DRM_DISPLAY = 14,
+    domi_vid_RENDER_PARAM_DRM_DISPLAY = 14,
     /**
      * DRM draw surface size, contains draw surface dimensions.
-     * Valid for mpv_render_context_create().
-     * Type : struct mpv_opengl_drm_draw_surface_size*
+     * Valid for domi_vid_render_context_create().
+     * Type : struct domi_vid_opengl_drm_draw_surface_size*
      */
-    MPV_RENDER_PARAM_DRM_DRAW_SURFACE_SIZE = 15,
+    domi_vid_RENDER_PARAM_DRM_DRAW_SURFACE_SIZE = 15,
     /**
      * DRM display, contains drm display handles.
-     * Valid for mpv_render_context_create().
-     * Type : struct mpv_opengl_drm_params_v2*
+     * Valid for domi_vid_render_context_create().
+     * Type : struct domi_vid_opengl_drm_params_v2*
     */
-    MPV_RENDER_PARAM_DRM_DISPLAY_V2 = 16,
+    domi_vid_RENDER_PARAM_DRM_DISPLAY_V2 = 16,
     /**
-     * MPV_RENDER_API_TYPE_SW only: rendering target surface size, mandatory.
-     * Valid for MPV_RENDER_API_TYPE_SW & mpv_render_context_render().
+     * domi_vid_RENDER_API_TYPE_SW only: rendering target surface size, mandatory.
+     * Valid for domi_vid_RENDER_API_TYPE_SW & domi_vid_render_context_render().
      * Type: int[2] (e.g.: int s[2] = {w, h}; param.data = &s[0];)
      *
      * The video frame is transformed as with other VOs. Typically, this means
      * the video gets scaled and black bars are added if the video size or
      * aspect ratio mismatches with the target size.
      */
-    MPV_RENDER_PARAM_SW_SIZE = 17,
+    domi_vid_RENDER_PARAM_SW_SIZE = 17,
     /**
-     * MPV_RENDER_API_TYPE_SW only: rendering target surface pixel format,
+     * domi_vid_RENDER_API_TYPE_SW only: rendering target surface pixel format,
      * mandatory.
-     * Valid for MPV_RENDER_API_TYPE_SW & mpv_render_context_render().
+     * Valid for domi_vid_RENDER_API_TYPE_SW & domi_vid_render_context_render().
      * Type: char* (e.g.: char *f = "rgb0"; param.data = f;)
      *
      * Valid values are:
@@ -382,16 +382,16 @@ typedef enum mpv_render_param_type {
      *      plane, and is supported as conversion output. It is not a good idea
      *      to rely on any of these. Their semantics and handling could change.
      */
-    MPV_RENDER_PARAM_SW_FORMAT = 18,
+    domi_vid_RENDER_PARAM_SW_FORMAT = 18,
     /**
-     * MPV_RENDER_API_TYPE_SW only: rendering target surface bytes per line,
+     * domi_vid_RENDER_API_TYPE_SW only: rendering target surface bytes per line,
      * mandatory.
-     * Valid for MPV_RENDER_API_TYPE_SW & mpv_render_context_render().
+     * Valid for domi_vid_RENDER_API_TYPE_SW & domi_vid_render_context_render().
      * Type: size_t*
      *
      * This is the number of bytes between a pixel (x, y) and (x, y + 1) on the
      * target surface. It must be a multiple of the pixel size, and have space
-     * for the surface width as specified by MPV_RENDER_PARAM_SW_SIZE.
+     * for the surface width as specified by domi_vid_RENDER_PARAM_SW_SIZE.
      *
      * Both stride and pointer value should be a multiple of 64 to facilitate
      * fast SIMD operation. Lower alignment might trigger slower code paths,
@@ -403,11 +403,11 @@ typedef enum mpv_render_param_type {
      * possible on platforms which do not support unaligned accesses (either
      * through normal memory access or aligned SIMD memory access instructions).
      */
-    MPV_RENDER_PARAM_SW_STRIDE = 19,
+    domi_vid_RENDER_PARAM_SW_STRIDE = 19,
     /*
-     * MPV_RENDER_API_TYPE_SW only: rendering target surface pixel data pointer,
+     * domi_vid_RENDER_API_TYPE_SW only: rendering target surface pixel data pointer,
      * mandatory.
-     * Valid for MPV_RENDER_API_TYPE_SW & mpv_render_context_render().
+     * Valid for domi_vid_RENDER_API_TYPE_SW & domi_vid_render_context_render().
      * Type: void*
      *
      * This points to the first pixel at the left/top corner (0, 0). In
@@ -419,29 +419,29 @@ typedef enum mpv_render_param_type {
      * line (starting at bytepos(w, h) until (pointer + stride * h)) is
      * writable.
      *
-     * See MPV_RENDER_PARAM_SW_STRIDE for alignment requirements.
+     * See domi_vid_RENDER_PARAM_SW_STRIDE for alignment requirements.
      */
-    MPV_RENDER_PARAM_SW_POINTER = 20,
-} mpv_render_param_type;
+    domi_vid_RENDER_PARAM_SW_POINTER = 20,
+} domi_vid_render_param_type;
 
 /**
  * For backwards compatibility with the old naming of
- * MPV_RENDER_PARAM_DRM_DRAW_SURFACE_SIZE
+ * domi_vid_RENDER_PARAM_DRM_DRAW_SURFACE_SIZE
  */
-#define MPV_RENDER_PARAM_DRM_OSD_SIZE MPV_RENDER_PARAM_DRM_DRAW_SURFACE_SIZE
+#define domi_vid_RENDER_PARAM_DRM_OSD_SIZE domi_vid_RENDER_PARAM_DRM_DRAW_SURFACE_SIZE
 
 /**
- * Used to pass arbitrary parameters to some mpv_render_* functions. The
+ * Used to pass arbitrary parameters to some domi_vid_render_* functions. The
  * meaning of the data parameter is determined by the type, and each
- * MPV_RENDER_PARAM_* documents what type the value must point to.
+ * domi_vid_RENDER_PARAM_* documents what type the value must point to.
  *
  * Each value documents the required data type as the pointer you cast to
- * void* and set on mpv_render_param.data. For example, if MPV_RENDER_PARAM_FOO
+ * void* and set on domi_vid_render_param.data. For example, if domi_vid_RENDER_PARAM_FOO
  * documents the type as Something* , then the code should look like this:
  *
  *   Something foo = {...};
- *   mpv_render_param param;
- *   param.type = MPV_RENDER_PARAM_FOO;
+ *   domi_vid_render_param param;
+ *   param.type = domi_vid_RENDER_PARAM_FOO;
  *   param.data = & foo;
  *
  * Normally, the data field points to exactly 1 object. If the type is char*,
@@ -455,24 +455,24 @@ typedef enum mpv_render_param_type {
  * is no specific order of the parameters required. The order of the 2 fields in
  * this struct is guaranteed (even after ABI changes).
  */
-typedef struct mpv_render_param {
-    enum mpv_render_param_type type;
+typedef struct domi_vid_render_param {
+    enum domi_vid_render_param_type type;
     void *data;
-} mpv_render_param;
+} domi_vid_render_param;
 
 
 /**
- * Predefined values for MPV_RENDER_PARAM_API_TYPE.
+ * Predefined values for domi_vid_RENDER_PARAM_API_TYPE.
  */
 // See render_gl.h
-#define MPV_RENDER_API_TYPE_OPENGL "opengl"
+#define domi_vid_RENDER_API_TYPE_OPENGL "opengl"
 // See section "Software renderer"
-#define MPV_RENDER_API_TYPE_SW "sw"
+#define domi_vid_RENDER_API_TYPE_SW "sw"
 
 /**
- * Flags used in mpv_render_frame_info.flags. Each value represents a bit in it.
+ * Flags used in domi_vid_render_frame_info.flags. Each value represents a bit in it.
  */
-typedef enum mpv_render_frame_info_flag {
+typedef enum domi_vid_render_frame_info_flag {
     /**
      * Set if there is actually a next frame. If unset, there is no next frame
      * yet, and other flags and fields that require a frame to be queued will
@@ -484,11 +484,11 @@ typedef enum mpv_render_frame_info_flag {
      * decoded/queued yet, not necessarily that the end of the video was
      * reached. A new frame can be queued after some time.
      *
-     * If the return value of mpv_render_context_render() had the
-     * MPV_RENDER_UPDATE_FRAME flag set, this flag will usually be set as well,
+     * If the return value of domi_vid_render_context_render() had the
+     * domi_vid_RENDER_UPDATE_FRAME flag set, this flag will usually be set as well,
      * unless the frame is rendered, or discarded by other asynchronous events.
      */
-    MPV_RENDER_FRAME_INFO_PRESENT         = 1 << 0,
+    domi_vid_RENDER_FRAME_INFO_PRESENT         = 1 << 0,
     /**
      * If set, the frame is not an actual new video frame, but a redraw request.
      * For example if the video is paused, and an option that affects video
@@ -497,86 +497,86 @@ typedef enum mpv_render_frame_info_flag {
      *
      * Typically, redraw frames will not be subject to video timing.
      *
-     * Implies MPV_RENDER_FRAME_INFO_PRESENT.
+     * Implies domi_vid_RENDER_FRAME_INFO_PRESENT.
      */
-    MPV_RENDER_FRAME_INFO_REDRAW          = 1 << 1,
+    domi_vid_RENDER_FRAME_INFO_REDRAW          = 1 << 1,
     /**
      * If set, this is supposed to reproduce the previous frame perfectly. This
      * is usually used for certain "video-sync" options ("display-..." modes).
      * Typically the renderer will blit the video from a FBO. Unset otherwise.
      *
-     * Implies MPV_RENDER_FRAME_INFO_PRESENT.
+     * Implies domi_vid_RENDER_FRAME_INFO_PRESENT.
      */
-    MPV_RENDER_FRAME_INFO_REPEAT          = 1 << 2,
+    domi_vid_RENDER_FRAME_INFO_REPEAT          = 1 << 2,
     /**
      * If set, the player timing code expects that the user thread blocks on
      * vsync (by either delaying the render call, or by making a call to
-     * mpv_render_context_report_swap() at vsync time).
+     * domi_vid_render_context_report_swap() at vsync time).
      *
-     * Implies MPV_RENDER_FRAME_INFO_PRESENT.
+     * Implies domi_vid_RENDER_FRAME_INFO_PRESENT.
      */
-    MPV_RENDER_FRAME_INFO_BLOCK_VSYNC     = 1 << 3,
-} mpv_render_frame_info_flag;
+    domi_vid_RENDER_FRAME_INFO_BLOCK_VSYNC     = 1 << 3,
+} domi_vid_render_frame_info_flag;
 
 /**
  * Information about the next video frame that will be rendered. Can be
- * retrieved with MPV_RENDER_PARAM_NEXT_FRAME_INFO.
+ * retrieved with domi_vid_RENDER_PARAM_NEXT_FRAME_INFO.
  */
-typedef struct mpv_render_frame_info {
+typedef struct domi_vid_render_frame_info {
     /**
-     * A bitset of mpv_render_frame_info_flag values (i.e. multiple flags are
+     * A bitset of domi_vid_render_frame_info_flag values (i.e. multiple flags are
      * combined with bitwise or).
      */
     uint64_t flags;
     /**
      * Absolute time at which the frame is supposed to be displayed. This is in
-     * the same unit and base as the time returned by mpv_get_time_us(). For
+     * the same unit and base as the time returned by domi_vid_get_time_us(). For
      * frames that are redrawn, or if vsync locked video timing is used (see
      * "video-sync" option), then this can be 0. The "video-timing-offset"
      * option determines how much "headroom" the render thread gets (but a high
-     * enough frame rate can reduce it anyway). mpv_render_context_render() will
+     * enough frame rate can reduce it anyway). domi_vid_render_context_render() will
      * normally block until the time is elapsed, unless you pass it
-     * MPV_RENDER_PARAM_BLOCK_FOR_TARGET_TIME = 0.
+     * domi_vid_RENDER_PARAM_BLOCK_FOR_TARGET_TIME = 0.
      */
     int64_t target_time;
-} mpv_render_frame_info;
+} domi_vid_render_frame_info;
 
 /**
  * Initialize the renderer state. Depending on the backend used, this will
  * access the underlying GPU API and initialize its own objects.
  *
- * You must free the context with mpv_render_context_free(). Not doing so before
+ * You must free the context with domi_vid_render_context_free(). Not doing so before
  * the mpv core is destroyed may result in memory leaks or crashes.
  *
  * Currently, only at most 1 context can exists per mpv core (it represents the
  * main video output).
  *
  * You should pass the following parameters:
- *  - MPV_RENDER_PARAM_API_TYPE to select the underlying backend/GPU API.
- *  - Backend-specific init parameter, like MPV_RENDER_PARAM_OPENGL_INIT_PARAMS.
- *  - Setting MPV_RENDER_PARAM_ADVANCED_CONTROL and following its rules is
+ *  - domi_vid_RENDER_PARAM_API_TYPE to select the underlying backend/GPU API.
+ *  - Backend-specific init parameter, like domi_vid_RENDER_PARAM_OPENGL_INIT_PARAMS.
+ *  - Setting domi_vid_RENDER_PARAM_ADVANCED_CONTROL and following its rules is
  *    strongly recommended.
  *  - If you want to use hwdec, possibly hwdec interop resources.
  *
  * @param res set to the context (on success) or NULL (on failure). The value
  *            is never read and always overwritten.
- * @param mpv handle used to get the core (the mpv_render_context won't depend
+ * @param mpv handle used to get the core (the domi_vid_render_context won't depend
  *            on this specific handle, only the core referenced by it)
  * @param params an array of parameters, terminated by type==0. It's left
  *               unspecified what happens with unknown parameters. At least
- *               MPV_RENDER_PARAM_API_TYPE is required, and most backends will
+ *               domi_vid_RENDER_PARAM_API_TYPE is required, and most backends will
  *               require another backend-specific parameter.
  * @return error code, including but not limited to:
- *      MPV_ERROR_UNSUPPORTED: the OpenGL version is not supported
+ *      domi_vid_ERROR_UNSUPPORTED: the OpenGL version is not supported
  *                             (or required extensions are missing)
- *      MPV_ERROR_NOT_IMPLEMENTED: an unknown API type was provided, or
+ *      domi_vid_ERROR_NOT_IMPLEMENTED: an unknown API type was provided, or
  *                                 support for the requested API was not
  *                                 built in the used libmpv binary.
- *      MPV_ERROR_INVALID_PARAMETER: at least one of the provided parameters was
+ *      domi_vid_ERROR_INVALID_PARAMETER: at least one of the provided parameters was
  *                                   not valid.
  */
-MPV_EXPORT int mpv_render_context_create(mpv_render_context **res, mpv_handle *mpv,
-                                         mpv_render_param *params);
+domi_vid_EXPORT int domi_vid_render_context_create(domi_vid_render_context **res, domi_vid_handle *mpv,
+                                         domi_vid_render_param *params);
 
 /**
  * Attempt to change a single parameter. Not all backends and parameter types
@@ -588,15 +588,15 @@ MPV_EXPORT int mpv_render_context_create(mpv_render_context **res, mpv_handle *m
  *         success, otherwise an error code depending on the parameter type
  *         and situation.
  */
-MPV_EXPORT int mpv_render_context_set_parameter(mpv_render_context *ctx,
-                                                mpv_render_param param);
+domi_vid_EXPORT int domi_vid_render_context_set_parameter(domi_vid_render_context *ctx,
+                                                domi_vid_render_param param);
 
 /**
  * Retrieve information from the render context. This is NOT a counterpart to
- * mpv_render_context_set_parameter(), because you generally can't read
+ * domi_vid_render_context_set_parameter(), because you generally can't read
  * parameters set with it, and this function is not meant for this purpose.
  * Instead, this is for communicating information from the renderer back to the
- * user. See mpv_render_param_type; entries which support this function
+ * user. See domi_vid_render_param_type; entries which support this function
  * explicitly mention it, and for other entries you can assume it will fail.
  *
  * You pass param with param.type set and param.data pointing to a variable
@@ -607,18 +607,18 @@ MPV_EXPORT int mpv_render_context_set_parameter(mpv_render_context *ctx,
  * @param param the parameter type and data that should be retrieved
  * @return error code. If a parameter could actually be retrieved, this returns
  *         success, otherwise an error code depending on the parameter type
- *         and situation. MPV_ERROR_NOT_IMPLEMENTED is used for unknown
+ *         and situation. domi_vid_ERROR_NOT_IMPLEMENTED is used for unknown
  *         param.type, or if retrieving it is not supported.
  */
-MPV_EXPORT int mpv_render_context_get_info(mpv_render_context *ctx,
-                                           mpv_render_param param);
+domi_vid_EXPORT int domi_vid_render_context_get_info(domi_vid_render_context *ctx,
+                                           domi_vid_render_param param);
 
-typedef void (*mpv_render_update_fn)(void *cb_ctx);
+typedef void (*domi_vid_render_update_fn)(void *cb_ctx);
 
 /**
  * Set the callback that notifies you when a new video frame is available, or
  * if the video display configuration somehow changed and requires a redraw.
- * Similar to mpv_set_wakeup_callback(), you must not call any mpv API from
+ * Similar to domi_vid_set_wakeup_callback(), you must not call any mpv API from
  * the callback, and all the other listed restrictions apply (such as not
  * exiting the callback by throwing exceptions).
  *
@@ -631,16 +631,16 @@ typedef void (*mpv_render_update_fn)(void *cb_ctx);
  *                 redrawn
  * @param callback_ctx opaque argument to the callback
  */
-MPV_EXPORT void mpv_render_context_set_update_callback(mpv_render_context *ctx,
-                                                       mpv_render_update_fn callback,
+domi_vid_EXPORT void domi_vid_render_context_set_update_callback(domi_vid_render_context *ctx,
+                                                       domi_vid_render_update_fn callback,
                                                        void *callback_ctx);
 
 /**
  * The API user is supposed to call this when the update callback was invoked
- * (like all mpv_render_* functions, this has to happen on the render thread,
+ * (like all domi_vid_render_* functions, this has to happen on the render thread,
  * and _not_ from the update callback itself).
  *
- * This is optional if MPV_RENDER_PARAM_ADVANCED_CONTROL was not set (default).
+ * This is optional if domi_vid_RENDER_PARAM_ADVANCED_CONTROL was not set (default).
  * Otherwise, it's a hard requirement that this is called after each update
  * callback. If multiple update callback happened, and the function could not
  * be called sooner, it's OK to call it once after the last callback.
@@ -648,34 +648,34 @@ MPV_EXPORT void mpv_render_context_set_update_callback(mpv_render_context *ctx,
  * If an update callback happens during or after this function, the function
  * must be called again at the soonest possible time.
  *
- * If MPV_RENDER_PARAM_ADVANCED_CONTROL was set, this will do additional work
+ * If domi_vid_RENDER_PARAM_ADVANCED_CONTROL was set, this will do additional work
  * such as allocating textures for the video decoder.
  *
- * @return a bitset of mpv_render_update_flag values (i.e. multiple flags are
+ * @return a bitset of domi_vid_render_update_flag values (i.e. multiple flags are
  *         combined with bitwise or). Typically, this will tell the API user
- *         what should happen next. E.g. if the MPV_RENDER_UPDATE_FRAME flag is
- *         set, mpv_render_context_render() should be called. If flags unknown
+ *         what should happen next. E.g. if the domi_vid_RENDER_UPDATE_FRAME flag is
+ *         set, domi_vid_render_context_render() should be called. If flags unknown
  *         to the API user are set, or if the return value is 0, nothing needs
  *         to be done.
  */
-MPV_EXPORT uint64_t mpv_render_context_update(mpv_render_context *ctx);
+domi_vid_EXPORT uint64_t domi_vid_render_context_update(domi_vid_render_context *ctx);
 
 /**
- * Flags returned by mpv_render_context_update(). Each value represents a bit
+ * Flags returned by domi_vid_render_context_update(). Each value represents a bit
  * in the function's return value.
  */
-typedef enum mpv_render_update_flag {
+typedef enum domi_vid_render_update_flag {
     /**
-     * A new video frame must be rendered. mpv_render_context_render() must be
+     * A new video frame must be rendered. domi_vid_render_context_render() must be
      * called.
      */
-    MPV_RENDER_UPDATE_FRAME         = 1 << 0,
-} mpv_render_context_flag;
+    domi_vid_RENDER_UPDATE_FRAME         = 1 << 0,
+} domi_vid_render_context_flag;
 
 /**
  * Render video.
  *
- * Typically renders the video to a target surface provided via mpv_render_param
+ * Typically renders the video to a target surface provided via domi_vid_render_param
  * (the details depend on the backend in use). Options like "panscan" are
  * applied to determine which part of the video should be visible and how the
  * video should be scaled. You can change these options at runtime by using the
@@ -686,7 +686,7 @@ typedef enum mpv_render_update_flag {
  *
  * This function implicitly pulls a video frame from the internal queue and
  * renders it. If no new frame is available, the previous frame is redrawn.
- * The update callback set with mpv_render_context_set_update_callback()
+ * The update callback set with domi_vid_render_context_set_update_callback()
  * notifies you when a new frame was added. The details potentially depend on
  * the backends and the provided parameters.
  *
@@ -697,8 +697,8 @@ typedef enum mpv_render_update_flag {
  * only to "audio" video sync mode.)
  *
  * You should pass the following parameters:
- *  - Backend-specific target object, such as MPV_RENDER_PARAM_OPENGL_FBO.
- *  - Possibly transformations, such as MPV_RENDER_PARAM_FLIP_Y.
+ *  - Backend-specific target object, such as domi_vid_RENDER_PARAM_OPENGL_FBO.
+ *  - Possibly transformations, such as domi_vid_RENDER_PARAM_FLIP_Y.
  *
  * @param ctx a valid render context
  * @param params an array of parameters, terminated by type==0. Which parameters
@@ -706,7 +706,7 @@ typedef enum mpv_render_update_flag {
  *               happens with unknown parameters.
  * @return error code
  */
-MPV_EXPORT int mpv_render_context_render(mpv_render_context *ctx, mpv_render_param *params);
+domi_vid_EXPORT int domi_vid_render_context_render(domi_vid_render_context *ctx, domi_vid_render_param *params);
 
 /**
  * Tell the renderer that a frame was flipped at the given time. This is
@@ -719,7 +719,7 @@ MPV_EXPORT int mpv_render_context_render(mpv_render_context *ctx, mpv_render_par
  *
  * @param ctx a valid render context
  */
-MPV_EXPORT void mpv_render_context_report_swap(mpv_render_context *ctx);
+domi_vid_EXPORT void domi_vid_render_context_report_swap(domi_vid_render_context *ctx);
 
 /**
  * Destroy the mpv renderer state.
@@ -730,26 +730,26 @@ MPV_EXPORT void mpv_render_context_report_swap(mpv_render_context *ctx);
  * @param ctx a valid render context. After this function returns, this is not
  *            a valid pointer anymore. NULL is also allowed and does nothing.
  */
-MPV_EXPORT void mpv_render_context_free(mpv_render_context *ctx);
+domi_vid_EXPORT void domi_vid_render_context_free(domi_vid_render_context *ctx);
 
-#ifdef MPV_CPLUGIN_DYNAMIC_SYM
+#ifdef domi_vid_CPLUGIN_DYNAMIC_SYM
 
-MPV_DEFINE_SYM_PTR(mpv_render_context_create)
-#define mpv_render_context_create pfn_mpv_render_context_create
-MPV_DEFINE_SYM_PTR(mpv_render_context_set_parameter)
-#define mpv_render_context_set_parameter pfn_mpv_render_context_set_parameter
-MPV_DEFINE_SYM_PTR(mpv_render_context_get_info)
-#define mpv_render_context_get_info pfn_mpv_render_context_get_info
-MPV_DEFINE_SYM_PTR(mpv_render_context_set_update_callback)
-#define mpv_render_context_set_update_callback pfn_mpv_render_context_set_update_callback
-MPV_DEFINE_SYM_PTR(mpv_render_context_update)
-#define mpv_render_context_update pfn_mpv_render_context_update
-MPV_DEFINE_SYM_PTR(mpv_render_context_render)
-#define mpv_render_context_render pfn_mpv_render_context_render
-MPV_DEFINE_SYM_PTR(mpv_render_context_report_swap)
-#define mpv_render_context_report_swap pfn_mpv_render_context_report_swap
-MPV_DEFINE_SYM_PTR(mpv_render_context_free)
-#define mpv_render_context_free pfn_mpv_render_context_free
+domi_vid_DEFINE_SYM_PTR(domi_vid_render_context_create)
+#define domi_vid_render_context_create pfn_domi_vid_render_context_create
+domi_vid_DEFINE_SYM_PTR(domi_vid_render_context_set_parameter)
+#define domi_vid_render_context_set_parameter pfn_domi_vid_render_context_set_parameter
+domi_vid_DEFINE_SYM_PTR(domi_vid_render_context_get_info)
+#define domi_vid_render_context_get_info pfn_domi_vid_render_context_get_info
+domi_vid_DEFINE_SYM_PTR(domi_vid_render_context_set_update_callback)
+#define domi_vid_render_context_set_update_callback pfn_domi_vid_render_context_set_update_callback
+domi_vid_DEFINE_SYM_PTR(domi_vid_render_context_update)
+#define domi_vid_render_context_update pfn_domi_vid_render_context_update
+domi_vid_DEFINE_SYM_PTR(domi_vid_render_context_render)
+#define domi_vid_render_context_render pfn_domi_vid_render_context_render
+domi_vid_DEFINE_SYM_PTR(domi_vid_render_context_report_swap)
+#define domi_vid_render_context_report_swap pfn_domi_vid_render_context_report_swap
+domi_vid_DEFINE_SYM_PTR(domi_vid_render_context_free)
+#define domi_vid_render_context_free pfn_domi_vid_render_context_free
 
 #endif
 

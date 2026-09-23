@@ -464,7 +464,7 @@ struct vo {
     const struct vo_driver *driver;
     struct mp_log *log; // Using e.g. "[vo/vdpau]" as prefix
     void *priv;
-    struct mpv_global *global;
+    struct domi_vid_global *global;
     union {
         struct vo_x11_state *x11;
         struct vo_w32_state *w32;
@@ -522,8 +522,8 @@ struct vo {
     void *display_swapchain;
 };
 
-struct mpv_global;
-struct vo *init_best_video_out(struct mpv_global *global, struct vo_extra *ex);
+struct domi_vid_global;
+struct vo *init_best_video_out(struct domi_vid_global *global, struct vo_extra *ex);
 int vo_reconfig(struct vo *vo, struct mp_image_params *p);
 int vo_reconfig2(struct vo *vo, struct mp_image *img);
 

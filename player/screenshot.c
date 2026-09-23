@@ -23,7 +23,7 @@
 
 #include "osdep/io.h"
 
-#include "mpv_talloc.h"
+#include "domi_vid_talloc.h"
 #include "screenshot.h"
 #include "core.h"
 #include "command.h"
@@ -430,7 +430,7 @@ static struct mp_image *screenshot_get(struct MPContext *mpctx, int mode,
 }
 
 struct mp_image *convert_image(struct mp_image *image, int destfmt,
-                               struct mpv_global *global, struct mp_log *log)
+                               struct domi_vid_global *global, struct mp_log *log)
 {
     int d_w, d_h;
     mp_image_params_get_dsize(&image->params, &d_w, &d_h);
@@ -513,7 +513,7 @@ void cmd_screenshot(void *p)
 {
     struct mp_cmd_ctx *cmd = p;
     struct MPContext *mpctx = cmd->mpctx;
-    struct mpv_node *res = &cmd->result;
+    struct domi_vid_node *res = &cmd->result;
     int mode = cmd->args[0].v.i & 7;
     bool each_frame_toggle = (cmd->args[0].v.i | cmd->args[1].v.i) & 8;
     bool each_frame_mode = cmd->args[0].v.i & 16;
@@ -548,7 +548,7 @@ void cmd_screenshot(void *p)
         if (filename) {
             cmd->success = write_screenshot(cmd, image, filename, NULL, false);
             if (cmd->success) {
-                node_init(res, MPV_FORMAT_NODE_MAP, NULL);
+                node_init(res, domi_vid_FORMAT_NODE_MAP, NULL);
                 node_map_add_string(res, "filename", filename);
             }
         }
@@ -564,7 +564,7 @@ void cmd_screenshot_raw(void *p)
 {
     struct mp_cmd_ctx *cmd = p;
     struct MPContext *mpctx = cmd->mpctx;
-    struct mpv_node *res = &cmd->result;
+    struct domi_vid_node *res = &cmd->result;
 
     const enum mp_imgfmt formats[] = {IMGFMT_BGR0, IMGFMT_BGRA, IMGFMT_RGBA, IMGFMT_RGBA64};
     const char *format_names[] = {"bgr0", "bgra", "rgba", "rgba64"};
@@ -579,14 +579,14 @@ void cmd_screenshot_raw(void *p)
         return;
     }
 
-    node_init(res, MPV_FORMAT_NODE_MAP, NULL);
+    node_init(res, domi_vid_FORMAT_NODE_MAP, NULL);
     node_map_add_int64(res, "w", img->w);
     node_map_add_int64(res, "h", img->h);
     node_map_add_int64(res, "stride", img->stride[0]);
     node_map_add_string(res, "format", format_names[idx]);
-    struct mpv_byte_array *ba =
-        node_map_add(res, "data", MPV_FORMAT_BYTE_ARRAY)->u.ba;
-    *ba = (struct mpv_byte_array){
+    struct domi_vid_byte_array *ba =
+        node_map_add(res, "data", domi_vid_FORMAT_BYTE_ARRAY)->u.ba;
+    *ba = (struct domi_vid_byte_array){
         .data = img->planes[0],
         .size = img->stride[0] * img->h,
     };

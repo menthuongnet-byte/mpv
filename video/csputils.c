@@ -519,7 +519,7 @@ static void mp_csp_copy_equalizer_values(struct mp_csp_params *params,
 }
 
 struct mp_csp_equalizer_state *mp_csp_equalizer_create(void *ta_parent,
-                                                    struct mpv_global *global)
+                                                    struct domi_vid_global *global)
 {
     struct m_config_cache *c = m_config_cache_alloc(ta_parent, global,
                                                     &mp_csp_equalizer_conf);

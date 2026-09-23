@@ -27,7 +27,7 @@
 #include "input/event.h"
 #include "osdep/io.h"
 #include "osdep/windows_utils.h"
-#include "mpv_talloc.h"
+#include "domi_vid_talloc.h"
 
 #include "droptarget.h"
 

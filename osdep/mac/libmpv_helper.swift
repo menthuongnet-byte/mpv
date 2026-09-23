@@ -35,19 +35,19 @@ class LibmpvHelper {
 
     func initRender() {
         let advanced: CInt = 1
-        let api = UnsafeMutableRawPointer(mutating: (MPV_RENDER_API_TYPE_OPENGL as NSString).utf8String)
-        let pAddress = mpv_opengl_init_params(get_proc_address: getProcAddress,
+        let api = UnsafeMutableRawPointer(mutating: (domi_vid_RENDER_API_TYPE_OPENGL as NSString).utf8String)
+        let pAddress = domi_vid_opengl_init_params(get_proc_address: getProcAddress,
                                               get_proc_address_ctx: nil)
 
         TypeHelper.withUnsafeMutableRawPointers([pAddress, advanced]) { (pointers: [UnsafeMutableRawPointer?]) in
-            var params: [mpv_render_param] = [
-                mpv_render_param(type: MPV_RENDER_PARAM_API_TYPE, data: api),
-                mpv_render_param(type: MPV_RENDER_PARAM_OPENGL_INIT_PARAMS, data: pointers[0]),
-                mpv_render_param(type: MPV_RENDER_PARAM_ADVANCED_CONTROL, data: pointers[1]),
-                mpv_render_param()
+            var params: [domi_vid_render_param] = [
+                domi_vid_render_param(type: domi_vid_RENDER_PARAM_API_TYPE, data: api),
+                domi_vid_render_param(type: domi_vid_RENDER_PARAM_OPENGL_INIT_PARAMS, data: pointers[0]),
+                domi_vid_render_param(type: domi_vid_RENDER_PARAM_ADVANCED_CONTROL, data: pointers[1]),
+                domi_vid_render_param()
             ]
 
-            if mpv_render_context_create(&mpvRenderContext, mpv, &params) < 0 {
+            if domi_vid_render_context_create(&mpvRenderContext, mpv, &params) < 0 {
                 log.error("Render context init has failed.")
                 exit(1)
             }
@@ -67,11 +67,11 @@ class LibmpvHelper {
         return addr
     }
 
-    func setRenderUpdateCallback(_ callback: @escaping mpv_render_update_fn, context object: AnyObject) {
+    func setRenderUpdateCallback(_ callback: @escaping domi_vid_render_update_fn, context object: AnyObject) {
         if mpvRenderContext == nil {
             log.warning("Init mpv render context first.")
         } else {
-            mpv_render_context_set_update_callback(mpvRenderContext, callback, TypeHelper.bridge(obj: object))
+            domi_vid_render_context_set_update_callback(mpvRenderContext, callback, TypeHelper.bridge(obj: object))
         }
     }
 
@@ -85,7 +85,7 @@ class LibmpvHelper {
 
     func reportRenderFlip() {
         if mpvRenderContext == nil { return }
-        mpv_render_context_report_swap(mpvRenderContext)
+        domi_vid_render_context_report_swap(mpvRenderContext)
     }
 
     func isRenderUpdateFrame() -> Bool {
@@ -94,9 +94,9 @@ class LibmpvHelper {
             uninitLock.unlock()
             return false
         }
-        let flags: UInt64 = mpv_render_context_update(mpvRenderContext)
+        let flags: UInt64 = domi_vid_render_context_update(mpvRenderContext)
         uninitLock.unlock()
-        return flags & UInt64(MPV_RENDER_UPDATE_FRAME.rawValue) > 0
+        return flags & UInt64(domi_vid_RENDER_UPDATE_FRAME.rawValue) > 0
     }
 
     func drawRender(_ surface: NSSize, _ depth: GLint, _ ctx: CGLContextObj, skip: Bool = false) {
@@ -111,20 +111,20 @@ class LibmpvHelper {
             // so only utilize a newly received FBO ID if it is nonzero.
             fbo = i != 0 ? i : fbo
 
-            let data = mpv_opengl_fbo(fbo: Int32(fbo),
+            let data = domi_vid_opengl_fbo(fbo: Int32(fbo),
                                         w: Int32(surface.width),
                                         h: Int32(surface.height),
                           internal_format: 0)
 
             TypeHelper.withUnsafeMutableRawPointers([data, flip, ditherDepth, skip]) { (pointers: [UnsafeMutableRawPointer?]) in
-                var params: [mpv_render_param] = [
-                    mpv_render_param(type: MPV_RENDER_PARAM_OPENGL_FBO, data: pointers[0]),
-                    mpv_render_param(type: MPV_RENDER_PARAM_FLIP_Y, data: pointers[1]),
-                    mpv_render_param(type: MPV_RENDER_PARAM_DEPTH, data: pointers[2]),
-                    mpv_render_param(type: MPV_RENDER_PARAM_SKIP_RENDERING, data: pointers[3]),
-                    mpv_render_param()
+                var params: [domi_vid_render_param] = [
+                    domi_vid_render_param(type: domi_vid_RENDER_PARAM_OPENGL_FBO, data: pointers[0]),
+                    domi_vid_render_param(type: domi_vid_RENDER_PARAM_FLIP_Y, data: pointers[1]),
+                    domi_vid_render_param(type: domi_vid_RENDER_PARAM_DEPTH, data: pointers[2]),
+                    domi_vid_render_param(type: domi_vid_RENDER_PARAM_SKIP_RENDERING, data: pointers[3]),
+                    domi_vid_render_param()
                 ]
-                mpv_render_context_render(mpvRenderContext, &params)
+                domi_vid_render_context_render(mpvRenderContext, &params)
             }
         } else {
             glClearColor(0, 0, 0, 1)
@@ -146,21 +146,21 @@ class LibmpvHelper {
             guard let baseAddress = ptr.baseAddress, ptr.count > 0 else { return }
 
             let u8Ptr = baseAddress.assumingMemoryBound(to: UInt8.self)
-            var icc = mpv_byte_array(data: u8Ptr, size: ptr.count)
+            var icc = domi_vid_byte_array(data: u8Ptr, size: ptr.count)
             withUnsafeMutableBytes(of: &icc) { (ptr: UnsafeMutableRawBufferPointer) in
-                let params = mpv_render_param(type: MPV_RENDER_PARAM_ICC_PROFILE, data: ptr.baseAddress)
-                mpv_render_context_set_parameter(mpvRenderContext, params)
+                let params = domi_vid_render_param(type: domi_vid_RENDER_PARAM_ICC_PROFILE, data: ptr.baseAddress)
+                domi_vid_render_context_set_parameter(mpvRenderContext, params)
             }
         }
     }
 
     func uninit() {
-        mpv_render_context_set_update_callback(mpvRenderContext, nil, nil)
+        domi_vid_render_context_set_update_callback(mpvRenderContext, nil, nil)
         mp_render_context_set_control_callback(mpvRenderContext, nil, nil)
         uninitLock.lock()
-        mpv_render_context_free(mpvRenderContext)
+        domi_vid_render_context_free(mpvRenderContext)
         mpvRenderContext = nil
-        mpv_destroy(mpv)
+        domi_vid_destroy(mpv)
         mpv = nil
         uninitLock.unlock()
     }

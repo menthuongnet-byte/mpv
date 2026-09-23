@@ -76,7 +76,7 @@ static int parse_line(char **ptr, char *cols[7])
 
 /* Loads a cookies.txt file into a linked list. */
 static struct cookie_list_type *load_cookies_from(void *ctx,
-                                                  struct mpv_global *global,
+                                                  struct domi_vid_global *global,
                                                   struct mp_log *log,
                                                   const char *filename)
 {
@@ -115,7 +115,7 @@ static struct cookie_list_type *load_cookies_from(void *ctx,
 // is like a Set-Cookie header (http://curl.haxx.se/rfc/cookie_spec.html),
 // separated by newlines.
 char *cookies_lavf(void *talloc_ctx,
-                   struct mpv_global *global,
+                   struct domi_vid_global *global,
                    struct mp_log *log,
                    const char *file)
 {

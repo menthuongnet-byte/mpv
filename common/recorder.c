@@ -40,7 +40,7 @@
 #define QUEUE_MIN_PACKETS 16
 
 struct mp_recorder {
-    struct mpv_global *global;
+    struct domi_vid_global *global;
     struct mp_log *log;
     struct demux_packet_pool *packet_pool;
 
@@ -128,7 +128,7 @@ done:
     return ret;
 }
 
-struct mp_recorder *mp_recorder_create(struct mpv_global *global,
+struct mp_recorder *mp_recorder_create(struct domi_vid_global *global,
                                        const char *target_file,
                                        struct sh_stream **streams,
                                        int num_streams,
@@ -202,7 +202,7 @@ struct mp_recorder *mp_recorder_create(struct mpv_global *global,
     char version[200];
     snprintf(version, sizeof(version), "%s experimental stream recording "
              "feature (can generate broken files - please report bugs)",
-             mpv_version);
+             domi_vid_version);
     av_dict_set(&priv->mux->metadata, "encoding_tool", version, 0);
 
     if (avformat_write_header(priv->mux, NULL) < 0) {

@@ -18,7 +18,7 @@
 #include "common.h"
 
 #include "misc/json.h"
-#include "mpv_talloc.h"
+#include "domi_vid_talloc.h"
 
 int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
 {
@@ -32,7 +32,7 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
 
     json_skip_whitespace(&s);
 
-    struct mpv_node res;
+    struct domi_vid_node res;
     if (!json_parse(tmp, &res, &s, MAX_JSON_DEPTH)) {
         char *d = talloc_strdup(tmp, "");
         json_write(&d, &res);

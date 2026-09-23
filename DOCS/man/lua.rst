@@ -573,7 +573,7 @@ These also live in the ``mp`` module, but are documented separately as they
 are useful only in special situations.
 
 ``mp.get_wakeup_pipe()``
-    Calls ``mpv_get_wakeup_pipe()`` and returns the read end of the wakeup
+    Calls ``domi_vid_get_wakeup_pipe()`` and returns the read end of the wakeup
     pipe. This is deprecated, but still works. (See ``client.h`` for details.)
 
 ``mp.get_next_timeout()``

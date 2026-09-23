@@ -66,8 +66,8 @@ ta.h & ta.c:
 
     One very useful feature of talloc is fast tracking of memory leaks. ("Fast"
     as in it doesn't require valgrind.) You can enable it by setting the
-    MPV_LEAK_REPORT environment variable to "1":
-        export MPV_LEAK_REPORT=1
+    domi_vid_LEAK_REPORT environment variable to "1":
+        export domi_vid_LEAK_REPORT=1
     This will list all unfree'd allocations on exit.
 
     Documentation can be found here:
@@ -137,10 +137,10 @@ options/m_config_*.h & m_config_*.c:
     anywhere, like m_config_cache_alloc().
 
     m_config_cache_alloc() lets anyone read, observe, and write options in any
-    thread. The only state it needs is struct mpv_global, which is an opaque
+    thread. The only state it needs is struct domi_vid_global, which is an opaque
     type that can be passed "down" the component hierarchy. For safety reasons,
     you should not pass down any pointers to option structs (like MPOpts), but
-    instead pass down mpv_global, and use m_config_cache_alloc() (or similar)
+    instead pass down domi_vid_global, and use m_config_cache_alloc() (or similar)
     to get a synchronized copy of the options.
 
 input/input.c:
@@ -542,7 +542,7 @@ also need to worry about what happens if the message queue overruns (you either
 lose messages or have unbounded memory usage). In the mpv public API, the
 distinction between message queue and wakeup callback is sort of blurry, because
 it does provide a message queue, but an additional wakeup callback, so API
-users are not required to call mpv_wait_event() with a high timeout.
+users are not required to call domi_vid_wait_event() with a high timeout.
 
 mpv itself prefers using wakeup callbacks over a generic event queue, because
 most times an event queue is not needed (or complicates things), and it is

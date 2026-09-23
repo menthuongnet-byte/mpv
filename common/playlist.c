@@ -21,7 +21,7 @@
 #include "common/global.h"
 #include "common/msg.h"
 #include "misc/random.h"
-#include "mpv_talloc.h"
+#include "domi_vid_talloc.h"
 #include "options/path.h"
 
 #include "demux/demux.h"
@@ -395,7 +395,7 @@ struct playlist_entry *playlist_entry_from_index(struct playlist *pl, int index)
 }
 
 struct playlist *playlist_parse_file(const char *file, struct mp_cancel *cancel,
-                                     struct mpv_global *global)
+                                     struct domi_vid_global *global)
 {
     struct mp_log *log = mp_log_new(NULL, global->log, "!playlist_parser");
     mp_verbose(log, "Parsing playlist file %s...\n", file);

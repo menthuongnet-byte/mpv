@@ -30,7 +30,7 @@
 
 #include <libavutil/md5.h>
 
-#include "mpv_talloc.h"
+#include "domi_vid_talloc.h"
 
 #include "osdep/io.h"
 

@@ -25,7 +25,7 @@
 #include <mujs.h>
 
 #include "osdep/io.h"
-#include "mpv_talloc.h"
+#include "domi_vid_talloc.h"
 #include "common/common.h"
 #include "options/m_property.h"
 #include "common/msg.h"
@@ -58,7 +58,7 @@ static const char *const builtin_files[][3] = {
 struct script_ctx {
     const char *filename;
     const char *path; // NULL if single file
-    struct mpv_handle *client;
+    struct domi_vid_handle *client;
     struct MPContext *mpctx;
     struct mp_log *log;
     char *last_error_str;
@@ -71,13 +71,13 @@ static struct script_ctx *jctx(js_State *J)
     return (struct script_ctx *)js_getcontext(J);
 }
 
-static mpv_handle *jclient(js_State *J)
+static domi_vid_handle *jclient(js_State *J)
 {
     return jctx(J)->client;
 }
 
-static void pushnode(js_State *J, mpv_node *node);
-static void makenode(void *ta_ctx, mpv_node *dst, js_State *J, int idx);
+static void pushnode(js_State *J, domi_vid_node *node);
+static void makenode(void *ta_ctx, domi_vid_node *dst, js_State *J, int idx);
 static int jsL_checkint(js_State *J, int idx);
 static uint64_t jsL_checkuint64(js_State *J, int idx);
 
@@ -181,7 +181,7 @@ static void push_status(js_State *J, int err)
     if (err >= 0) {
         push_success(J);
     } else {
-        push_failure(J, mpv_error_string(err));
+        push_failure(J, domi_vid_error_string(err));
     }
 }
 
@@ -189,7 +189,7 @@ static void push_status(js_State *J, int err)
 static bool pushed_error(js_State *J, int err, int def)
 {
     bool iserr = err < 0;
-    set_last_error(jctx(J), iserr, iserr ? mpv_error_string(err) : NULL);
+    set_last_error(jctx(J), iserr, iserr ? domi_vid_error_string(err) : NULL);
     if (!iserr)
         return false;
 
@@ -230,8 +230,8 @@ static bool pushed_error(js_State *J, int err, int def)
 //  allocation happened, and then if af_TARGET threw then s_TARGET will catch
 //  it (and return 1) and we'll free if afterwards.
 
-// add_af_file, add_af_dir, add_af_mpv_alloc take a valid FILE*/DIR*/char* value
-// respectively, and fclose/closedir/mpv_free it when the parent is freed.
+// add_af_file, add_af_dir, add_af_domi_vid_alloc take a valid FILE*/DIR*/char* value
+// respectively, and fclose/closedir/domi_vid_free it when the parent is freed.
 
 static void destruct_af_file(void *p)
 {
@@ -257,29 +257,29 @@ static void add_af_dir(void *parent, DIR *d)
     talloc_set_destructor(pd, destruct_af_dir);
 }
 
-static void destruct_af_mpv_alloc(void *p)
+static void destruct_af_domi_vid_alloc(void *p)
 {
-    mpv_free(*(char**)p);
+    domi_vid_free(*(char**)p);
 }
 
-static void add_af_mpv_alloc(void *parent, char *ma)
+static void add_af_domi_vid_alloc(void *parent, char *ma)
 {
     char **p = talloc(parent, char*);
     *p = ma;
-    talloc_set_destructor(p, destruct_af_mpv_alloc);
+    talloc_set_destructor(p, destruct_af_domi_vid_alloc);
 }
 
-static void destruct_af_mpv_node(void *p)
+static void destruct_af_domi_vid_node(void *p)
 {
-    mpv_free_node_contents((mpv_node*)p);  // does nothing for MPV_FORMAT_NONE
+    domi_vid_free_node_contents((domi_vid_node*)p);  // does nothing for domi_vid_FORMAT_NONE
 }
 
-// returns a new zeroed allocated struct mpv_node, and free it and its content
+// returns a new zeroed allocated struct domi_vid_node, and free it and its content
 // when the parent is freed.
-static mpv_node *new_af_mpv_node(void *parent)
+static domi_vid_node *new_af_domi_vid_node(void *parent)
 {
-    mpv_node *p = talloc_zero(parent, mpv_node);  // .format == MPV_FORMAT_NONE
-    talloc_set_destructor(p, destruct_af_mpv_node);
+    domi_vid_node *p = talloc_zero(parent, domi_vid_node);  // .format == domi_vid_FORMAT_NONE
+    talloc_set_destructor(p, destruct_af_domi_vid_node);
     return p;
 }
 
@@ -515,7 +515,7 @@ static int s_load_javascript(struct mp_script_args *args)
         .path = args->path,
         .js_malloc_size = 0,
         .stats = stats_ctx_create(ctx, args->mpctx->global,
-                    mp_tprintf(80, "script/%s", mpv_client_name(args->client))),
+                    mp_tprintf(80, "script/%s", domi_vid_client_name(args->client))),
     };
 
     stats_register_thread_cputime(ctx->stats, "cpu");
@@ -599,9 +599,9 @@ static void script__request_event(js_State *J)
 
     for (int n = 0; n < 256; n++) {
         // some n's may be missing ("holes"), returning NULL
-        const char *name = mpv_event_name(n);
+        const char *name = domi_vid_event_name(n);
         if (name && strcmp(name, event) == 0) {
-            push_status(J, mpv_request_event(jclient(J), n, enable));
+            push_status(J, domi_vid_request_event(jclient(J), n, enable));
             return;
         }
     }
@@ -611,8 +611,8 @@ static void script__request_event(js_State *J)
 static void script_enable_messages(js_State *J)
 {
     const char *level = js_tostring(J, 1);
-    int e = mpv_request_log_messages(jclient(J), level);
-    if (e == MPV_ERROR_INVALID_PARAMETER)
+    int e = domi_vid_request_log_messages(jclient(J), level);
+    if (e == domi_vid_ERROR_INVALID_PARAMETER)
         js_error(J, "Invalid log level '%s'", level);
     push_status(J, e);
 }
@@ -620,7 +620,7 @@ static void script_enable_messages(js_State *J)
 // args - command [with arguments] as string
 static void script_command(js_State *J)
 {
-    push_status(J, mpv_command_string(jclient(J), js_tostring(J, 1)));
+    push_status(J, domi_vid_command_string(jclient(J), js_tostring(J, 1)));
 }
 
 // args: strings of command and then variable number of arguments
@@ -634,13 +634,13 @@ static void script_commandv(js_State *J)
     for (int i = 0; i < length; i++)
         argv[i] = js_tostring(J, 1 + i);
     argv[length] = NULL;
-    push_status(J, mpv_command(jclient(J), argv));
+    push_status(J, domi_vid_command(jclient(J), argv));
 }
 
 // args: name, string value
 static void script_set_property(js_State *J)
 {
-    int e = mpv_set_property_string(jclient(J), js_tostring(J, 1),
+    int e = domi_vid_set_property_string(jclient(J), js_tostring(J, 1),
                                                 js_tostring(J, 2));
     push_status(J, e);
 }
@@ -649,7 +649,7 @@ static void script_set_property(js_State *J)
 static void script_set_property_bool(js_State *J)
 {
     int v = js_toboolean(J, 2);
-    int e = mpv_set_property(jclient(J), js_tostring(J, 1), MPV_FORMAT_FLAG, &v);
+    int e = domi_vid_set_property(jclient(J), js_tostring(J, 1), domi_vid_FORMAT_FLAG, &v);
     push_status(J, e);
 }
 
@@ -658,7 +658,7 @@ static void script_get_property_number(js_State *J)
 {
     double result;
     const char *name = js_tostring(J, 1);
-    int e = mpv_get_property(jclient(J), name, MPV_FORMAT_DOUBLE, &result);
+    int e = domi_vid_get_property(jclient(J), name, domi_vid_FORMAT_DOUBLE, &result);
     if (!pushed_error(J, e, 2))
         js_pushnumber(J, result);
 }
@@ -666,21 +666,21 @@ static void script_get_property_number(js_State *J)
 // args: name, native value
 static void script_set_property_native(js_State *J, void *af)
 {
-    mpv_node node;
+    domi_vid_node node;
     makenode(af, &node, J, 2);
-    mpv_handle *h = jclient(J);
-    int e = mpv_set_property(h, js_tostring(J, 1), MPV_FORMAT_NODE, &node);
+    domi_vid_handle *h = jclient(J);
+    int e = domi_vid_set_property(h, js_tostring(J, 1), domi_vid_FORMAT_NODE, &node);
     push_status(J, e);
 }
 
 // args: name [,def]
 static void script_get_property(js_State *J, void *af)
 {
-    mpv_handle *h = jclient(J);
+    domi_vid_handle *h = jclient(J);
     char *res = NULL;
-    int e = mpv_get_property(h, js_tostring(J, 1), MPV_FORMAT_STRING, &res);
+    int e = domi_vid_get_property(h, js_tostring(J, 1), domi_vid_FORMAT_STRING, &res);
     if (e >= 0)
-        add_af_mpv_alloc(af, res);
+        add_af_domi_vid_alloc(af, res);
     if (!pushed_error(J, e, 2))
         js_pushstring(J, res);
 }
@@ -688,7 +688,7 @@ static void script_get_property(js_State *J, void *af)
 // args: name
 static void script_del_property(js_State *J)
 {
-    int e = mpv_del_property(jclient(J), js_tostring(J, 1));
+    int e = domi_vid_del_property(jclient(J), js_tostring(J, 1));
     push_status(J, e);
 }
 
@@ -696,8 +696,8 @@ static void script_del_property(js_State *J)
 static void script_get_property_bool(js_State *J)
 {
     int result;
-    mpv_handle *h = jclient(J);
-    int e = mpv_get_property(h, js_tostring(J, 1), MPV_FORMAT_FLAG, &result);
+    domi_vid_handle *h = jclient(J);
+    int e = domi_vid_get_property(h, js_tostring(J, 1), domi_vid_FORMAT_FLAG, &result);
     if (!pushed_error(J, e, 2))
         js_pushboolean(J, result);
 }
@@ -713,15 +713,15 @@ static bool same_as_int64(double d)
 static void script_set_property_number(js_State *J)
 {
     double v = js_tonumber(J, 2);
-    mpv_handle *h = jclient(J);
+    domi_vid_handle *h = jclient(J);
     // If the number might be an integer, then set it as integer. The mpv core
     // will (probably) convert INT64 to DOUBLE when setting, but not the other
     // way around.
     int e;
     if (same_as_int64(v)) {
-        e = mpv_set_property(h, js_tostring(J, 1), MPV_FORMAT_INT64, &(int64_t){v});
+        e = domi_vid_set_property(h, js_tostring(J, 1), domi_vid_FORMAT_INT64, &(int64_t){v});
     } else {
-        e = mpv_set_property(h, js_tostring(J, 1), MPV_FORMAT_DOUBLE, &v);
+        e = domi_vid_set_property(h, js_tostring(J, 1), domi_vid_FORMAT_DOUBLE, &v);
     }
     push_status(J, e);
 }
@@ -730,9 +730,9 @@ static void script_set_property_number(js_State *J)
 static void script_get_property_native(js_State *J, void *af)
 {
     const char *name = js_tostring(J, 1);
-    mpv_handle *h = jclient(J);
-    mpv_node *presult_node = new_af_mpv_node(af);
-    int e = mpv_get_property(h, name, MPV_FORMAT_NODE, presult_node);
+    domi_vid_handle *h = jclient(J);
+    domi_vid_node *presult_node = new_af_domi_vid_node(af);
+    int e = domi_vid_get_property(h, name, domi_vid_FORMAT_NODE, presult_node);
     if (!pushed_error(J, e, 2))
         pushnode(J, presult_node);
 }
@@ -741,11 +741,11 @@ static void script_get_property_native(js_State *J, void *af)
 static void script_get_property_osd(js_State *J, void *af)
 {
     const char *name = js_tostring(J, 1);
-    mpv_handle *h = jclient(J);
+    domi_vid_handle *h = jclient(J);
     char *res = NULL;
-    int e = mpv_get_property(h, name, MPV_FORMAT_OSD_STRING, &res);
+    int e = domi_vid_get_property(h, name, domi_vid_FORMAT_OSD_STRING, &res);
     if (e >= 0)
-        add_af_mpv_alloc(af, res);
+        add_af_domi_vid_alloc(af, res);
     if (!pushed_error(J, e, 2))
         js_pushstring(J, res);
 }
@@ -754,11 +754,11 @@ static void script_get_property_osd(js_State *J, void *af)
 static void script__observe_property(js_State *J)
 {
     const char *fmts[] = {"none", "native", "bool", "string", "number", NULL};
-    const mpv_format mf[] = {MPV_FORMAT_NONE, MPV_FORMAT_NODE, MPV_FORMAT_FLAG,
-                             MPV_FORMAT_STRING, MPV_FORMAT_DOUBLE};
+    const domi_vid_format mf[] = {domi_vid_FORMAT_NONE, domi_vid_FORMAT_NODE, domi_vid_FORMAT_FLAG,
+                             domi_vid_FORMAT_STRING, domi_vid_FORMAT_DOUBLE};
 
-    mpv_format f = mf[checkopt(J, 3, "none", fmts, "observe type")];
-    int e = mpv_observe_property(jclient(J), jsL_checkuint64(J, 1),
+    domi_vid_format f = mf[checkopt(J, 3, "none", fmts, "observe type")];
+    int e = domi_vid_observe_property(jclient(J), jsL_checkuint64(J, 1),
                                              js_tostring(J, 2),
                                              f);
     push_status(J, e);
@@ -767,17 +767,17 @@ static void script__observe_property(js_State *J)
 // args: id
 static void script__unobserve_property(js_State *J)
 {
-    int e = mpv_unobserve_property(jclient(J), jsL_checkuint64(J, 1));
+    int e = domi_vid_unobserve_property(jclient(J), jsL_checkuint64(J, 1));
     push_status(J, e);
 }
 
 // args: native (array of command and args, similar to commandv) [,def]
 static void script_command_native(js_State *J, void *af)
 {
-    mpv_node cmd;
+    domi_vid_node cmd;
     makenode(af, &cmd, J, 1);
-    mpv_node *presult_node = new_af_mpv_node(af);
-    int e = mpv_command_node(jclient(J), &cmd, presult_node);
+    domi_vid_node *presult_node = new_af_domi_vid_node(af);
+    int e = domi_vid_command_node(jclient(J), &cmd, presult_node);
     if (!pushed_error(J, e, 2))
         pushnode(J, presult_node);
 }
@@ -786,22 +786,22 @@ static void script_command_native(js_State *J, void *af)
 static void script__command_native_async(js_State *J, void *af)
 {
     uint64_t id = jsL_checkuint64(J, 1);
-    struct mpv_node node;
+    struct domi_vid_node node;
     makenode(af, &node, J, 2);
-    push_status(J, mpv_command_node_async(jclient(J), id, &node));
+    push_status(J, domi_vid_command_node_async(jclient(J), id, &node));
 }
 
 // args: async-command-id
 static void script__abort_async_command(js_State *J)
 {
-    mpv_abort_async_command(jclient(J), jsL_checkuint64(J, 1));
+    domi_vid_abort_async_command(jclient(J), jsL_checkuint64(J, 1));
     push_success(J);
 }
 
 // args: none, result in millisec
 static void script_get_time_ms(js_State *J)
 {
-    js_pushnumber(J, mpv_get_time_us(jclient(J)) / (double)(1000));
+    js_pushnumber(J, domi_vid_get_time_us(jclient(J)) / (double)(1000));
 }
 
 // push object with properties names (NULL terminated) with respective vals
@@ -839,7 +839,7 @@ static void script_format_time(js_State *J, void *af)
 // TODO: untested
 static void script_get_wakeup_pipe(js_State *J)
 {
-    js_pushnumber(J, mpv_get_wakeup_pipe(jclient(J)));
+    js_pushnumber(J, domi_vid_get_wakeup_pipe(jclient(J)));
 }
 
 // args: name (str), priority (int), id (uint)
@@ -848,13 +848,13 @@ static void script__hook_add(js_State *J)
     const char *name = js_tostring(J, 1);
     int pri = jsL_checkint(J, 2);
     uint64_t id = jsL_checkuint64(J, 3);
-    push_status(J, mpv_hook_add(jclient(J), id, name, pri));
+    push_status(J, domi_vid_hook_add(jclient(J), id, name, pri));
 }
 
 // args: id (uint)
 static void script__hook_continue(js_State *J)
 {
-    push_status(J, mpv_hook_continue(jclient(J), jsL_checkuint64(J, 1)));
+    push_status(J, domi_vid_hook_continue(jclient(J), jsL_checkuint64(J, 1)));
 }
 
 /**********************************************************************
@@ -1027,20 +1027,20 @@ static void script__gc(js_State *J)
  *  Core functions: pushnode, makenode and the event loop backend
  *********************************************************************/
 
-// pushes a js value/array/object from an mpv_node
-static void pushnode(js_State *J, mpv_node *node)
+// pushes a js value/array/object from an domi_vid_node
+static void pushnode(js_State *J, domi_vid_node *node)
 {
     int len;
     switch (node->format) {
-    case MPV_FORMAT_NONE:   js_pushnull(J); break;
-    case MPV_FORMAT_STRING: js_pushstring(J, node->u.string); break;
-    case MPV_FORMAT_INT64:  js_pushnumber(J, node->u.int64); break;
-    case MPV_FORMAT_DOUBLE: js_pushnumber(J, node->u.double_); break;
-    case MPV_FORMAT_FLAG:   js_pushboolean(J, node->u.flag); break;
-    case MPV_FORMAT_BYTE_ARRAY:
+    case domi_vid_FORMAT_NONE:   js_pushnull(J); break;
+    case domi_vid_FORMAT_STRING: js_pushstring(J, node->u.string); break;
+    case domi_vid_FORMAT_INT64:  js_pushnumber(J, node->u.int64); break;
+    case domi_vid_FORMAT_DOUBLE: js_pushnumber(J, node->u.double_); break;
+    case domi_vid_FORMAT_FLAG:   js_pushboolean(J, node->u.flag); break;
+    case domi_vid_FORMAT_BYTE_ARRAY:
         js_pushlstring(J, node->u.ba->data, node->u.ba->size);
         break;
-    case MPV_FORMAT_NODE_ARRAY:
+    case domi_vid_FORMAT_NODE_ARRAY:
         js_newarray(J);
         len = node->u.list->num;
         for (int n = 0; n < len; n++) {
@@ -1048,7 +1048,7 @@ static void pushnode(js_State *J, mpv_node *node)
             js_setindex(J, -2, n);
         }
         break;
-    case MPV_FORMAT_NODE_MAP:
+    case domi_vid_FORMAT_NODE_MAP:
         js_newobject(J);
         len = node->u.list->num;
         for (int n = 0; n < len; n++) {
@@ -1057,7 +1057,7 @@ static void pushnode(js_State *J, mpv_node *node)
         }
         break;
     default:
-        js_pushstring(J, "[UNSUPPORTED_MPV_FORMAT]");
+        js_pushstring(J, "[UNSUPPORTED_domi_vid_FORMAT]");
         break;
     }
 }
@@ -1095,33 +1095,33 @@ static uint64_t jsL_checkuint64(js_State *J, int idx)
 }
 
 // From the js stack value/array/object at index idx
-static void makenode(void *ta_ctx, mpv_node *dst, js_State *J, int idx)
+static void makenode(void *ta_ctx, domi_vid_node *dst, js_State *J, int idx)
 {
     if (js_isundefined(J, idx) || js_isnull(J, idx)) {
-        dst->format = MPV_FORMAT_NONE;
+        dst->format = domi_vid_FORMAT_NONE;
 
     } else if (js_isboolean(J, idx)) {
-        dst->format = MPV_FORMAT_FLAG;
+        dst->format = domi_vid_FORMAT_FLAG;
         dst->u.flag = js_toboolean(J, idx);
 
     } else if (js_isnumber(J, idx)) {
         double val = js_tonumber(J, idx);
         if (same_as_int64(val)) {  // use int, because we can
-            dst->format = MPV_FORMAT_INT64;
+            dst->format = domi_vid_FORMAT_INT64;
             dst->u.int64 = val;
         } else {
-            dst->format = MPV_FORMAT_DOUBLE;
+            dst->format = domi_vid_FORMAT_DOUBLE;
             dst->u.double_ = val;
         }
 
     } else if (js_isarray(J, idx)) {
-        dst->format = MPV_FORMAT_NODE_ARRAY;
-        dst->u.list = talloc(ta_ctx, struct mpv_node_list);
+        dst->format = domi_vid_FORMAT_NODE_ARRAY;
+        dst->u.list = talloc(ta_ctx, struct domi_vid_node_list);
         dst->u.list->keys = NULL;
 
         int length = js_getlength(J, idx);
         dst->u.list->num = length;
-        dst->u.list->values = talloc_array(ta_ctx, mpv_node, length);
+        dst->u.list->values = talloc_array(ta_ctx, domi_vid_node, length);
         for (int n = 0; n < length; n++) {
             js_getindex(J, idx, n);
             makenode(ta_ctx, &dst->u.list->values[n], J, -1);
@@ -1129,12 +1129,12 @@ static void makenode(void *ta_ctx, mpv_node *dst, js_State *J, int idx)
         }
 
     } else if (js_isobject(J, idx)) {
-        dst->format = MPV_FORMAT_NODE_MAP;
-        dst->u.list = talloc(ta_ctx, struct mpv_node_list);
+        dst->format = domi_vid_FORMAT_NODE_MAP;
+        dst->u.list = talloc(ta_ctx, struct domi_vid_node_list);
 
         int length = get_obj_properties(ta_ctx, &dst->u.list->keys, J, idx);
         dst->u.list->num = length;
-        dst->u.list->values = talloc_array(ta_ctx, mpv_node, length);
+        dst->u.list->values = talloc_array(ta_ctx, domi_vid_node, length);
         for (int n = 0; n < length; n++) {
             js_getproperty(J, idx, dst->u.list->keys[n]);
             makenode(ta_ctx, &dst->u.list->values[n], J, -1);
@@ -1142,7 +1142,7 @@ static void makenode(void *ta_ctx, mpv_node *dst, js_State *J, int idx)
         }
 
     } else {  // string, or anything else as string
-        dst->format = MPV_FORMAT_STRING;
+        dst->format = domi_vid_FORMAT_STRING;
         dst->u.string = talloc_strdup(ta_ctx, js_tostring(J, idx));
     }
 }
@@ -1151,10 +1151,10 @@ static void makenode(void *ta_ctx, mpv_node *dst, js_State *J, int idx)
 static void script_wait_event(js_State *J, void *af)
 {
     double timeout = js_isnumber(J, 1) ? js_tonumber(J, 1) : -1;
-    mpv_event *event = mpv_wait_event(jclient(J), timeout);
+    domi_vid_event *event = domi_vid_wait_event(jclient(J), timeout);
 
-    mpv_node *rn = new_af_mpv_node(af);
-    mpv_event_to_node(rn, event);
+    domi_vid_node *rn = new_af_domi_vid_node(af);
+    domi_vid_event_to_node(rn, event);
     pushnode(J, rn);
 }
 
@@ -1246,7 +1246,7 @@ static void add_functions(js_State *J, struct script_ctx *ctx)
     js_getproperty(J, 0, "mp");  // + this mp
     add_package_fns(J, "utils", utils_fns);
 
-    js_pushstring(J, mpv_client_name(ctx->client));
+    js_pushstring(J, domi_vid_client_name(ctx->client));
     js_setproperty(J, -2, "script_name");
 
     js_pushstring(J, ctx->filename);

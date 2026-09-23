@@ -20,7 +20,7 @@
 #include "misc/language.h"
 
 #include "utils-mac.h"
-#include "mpv_talloc.h"
+#include "domi_vid_talloc.h"
 
 char **mp_get_user_langs(void)
 {

@@ -77,12 +77,12 @@ enum mp_property_action {
     //  arg: char*
     M_PROPERTY_SET_STRING,
 
-    // Set a mpv_node value.
-    //  arg: mpv_node*
+    // Set a domi_vid_node value.
+    //  arg: domi_vid_node*
     M_PROPERTY_GET_NODE,
 
-    // Get a mpv_node value.
-    //  arg: mpv_node*
+    // Get a domi_vid_node value.
+    //  arg: domi_vid_node*
     M_PROPERTY_SET_NODE,
 
     // Multiply numeric property with a factor.

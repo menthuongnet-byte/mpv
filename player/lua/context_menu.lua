@@ -249,7 +249,7 @@ local function add_menu(menu_items, x, y)
     }
 end
 
-local function mpv_color_to_ass(color)
+local function domi_vid_color_to_ass(color)
     return color:sub(8,9) .. color:sub(6,7) ..  color:sub(4,5)
 end
 
@@ -406,7 +406,7 @@ local function render()
 
     local style = "{\\fs" .. options.font_size .. "\\bord0\\4a&Hff&\\blur0\\q2}"
 
-    local back_color = mpv_color_to_ass(mp.get_property(
+    local back_color = domi_vid_color_to_ass(mp.get_property(
         border_style == "background-box" and "osd-back-color" or "osd-outline-color"))
 
     -- Don't make the background pure black in the default configuration

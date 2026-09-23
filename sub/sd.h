@@ -18,7 +18,7 @@ enum ass_style_override {
 };
 
 struct sd {
-    struct mpv_global *global;
+    struct domi_vid_global *global;
     struct mp_log *log;
     struct mp_subtitle_opts *opts;
     struct mp_subtitle_shared_opts *shared_opts;
@@ -77,7 +77,7 @@ struct mp_sub_filter_opts {
 };
 
 struct sd_filter {
-    struct mpv_global *global;
+    struct domi_vid_global *global;
     struct mp_log *log;
     struct demux_packet_pool *packet_pool;
     struct mp_sub_filter_opts *opts;

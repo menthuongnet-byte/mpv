@@ -24,7 +24,7 @@
 #include <stdio.h>
 #include <limits.h>
 
-#include "mpv_talloc.h"
+#include "domi_vid_talloc.h"
 #include "bitmap_packer.h"
 #include "common/common.h"
 

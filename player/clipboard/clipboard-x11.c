@@ -101,9 +101,9 @@ static bool clipboard_x11_init(struct clipboard_x11_priv *x11, bool xwayland, bo
     // so request selection here
     if (x11->monitor) {
         XConvertSelection(x11->display, XA(x11, CLIPBOARD), XA(x11, UTF8_STRING),
-                          XA(x11, MPV_CLIPBOARD), x11->window, CurrentTime);
+                          XA(x11, domi_vid_CLIPBOARD), x11->window, CurrentTime);
         XConvertSelection(x11->display, XA_PRIMARY, XA(x11, UTF8_STRING),
-                          XA(x11, MPV_PRIMARY), x11->window, CurrentTime);
+                          XA(x11, domi_vid_PRIMARY), x11->window, CurrentTime);
         XFlush(x11->display);
     }
 
@@ -190,10 +190,10 @@ static void clipboard_x11_update_data(struct clipboard_x11_priv *x11, uint8_t ty
 {
     if (type == MESSAGE_UPDATE_CLIPBOARD) {
         XConvertSelection(x11->display, XA(x11, CLIPBOARD), XA(x11, UTF8_STRING),
-                          XA(x11, MPV_CLIPBOARD), x11->window, CurrentTime);
+                          XA(x11, domi_vid_CLIPBOARD), x11->window, CurrentTime);
     } else if (type == MESSAGE_UPDATE_PRIMARY_SELECTION) {
         XConvertSelection(x11->display, XA_PRIMARY, XA(x11, UTF8_STRING),
-                          XA(x11, MPV_PRIMARY), x11->window, CurrentTime);
+                          XA(x11, domi_vid_PRIMARY), x11->window, CurrentTime);
     }
     XFlush(x11->display);
 }

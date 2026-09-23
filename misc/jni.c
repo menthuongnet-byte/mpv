@@ -23,7 +23,7 @@
 #include <stdlib.h>
 
 #include "jni.h"
-#include "mpv_talloc.h"
+#include "domi_vid_talloc.h"
 #include "osdep/threads.h"
 
 static JavaVM *java_vm;

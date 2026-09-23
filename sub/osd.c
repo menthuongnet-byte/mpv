@@ -27,7 +27,7 @@
 
 #include "osdep/timer.h"
 
-#include "mpv_talloc.h"
+#include "domi_vid_talloc.h"
 #include "options/m_config.h"
 #include "options/options.h"
 #include "common/global.h"
@@ -155,7 +155,7 @@ bool osd_res_equals(struct mp_osd_res a, struct mp_osd_res b)
         && a.display_par == b.display_par;
 }
 
-struct osd_state *osd_create(struct mpv_global *global)
+struct osd_state *osd_create(struct domi_vid_global *global)
 {
     static_assert(MAX_OSD_PARTS >= OSDTYPE_COUNT, "");
 

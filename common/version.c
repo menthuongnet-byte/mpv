@@ -18,6 +18,6 @@
 #include "common.h"
 #include "version.h"
 
-const char mpv_version[]  = "mpv " VERSION;
-const char mpv_builddate[] = BUILDDATE;
-const char mpv_copyright[] = MPVCOPYRIGHT;
+const char domi_vid_version[]  = "mpv " VERSION;
+const char domi_vid_builddate[] = BUILDDATE;
+const char domi_vid_copyright[] = MPVCOPYRIGHT;

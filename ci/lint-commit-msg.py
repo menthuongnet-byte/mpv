@@ -66,7 +66,7 @@ def do_lint(commit_range: str) -> bool:
 ################################################################################
 
 NO_PREFIX_WHITELIST = \
-    r"^Revert \"(.*)\"|^Reapply \"(.*)\"|^Release [0-9]|^Update MPV_VERSION$"
+    r"^Revert \"(.*)\"|^Reapply \"(.*)\"|^Release [0-9]|^Update domi_vid_VERSION$"
 
 @lint_rule("Subject line must contain a prefix identifying the sub system")
 def subsystem_prefix(body):

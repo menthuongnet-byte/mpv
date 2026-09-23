@@ -24,7 +24,7 @@
 #include <libavutil/common.h>
 #include <ass/ass.h>
 
-#include "mpv_talloc.h"
+#include "domi_vid_talloc.h"
 
 #include "config.h"
 #include "options/m_config.h"

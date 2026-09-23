@@ -15,8 +15,8 @@
  * License along with mpv.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef MPV_DECODE_D3D_H
-#define MPV_DECODE_D3D_H
+#ifndef domi_vid_DECODE_D3D_H
+#define domi_vid_DECODE_D3D_H
 
 #include <windows.h>
 #include <d3d11.h>

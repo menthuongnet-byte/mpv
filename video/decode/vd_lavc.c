@@ -29,7 +29,7 @@
 #include <libavutil/intreadwrite.h>
 #include <libavutil/pixdesc.h>
 
-#include "mpv_talloc.h"
+#include "domi_vid_talloc.h"
 #include "common/msg.h"
 #include "options/m_config.h"
 #include "options/options.h"

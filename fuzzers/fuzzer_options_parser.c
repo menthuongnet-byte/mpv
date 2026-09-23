@@ -21,7 +21,7 @@
 
 #include "common.h"
 
-int mpv_initialize_opts(mpv_handle *ctx, char **options);
+int domi_vid_initialize_opts(domi_vid_handle *ctx, char **options);
 
 #define MAX_INPUT_SIZE 2048
 #define MAX_OPTS_NUM 10000
@@ -58,13 +58,13 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
 
     set_fontconfig_sysroot();
 
-    mpv_handle *ctx = mpv_create();
+    domi_vid_handle *ctx = domi_vid_create();
     if (!ctx)
         exit(1);
 
-    mpv_initialize_opts(ctx, opts);
+    domi_vid_initialize_opts(ctx, opts);
 
-    mpv_terminate_destroy(ctx);
+    domi_vid_terminate_destroy(ctx);
 
     return 0;
 }

@@ -20,7 +20,7 @@
 
 #include "m_config_frontend.h"
 
-int m_config_parse_config_file(m_config_t* config, struct mpv_global *global,
+int m_config_parse_config_file(m_config_t* config, struct domi_vid_global *global,
                                const char *conffile, char *initial_section,
                                int flags);
 

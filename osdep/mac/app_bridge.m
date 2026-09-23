@@ -151,7 +151,7 @@ void cocoa_set_input_context(struct input_ctx *input_context)
     [[AppHub shared] initInput:input_context];
 }
 
-void cocoa_set_mpv_handle(struct mpv_handle *ctx)
+void cocoa_set_domi_vid_handle(struct domi_vid_handle *ctx)
 {
     [[AppHub shared] initMpv:ctx];
 }

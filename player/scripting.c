@@ -82,16 +82,16 @@ static char *script_name_from_filename(void *talloc_ctx, const char *fname)
 static void run_script(struct mp_script_args *arg)
 {
     char *name = talloc_asprintf(NULL, "%s/%s", arg->backend->name,
-                                 mpv_client_name(arg->client));
+                                 domi_vid_client_name(arg->client));
     mp_thread_set_name(name);
     talloc_free(name);
 
     if (arg->backend->load(arg) < 0)
         MP_ERR(arg, "Could not load %s script %s\n", arg->backend->name, arg->filename);
 
-    mpv_handle *client = arg->client;
+    domi_vid_handle *client = arg->client;
     talloc_free(arg);
-    mpv_destroy(client);
+    domi_vid_destroy(client);
 }
 
 static MP_THREAD_VOID script_thread(void *p)
@@ -181,7 +181,7 @@ static int64_t mp_load_script(struct MPContext *mpctx, const char *fname)
 
     mp_client_set_weak(arg->client);
     arg->log = mp_client_get_log(arg->client);
-    int64_t id = mpv_client_id(arg->client);
+    int64_t id = domi_vid_client_id(arg->client);
 
     MP_DBG(arg, "Loading %s script %s...\n", backend->name, arg->filename);
 
@@ -190,7 +190,7 @@ static int64_t mp_load_script(struct MPContext *mpctx, const char *fname)
     } else {
         mp_thread thread;
         if (mp_thread_create(&thread, script_thread, arg)) {
-            mpv_destroy(arg->client);
+            domi_vid_destroy(arg->client);
             talloc_free(arg);
             return -1;
         }
@@ -253,7 +253,7 @@ static void load_builtin_script(struct MPContext *mpctx, int slot, bool enable,
         } else {
             char *name = mp_tprintf(22, "@%"PRIi64, *pid);
             MP_DBG(mpctx, "Unloading script %s (disabled by option)\n", fname);
-            mp_client_send_event(mpctx, name, 0, MPV_EVENT_SHUTDOWN, NULL);
+            mp_client_send_event(mpctx, name, 0, domi_vid_EVENT_SHUTDOWN, NULL);
             // note: there is no synchronization of script exit
         }
     }
@@ -305,8 +305,8 @@ bool mp_load_scripts(struct MPContext *mpctx)
 #include <dlfcn.h>
 #endif
 
-#define MPV_DLOPEN_FN "mpv_open_cplugin"
-typedef int (*mpv_open_cplugin)(mpv_handle *handle);
+#define domi_vid_DLOPEN_FN "domi_vid_open_cplugin"
+typedef int (*domi_vid_open_cplugin)(domi_vid_handle *handle);
 
 static void init_sym_table(struct mp_script_args *args, void *lib) {
 #define INIT_SYM(name)                                                         \
@@ -319,62 +319,62 @@ static void init_sym_table(struct mp_script_args *args, void *lib) {
         }                                                                      \
     }
 
-    INIT_SYM(mpv_client_api_version);
-    INIT_SYM(mpv_error_string);
-    INIT_SYM(mpv_free);
-    INIT_SYM(mpv_client_name);
-    INIT_SYM(mpv_client_id);
-    INIT_SYM(mpv_create);
-    INIT_SYM(mpv_initialize);
-    INIT_SYM(mpv_destroy);
-    INIT_SYM(mpv_terminate_destroy);
-    INIT_SYM(mpv_create_client);
-    INIT_SYM(mpv_create_weak_client);
-    INIT_SYM(mpv_load_config_file);
-    INIT_SYM(mpv_get_time_ns);
-    INIT_SYM(mpv_get_time_us);
-    INIT_SYM(mpv_free_node_contents);
-    INIT_SYM(mpv_set_option);
-    INIT_SYM(mpv_set_option_string);
-    INIT_SYM(mpv_command);
-    INIT_SYM(mpv_command_node);
-    INIT_SYM(mpv_command_ret);
-    INIT_SYM(mpv_command_string);
-    INIT_SYM(mpv_command_async);
-    INIT_SYM(mpv_command_node_async);
-    INIT_SYM(mpv_abort_async_command);
-    INIT_SYM(mpv_set_property);
-    INIT_SYM(mpv_set_property_string);
-    INIT_SYM(mpv_del_property);
-    INIT_SYM(mpv_set_property_async);
-    INIT_SYM(mpv_get_property);
-    INIT_SYM(mpv_get_property_string);
-    INIT_SYM(mpv_get_property_osd_string);
-    INIT_SYM(mpv_get_property_async);
-    INIT_SYM(mpv_observe_property);
-    INIT_SYM(mpv_unobserve_property);
-    INIT_SYM(mpv_event_name);
-    INIT_SYM(mpv_event_to_node);
-    INIT_SYM(mpv_request_event);
-    INIT_SYM(mpv_request_log_messages);
-    INIT_SYM(mpv_wait_event);
-    INIT_SYM(mpv_wakeup);
-    INIT_SYM(mpv_set_wakeup_callback);
-    INIT_SYM(mpv_wait_async_requests);
-    INIT_SYM(mpv_hook_add);
-    INIT_SYM(mpv_hook_continue);
-    INIT_SYM(mpv_get_wakeup_pipe);
+    INIT_SYM(domi_vid_client_api_version);
+    INIT_SYM(domi_vid_error_string);
+    INIT_SYM(domi_vid_free);
+    INIT_SYM(domi_vid_client_name);
+    INIT_SYM(domi_vid_client_id);
+    INIT_SYM(domi_vid_create);
+    INIT_SYM(domi_vid_initialize);
+    INIT_SYM(domi_vid_destroy);
+    INIT_SYM(domi_vid_terminate_destroy);
+    INIT_SYM(domi_vid_create_client);
+    INIT_SYM(domi_vid_create_weak_client);
+    INIT_SYM(domi_vid_load_config_file);
+    INIT_SYM(domi_vid_get_time_ns);
+    INIT_SYM(domi_vid_get_time_us);
+    INIT_SYM(domi_vid_free_node_contents);
+    INIT_SYM(domi_vid_set_option);
+    INIT_SYM(domi_vid_set_option_string);
+    INIT_SYM(domi_vid_command);
+    INIT_SYM(domi_vid_command_node);
+    INIT_SYM(domi_vid_command_ret);
+    INIT_SYM(domi_vid_command_string);
+    INIT_SYM(domi_vid_command_async);
+    INIT_SYM(domi_vid_command_node_async);
+    INIT_SYM(domi_vid_abort_async_command);
+    INIT_SYM(domi_vid_set_property);
+    INIT_SYM(domi_vid_set_property_string);
+    INIT_SYM(domi_vid_del_property);
+    INIT_SYM(domi_vid_set_property_async);
+    INIT_SYM(domi_vid_get_property);
+    INIT_SYM(domi_vid_get_property_string);
+    INIT_SYM(domi_vid_get_property_osd_string);
+    INIT_SYM(domi_vid_get_property_async);
+    INIT_SYM(domi_vid_observe_property);
+    INIT_SYM(domi_vid_unobserve_property);
+    INIT_SYM(domi_vid_event_name);
+    INIT_SYM(domi_vid_event_to_node);
+    INIT_SYM(domi_vid_request_event);
+    INIT_SYM(domi_vid_request_log_messages);
+    INIT_SYM(domi_vid_wait_event);
+    INIT_SYM(domi_vid_wakeup);
+    INIT_SYM(domi_vid_set_wakeup_callback);
+    INIT_SYM(domi_vid_wait_async_requests);
+    INIT_SYM(domi_vid_hook_add);
+    INIT_SYM(domi_vid_hook_continue);
+    INIT_SYM(domi_vid_get_wakeup_pipe);
 
-    INIT_SYM(mpv_render_context_create);
-    INIT_SYM(mpv_render_context_set_parameter);
-    INIT_SYM(mpv_render_context_get_info);
-    INIT_SYM(mpv_render_context_set_update_callback);
-    INIT_SYM(mpv_render_context_update);
-    INIT_SYM(mpv_render_context_render);
-    INIT_SYM(mpv_render_context_report_swap);
-    INIT_SYM(mpv_render_context_free);
+    INIT_SYM(domi_vid_render_context_create);
+    INIT_SYM(domi_vid_render_context_set_parameter);
+    INIT_SYM(domi_vid_render_context_get_info);
+    INIT_SYM(domi_vid_render_context_set_update_callback);
+    INIT_SYM(domi_vid_render_context_update);
+    INIT_SYM(domi_vid_render_context_render);
+    INIT_SYM(domi_vid_render_context_report_swap);
+    INIT_SYM(domi_vid_render_context_free);
 
-    INIT_SYM(mpv_stream_cb_add_ro);
+    INIT_SYM(domi_vid_stream_cb_add_ro);
 
 #undef INIT_SYM
 }
@@ -386,7 +386,7 @@ static int load_cplugin(struct mp_script_args *args)
         goto error;
     // Note: once loaded, we never unload, as unloading the libraries linked to
     //       the plugin can cause random serious problems.
-    mpv_open_cplugin sym = (mpv_open_cplugin)dlsym(lib, MPV_DLOPEN_FN);
+    domi_vid_open_cplugin sym = (domi_vid_open_cplugin)dlsym(lib, domi_vid_DLOPEN_FN);
     if (!sym)
         goto error;
 

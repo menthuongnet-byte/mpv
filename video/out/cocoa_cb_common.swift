@@ -36,7 +36,7 @@ class CocoaCB: Common, EventSubscriber {
         libmpv = LibmpvHelper(mpv, log)
         super.init(option, log)
         layer = GLLayer(cocoaCB: self)
-        AppHub.shared.event?.subscribe(self, event: .init(name: "MPV_EVENT_SHUTDOWN"))
+        AppHub.shared.event?.subscribe(self, event: .init(name: "domi_vid_EVENT_SHUTDOWN"))
     }
 
     func preinit(_ vo: UnsafeMutablePointer<vo>) {
@@ -275,6 +275,6 @@ class CocoaCB: Common, EventSubscriber {
     }
 
     func handle(event: EventHelper.Event) {
-        if event.name == String(describing: MPV_EVENT_SHUTDOWN) { shutdown() }
+        if event.name == String(describing: domi_vid_EVENT_SHUTDOWN) { shutdown() }
     }
 }

@@ -173,7 +173,7 @@ AVBufferRef *d3d11_wrap_device_ref(ID3D11Device *device)
     return device_ref;
 }
 
-static struct AVBufferRef *d3d11_create_standalone(struct mpv_global *global,
+static struct AVBufferRef *d3d11_create_standalone(struct domi_vid_global *global,
         struct mp_log *plog, struct hwcontext_create_dev_params *params)
 {
     ID3D11Device *device = NULL;
@@ -266,7 +266,7 @@ fail:
     return NULL;
 }
 
-static struct AVBufferRef *d3d9_create_standalone(struct mpv_global *global,
+static struct AVBufferRef *d3d9_create_standalone(struct domi_vid_global *global,
         struct mp_log *plog, struct hwcontext_create_dev_params *params)
 {
     d3d_load_dlls();

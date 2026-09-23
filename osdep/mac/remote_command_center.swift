@@ -104,16 +104,16 @@ class RemoteCommandCenter: EventSubscriber {
     }
 
     func registerEvents() {
-        event?.subscribe(self, event: .init(name: "duration", format: MPV_FORMAT_INT64))
-        event?.subscribe(self, event: .init(name: "time-pos", format: MPV_FORMAT_INT64))
-        event?.subscribe(self, event: .init(name: "speed", format: MPV_FORMAT_DOUBLE))
-        event?.subscribe(self, event: .init(name: "pause", format: MPV_FORMAT_FLAG))
-        event?.subscribe(self, event: .init(name: "media-title", format: MPV_FORMAT_STRING))
-        event?.subscribe(self, event: .init(name: "chapter-metadata/title", format: MPV_FORMAT_STRING))
-        event?.subscribe(self, event: .init(name: "metadata/by-key/album", format: MPV_FORMAT_STRING))
-        event?.subscribe(self, event: .init(name: "metadata/by-key/artist", format: MPV_FORMAT_STRING))
-        event?.subscribe(self, event: .init(name: "path", format: MPV_FORMAT_STRING))
-        event?.subscribe(self, event: .init(name: "track-list", format: MPV_FORMAT_NODE))
+        event?.subscribe(self, event: .init(name: "duration", format: domi_vid_FORMAT_INT64))
+        event?.subscribe(self, event: .init(name: "time-pos", format: domi_vid_FORMAT_INT64))
+        event?.subscribe(self, event: .init(name: "speed", format: domi_vid_FORMAT_DOUBLE))
+        event?.subscribe(self, event: .init(name: "pause", format: domi_vid_FORMAT_FLAG))
+        event?.subscribe(self, event: .init(name: "media-title", format: domi_vid_FORMAT_STRING))
+        event?.subscribe(self, event: .init(name: "chapter-metadata/title", format: domi_vid_FORMAT_STRING))
+        event?.subscribe(self, event: .init(name: "metadata/by-key/album", format: domi_vid_FORMAT_STRING))
+        event?.subscribe(self, event: .init(name: "metadata/by-key/artist", format: domi_vid_FORMAT_STRING))
+        event?.subscribe(self, event: .init(name: "path", format: domi_vid_FORMAT_STRING))
+        event?.subscribe(self, event: .init(name: "track-list", format: domi_vid_FORMAT_NODE))
     }
 
     func start() {

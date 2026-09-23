@@ -15,8 +15,8 @@
  * License along with mpv.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef MPV_COREAUDIO_CHMAP_H
-#define MPV_COREAUDIO_CHMAP_H
+#ifndef domi_vid_COREAUDIO_CHMAP_H
+#define domi_vid_COREAUDIO_CHMAP_H
 
 #include "config.h"
 #include <AudioToolbox/AudioToolbox.h>

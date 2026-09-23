@@ -29,7 +29,7 @@
 
 #include "common/common.h"
 #include "windows_utils.h"
-#include "mpv_talloc.h"
+#include "domi_vid_talloc.h"
 
 char *mp_GUID_to_str_buf(char *buf, size_t buf_size, const GUID *guid)
 {

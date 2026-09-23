@@ -34,33 +34,33 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
     if (strlen(data) != size - 1)
         return 0;
 
-#ifdef MPV_PROTO
-    if (!str_startswith(data, size - 1, MPV_STRINGIFY(MPV_PROTO) "://", sizeof(MPV_STRINGIFY(MPV_PROTO) "://") - 1))
+#ifdef domi_vid_PROTO
+    if (!str_startswith(data, size - 1, domi_vid_STRINGIFY(domi_vid_PROTO) "://", sizeof(domi_vid_STRINGIFY(domi_vid_PROTO) "://") - 1))
         return 0;
 #endif
 
     set_fontconfig_sysroot();
 
-    mpv_handle *ctx = mpv_create();
+    domi_vid_handle *ctx = domi_vid_create();
     if (!ctx)
         exit(1);
 
-    check_error(mpv_set_option_string(ctx, "vo", "null"));
-    check_error(mpv_set_option_string(ctx, "ao", "null"));
-    check_error(mpv_set_option_string(ctx, "ao-null-untimed", "yes"));
-    check_error(mpv_set_option_string(ctx, "untimed", "yes"));
-    check_error(mpv_set_option_string(ctx, "video-osd", "no"));
-    check_error(mpv_set_option_string(ctx, "msg-level", "all=trace"));
-    check_error(mpv_set_option_string(ctx, "network-timeout", "1"));
+    check_error(domi_vid_set_option_string(ctx, "vo", "null"));
+    check_error(domi_vid_set_option_string(ctx, "ao", "null"));
+    check_error(domi_vid_set_option_string(ctx, "ao-null-untimed", "yes"));
+    check_error(domi_vid_set_option_string(ctx, "untimed", "yes"));
+    check_error(domi_vid_set_option_string(ctx, "video-osd", "no"));
+    check_error(domi_vid_set_option_string(ctx, "msg-level", "all=trace"));
+    check_error(domi_vid_set_option_string(ctx, "network-timeout", "1"));
 
-    check_error(mpv_initialize(ctx));
+    check_error(domi_vid_initialize(ctx));
 
     const char *cmd[] = {"loadfile", data, NULL};
-    check_error(mpv_command(ctx, cmd));
+    check_error(domi_vid_command(ctx, cmd));
 
     player_loop(ctx);
 
-    mpv_terminate_destroy(ctx);
+    domi_vid_terminate_destroy(ctx);
 
     return 0;
 }

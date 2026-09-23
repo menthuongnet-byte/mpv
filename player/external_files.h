@@ -30,9 +30,9 @@ struct subfn {
     enum track_flags flags;
 };
 
-struct mpv_global;
+struct domi_vid_global;
 struct MPOpts;
-struct subfn *find_external_files(struct mpv_global *global, const char *fname,
+struct subfn *find_external_files(struct domi_vid_global *global, const char *fname,
                                   struct MPOpts *opts);
 
 #endif /* MPLAYER_FINDFILES_H */

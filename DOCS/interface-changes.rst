@@ -594,7 +594,7 @@ Interface changes
     - deprecate the --cache-secs option (once removed, the cache cannot be
       limited by time anymore)
     - remove deprecated legacy hook API ("hook-add", "hook-ack"). Use either the
-      libmpv API (mpv_hook_add(), mpv_hook_continue()), or the Lua scripting
+      libmpv API (domi_vid_hook_add(), domi_vid_hook_continue()), or the Lua scripting
       wrappers (mp.add_hook()).
     - improve how property change notifications are delivered on events and on
       hooks. In particular, a hook event is only returned to a client after all
@@ -620,7 +620,7 @@ Interface changes
       vaguely a replacement of the removed option, but not the same
     - change another detail for track selection options (see --aid manpage
       entry)
-    - reading loop-file property as native property or mpv_node will now return
+    - reading loop-file property as native property or domi_vid_node will now return
       "inf" instead of boolean true (also affects loop option)
     - remove some --vo-direct3d-... options (it got dumbed down; use --vo=gpu)
     - remove video-params/plane-depth property (was too vaguely defined)
@@ -675,7 +675,7 @@ Interface changes
     - the vid/aid/sid/secondary-sid properties (and their aliases: "audio",
       "video", "sub") will now allow setting any track ID; before this change,
       only IDs of actually existing tracks could be set (the restriction was
-      active the MPV_EVENT_FILE_LOADED/"file-loaded" event was sent). Setting
+      active the domi_vid_EVENT_FILE_LOADED/"file-loaded" event was sent). Setting
       an ID for which no track exists is equivalent to disabling it. Note that
       setting the properties to non-existing tracks may report it as selected
       track for a small time window, until it's forced back to "no". The exact
@@ -753,7 +753,7 @@ Interface changes
     - ipc: require that "request_id" fields are integers. Other types are still
       accepted for compatibility, but this will stop in the future. Also, if no
       request_id is provided, 0 will be assumed.
-    - mpv_command_node() and mp.command_native() now support named arguments
+    - domi_vid_command_node() and mp.command_native() now support named arguments
       (see manpage). If you want to use them, use a new version of the manpage
       as reference, which lists the definitive names.
     - edition and disc title switching will now fully reload playback (may have
@@ -1166,7 +1166,7 @@ Interface changes
     - implement changing sub-speed during playback
     - make many previously fixed options changeable at runtime (for example
       --terminal, --osc, --ytdl, can all be enable/disabled after
-      mpv_initialize() - this can be extended to other still fixed options
+      domi_vid_initialize() - this can be extended to other still fixed options
       on user requests)
  --- mpv 0.20.0 ---
     - add --image-display-duration option - this also means that image duration
@@ -1203,7 +1203,7 @@ Interface changes
     - deprecated "hwdec-active" and "hwdec-detected" properties (to be removed
       in mpv 0.20.0)
     - choice option/property values that are "yes" or "no" will now be returned
-      as booleans when using the mpv_node functions in the client API, the
+      as booleans when using the domi_vid_node functions in the client API, the
       "native" property accessors in Lua, and the JSON API. They can be set as
       such as well.
     - the VO opengl fbo-format sub-option does not accept "rgb" or "rgba"

@@ -16,8 +16,8 @@
  * License along with mpv.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef MPV_COREAUDIO_UTILS_H
-#define MPV_COREAUDIO_UTILS_H
+#ifndef domi_vid_COREAUDIO_UTILS_H
+#define domi_vid_COREAUDIO_UTILS_H
 
 #include <AudioToolbox/AudioToolbox.h>
 #include <inttypes.h>
@@ -82,4 +82,4 @@ bool ca_change_physical_format_sync(struct ao *ao, AudioStreamID stream,
                                     AudioStreamBasicDescription change_format);
 #endif
 
-#endif /* MPV_COREAUDIO_UTILS_H */
+#endif /* domi_vid_COREAUDIO_UTILS_H */

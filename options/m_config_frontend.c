@@ -123,7 +123,7 @@ static int show_profile(struct m_config *config, bstr param, int depth)
 
 static struct m_config *m_config_from_obj_desc(void *talloc_ctx,
                                                struct mp_log *log,
-                                               struct mpv_global *global,
+                                               struct domi_vid_global *global,
                                                struct m_obj_desc *desc)
 {
     struct m_sub_options *root = talloc_ptrtype(NULL, root);
@@ -148,7 +148,7 @@ struct m_config *m_config_from_obj_desc_noalloc(void *talloc_ctx,
 }
 
 static int m_config_set_obj_params(struct m_config *config, struct mp_log *log,
-                                   struct mpv_global *global,
+                                   struct domi_vid_global *global,
                                    struct m_obj_desc *desc, char **args)
 {
     for (int n = 0; args && args[n * 2 + 0]; n++) {
@@ -162,7 +162,7 @@ static int m_config_set_obj_params(struct m_config *config, struct mp_log *log,
 }
 
 struct m_config *m_config_from_obj_desc_and_args(void *ta_parent,
-    struct mp_log *log, struct mpv_global *global, struct m_obj_desc *desc,
+    struct mp_log *log, struct domi_vid_global *global, struct m_obj_desc *desc,
     char **args)
 {
     struct m_config *config = m_config_from_obj_desc(ta_parent, log, global, desc);
@@ -776,7 +776,7 @@ done:
 }
 
 int m_config_set_option_node(struct m_config *config, bstr name,
-                             struct mpv_node *data, int flags)
+                             struct domi_vid_node *data, int flags)
 {
     int r;
 
@@ -1056,14 +1056,14 @@ void m_config_finish_default_profile(struct m_config *config, int flags)
     p->num_opts = 0;
 }
 
-struct mpv_node m_config_get_profiles(struct m_config *config)
+struct domi_vid_node m_config_get_profiles(struct m_config *config)
 {
-    struct mpv_node root;
-    node_init(&root, MPV_FORMAT_NODE_ARRAY, NULL);
+    struct domi_vid_node root;
+    node_init(&root, domi_vid_FORMAT_NODE_ARRAY, NULL);
 
     for (m_profile_t *profile = config->profiles; profile; profile = profile->next)
     {
-        struct mpv_node *entry = node_array_add(&root, MPV_FORMAT_NODE_MAP);
+        struct domi_vid_node *entry = node_array_add(&root, domi_vid_FORMAT_NODE_MAP);
 
         node_map_add_string(entry, "name", profile->name);
         if (profile->desc)
@@ -1077,11 +1077,11 @@ struct mpv_node m_config_get_profiles(struct m_config *config)
             talloc_free(s);
         }
 
-        struct mpv_node *opts =
-            node_map_add(entry, "options", MPV_FORMAT_NODE_ARRAY);
+        struct domi_vid_node *opts =
+            node_map_add(entry, "options", domi_vid_FORMAT_NODE_ARRAY);
 
         for (int n = 0; n < profile->num_opts; n++) {
-            struct mpv_node *opt_entry = node_array_add(opts, MPV_FORMAT_NODE_MAP);
+            struct domi_vid_node *opt_entry = node_array_add(opts, domi_vid_FORMAT_NODE_MAP);
             node_map_add_string(opt_entry, "key", profile->opts[n * 2 + 0]);
             node_map_add_string(opt_entry, "value", profile->opts[n * 2 + 1]);
         }

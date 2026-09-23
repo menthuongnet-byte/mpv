@@ -46,7 +46,7 @@ static void gl_ctx_set_context(struct offscreen_ctx *ctx, bool enable)
         MP_ERR(ctx, "Could not make EGL context current.\n");
 }
 
-static struct offscreen_ctx *gl_offscreen_ctx_create(struct mpv_global *global,
+static struct offscreen_ctx *gl_offscreen_ctx_create(struct domi_vid_global *global,
                                                      struct mp_log *log)
 {
     struct offscreen_ctx *ctx = talloc(NULL, struct offscreen_ctx);

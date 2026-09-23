@@ -21,7 +21,7 @@
 
 #include "audio/out/ao_coreaudio_properties.h"
 #include "audio/out/ao_coreaudio_utils.h"
-#include "mpv_talloc.h"
+#include "domi_vid_talloc.h"
 #include "osdep/mac/compat.h"
 
 OSStatus ca_get(AudioObjectID id, ca_scope scope, ca_sel selector,

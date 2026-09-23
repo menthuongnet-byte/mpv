@@ -242,7 +242,7 @@ typedef struct MPContext {
     bool initialized;
     bool is_cli;
     mp_thread core_thread;
-    struct mpv_global *global;
+    struct domi_vid_global *global;
     struct MPOpts *opts;
     struct mp_log *log;
     struct stats_ctx *stats;
@@ -494,8 +494,8 @@ struct mp_abort_entry {
     // without holding the abort_lock.
     struct mp_cancel *cancel;
     // For client API.
-    struct mpv_handle *client;  // non-NULL if done by a client API user
-    int client_work_type;       // client API type, e.h. MPV_EVENT_COMMAND_REPLY
+    struct domi_vid_handle *client;  // non-NULL if done by a client API user
+    int client_work_type;       // client API type, e.h. domi_vid_EVENT_COMMAND_REPLY
     uint64_t client_work_id;    // client API user reply_userdata value
                                 // (only valid if client_work_type set)
 };
@@ -650,7 +650,7 @@ struct mp_script_args {
     const struct mp_scripting *backend;
     struct MPContext *mpctx;
     struct mp_log *log;
-    struct mpv_handle *client;
+    struct domi_vid_handle *client;
     const char *filename;
     const char *path;
 };

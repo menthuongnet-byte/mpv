@@ -46,7 +46,7 @@ static void free_demux_packets(struct demux_packet *dp)
     }
 }
 
-void demux_packet_pool_init(struct mpv_global *global)
+void demux_packet_pool_init(struct domi_vid_global *global)
 {
     struct demux_packet_pool *pool = talloc(global, struct demux_packet_pool);
     talloc_set_destructor(pool, uninit);
@@ -57,7 +57,7 @@ void demux_packet_pool_init(struct mpv_global *global)
     global->packet_pool = pool;
 }
 
-struct demux_packet_pool *demux_packet_pool_get(struct mpv_global *global)
+struct demux_packet_pool *demux_packet_pool_get(struct domi_vid_global *global)
 {
     // Currently all clients use the same packet pool. There is no additional
     // state for each client, may be extended in the future.

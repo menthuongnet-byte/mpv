@@ -48,7 +48,7 @@ static void vk_ctx_destroy(void *p)
     mpvk_uninit(vk);
 }
 
-static struct offscreen_ctx *vk_offscreen_ctx_create(struct mpv_global *global,
+static struct offscreen_ctx *vk_offscreen_ctx_create(struct domi_vid_global *global,
                                                      struct mp_log *log)
 {
     struct offscreen_ctx *ctx = talloc(NULL, struct offscreen_ctx);

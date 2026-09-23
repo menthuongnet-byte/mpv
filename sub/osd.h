@@ -194,10 +194,10 @@ extern const struct m_sub_options osd_bar_style_conf;
 
 struct osd_state;
 struct osd_object;
-struct mpv_global;
+struct domi_vid_global;
 struct dec_sub;
 
-struct osd_state *osd_create(struct mpv_global *global);
+struct osd_state *osd_create(struct domi_vid_global *global);
 void osd_changed(struct osd_state *osd);
 void osd_free(struct osd_state *osd);
 

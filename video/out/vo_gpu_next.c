@@ -98,7 +98,7 @@ struct frame_info {
 
 struct cache {
     struct mp_log *log;
-    struct mpv_global *global;
+    struct domi_vid_global *global;
     char *dir;
     const char *name;
     size_t size_limit;
@@ -117,7 +117,7 @@ struct hwdec_slot {
 
 struct priv {
     struct mp_log *log;
-    struct mpv_global *global;
+    struct domi_vid_global *global;
     struct stats_ctx *stats;
     struct ra_ctx *ra_ctx;
     struct gpu_ctx *context;
@@ -2461,7 +2461,7 @@ static void uninit(struct vo *vo)
     for (int i = 0; i < p->num_sub_tex; i++)
         pl_tex_destroy(p->gpu, &p->sub_tex[i]);
     for (int i = 0; i < p->num_user_hooks; i++)
-        pl_mpv_user_shader_destroy(&p->user_hooks[i].hook);
+        pl_domi_vid_user_shader_destroy(&p->user_hooks[i].hook);
 
     timer_pool_destroy(p->sw_upload_timer);
 
@@ -2665,7 +2665,7 @@ static const struct pl_hook *load_hook(struct priv *p, const char *path)
 
     const struct pl_hook *hook = NULL;
     if (shader.len)
-        hook = pl_mpv_user_shader_parse(p->gpu, shader.start, shader.len);
+        hook = pl_domi_vid_user_shader_parse(p->gpu, shader.start, shader.len);
 
     MP_TARRAY_APPEND(p, p->user_hooks, p->num_user_hooks, (struct user_hook) {
         .path = talloc_strdup(p, path),

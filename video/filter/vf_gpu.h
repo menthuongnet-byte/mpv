@@ -19,7 +19,7 @@
 
 #include "common/common.h"
 
-struct mpv_global;
+struct domi_vid_global;
 
 struct offscreen_ctx {
     struct mp_log *log;
@@ -31,6 +31,6 @@ struct offscreen_ctx {
 
 struct offscreen_context {
     const char *api;
-    struct offscreen_ctx *(*offscreen_ctx_create)(struct mpv_global *,
+    struct offscreen_ctx *(*offscreen_ctx_create)(struct domi_vid_global *,
                                                   struct mp_log *);
 };

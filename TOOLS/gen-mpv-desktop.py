@@ -25,26 +25,26 @@ import sys
 if __name__ == "__main__":
     with open(sys.argv[1], encoding="UTF-8") as f:
         next(f)
-        mpv_desktop = dict([line.split("=", 1) for line in f])
+        domi_vid_desktop = dict([line.split("=", 1) for line in f])
 
-    if not mpv_desktop["X-KDE-Protocols"]:
+    if not domi_vid_desktop["X-KDE-Protocols"]:
         raise ValueError("Missing X-KDE-Protocols entry in mpv.desktop file")
 
-    with open(sys.argv[2], encoding="UTF-8") as mpv_protocols_f:
-        mpv_protocols = {
+    with open(sys.argv[2], encoding="UTF-8") as domi_vid_protocols_f:
+        domi_vid_protocols = {
             line.strip(" :/")
-            for line in mpv_protocols_f.read().splitlines()
+            for line in domi_vid_protocols_f.read().splitlines()
             if "://" in line
         }
 
-    if len(mpv_protocols) == 0:
+    if len(domi_vid_protocols) == 0:
         raise ValueError("Unable to parse any protocols from mpv '--list-protocols'")
 
-    protocol_list = set(mpv_desktop["X-KDE-Protocols"].strip().split(","))
-    compatible_protocols = sorted(mpv_protocols & protocol_list)
-    mpv_desktop["X-KDE-Protocols"] = ",".join(compatible_protocols) + "\n"
+    protocol_list = set(domi_vid_desktop["X-KDE-Protocols"].strip().split(","))
+    compatible_protocols = sorted(domi_vid_protocols & protocol_list)
+    domi_vid_desktop["X-KDE-Protocols"] = ",".join(compatible_protocols) + "\n"
 
     with open(sys.argv[3], "w", encoding="UTF-8") as f:
         f.write("[Desktop Entry]" + "\n")
-        for key, value in mpv_desktop.items():
+        for key, value in domi_vid_desktop.items():
             f.write(f"{key}={value}")

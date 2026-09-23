@@ -3,7 +3,7 @@
 #include "ra_gl.h"
 #include "options/m_config.h"
 #include "mpv/render_gl.h"
-#include "video/out/gpu/libmpv_gpu.h"
+#include "video/out/gpu/libdomi_vid_gpu.h"
 #include "video/out/gpu/ra.h"
 
 struct priv {
@@ -11,15 +11,15 @@ struct priv {
     struct ra_ctx *ra_ctx;
 };
 
-static int init(struct libmpv_gpu_context *ctx, mpv_render_param *params)
+static int init(struct libdomi_vid_gpu_context *ctx, domi_vid_render_param *params)
 {
     ctx->priv = talloc_zero(NULL, struct priv);
     struct priv *p = ctx->priv;
 
-    mpv_opengl_init_params *init_params =
-        get_mpv_render_param(params, MPV_RENDER_PARAM_OPENGL_INIT_PARAMS, NULL);
+    domi_vid_opengl_init_params *init_params =
+        get_domi_vid_render_param(params, domi_vid_RENDER_PARAM_OPENGL_INIT_PARAMS, NULL);
     if (!init_params)
-        return MPV_ERROR_INVALID_PARAMETER;
+        return domi_vid_ERROR_INVALID_PARAMETER;
 
     p->gl = talloc_zero(p, GL);
 
@@ -28,7 +28,7 @@ static int init(struct libmpv_gpu_context *ctx, mpv_render_param *params)
                          NULL, ctx->log);
     if (!p->gl->version && !p->gl->es) {
         MP_FATAL(ctx, "OpenGL not initialized.\n");
-        return MPV_ERROR_UNSUPPORTED;
+        return domi_vid_ERROR_UNSUPPORTED;
     }
 
     // initialize a blank ra_ctx to reuse ra_gl_ctx
@@ -48,7 +48,7 @@ static int init(struct libmpv_gpu_context *ctx, mpv_render_param *params)
     struct ra_ctx_params gl_params = {0};
     p->gl->SwapInterval = NULL; // we shouldn't randomly change this, so lock it
     if (!ra_gl_ctx_init(p->ra_ctx, p->gl, gl_params))
-        return MPV_ERROR_UNSUPPORTED;
+        return domi_vid_ERROR_UNSUPPORTED;
 
     struct ra_ctx_opts *ctx_opts = mp_get_config_group(ctx, ctx->global, &ra_ctx_conf);
     p->ra_ctx->opts.debug = ctx_opts->debug;
@@ -61,19 +61,19 @@ static int init(struct libmpv_gpu_context *ctx, mpv_render_param *params)
     return 0;
 }
 
-static int wrap_fbo(struct libmpv_gpu_context *ctx, mpv_render_param *params,
+static int wrap_fbo(struct libdomi_vid_gpu_context *ctx, domi_vid_render_param *params,
                     struct ra_tex **out)
 {
     struct priv *p = ctx->priv;
 
-    mpv_opengl_fbo *fbo =
-        get_mpv_render_param(params, MPV_RENDER_PARAM_OPENGL_FBO, NULL);
+    domi_vid_opengl_fbo *fbo =
+        get_domi_vid_render_param(params, domi_vid_RENDER_PARAM_OPENGL_FBO, NULL);
     if (!fbo)
-        return MPV_ERROR_INVALID_PARAMETER;
+        return domi_vid_ERROR_INVALID_PARAMETER;
 
     if (fbo->fbo && !(p->gl->mpgl_caps & MPGL_CAP_FB)) {
         MP_FATAL(ctx, "Rendering to FBO requested, but no FBO extension found!\n");
-        return MPV_ERROR_UNSUPPORTED;
+        return domi_vid_ERROR_UNSUPPORTED;
     }
 
     struct ra_swapchain *sw = p->ra_ctx->swapchain;
@@ -84,7 +84,7 @@ static int wrap_fbo(struct libmpv_gpu_context *ctx, mpv_render_param *params,
     return 0;
 }
 
-static void done_frame(struct libmpv_gpu_context *ctx, bool ds)
+static void done_frame(struct libdomi_vid_gpu_context *ctx, bool ds)
 {
     struct priv *p = ctx->priv;
 
@@ -93,7 +93,7 @@ static void done_frame(struct libmpv_gpu_context *ctx, bool ds)
     ra_gl_ctx_submit_frame(sw, &dummy);
 }
 
-static void destroy(struct libmpv_gpu_context *ctx)
+static void destroy(struct libdomi_vid_gpu_context *ctx)
 {
     struct priv *p = ctx->priv;
 
@@ -101,8 +101,8 @@ static void destroy(struct libmpv_gpu_context *ctx)
         ra_gl_ctx_uninit(p->ra_ctx);
 }
 
-const struct libmpv_gpu_context_fns libmpv_gpu_context_gl = {
-    .api_name = MPV_RENDER_API_TYPE_OPENGL,
+const struct libdomi_vid_gpu_context_fns libdomi_vid_gpu_context_gl = {
+    .api_name = domi_vid_RENDER_API_TYPE_OPENGL,
     .init = init,
     .wrap_fbo = wrap_fbo,
     .done_frame = done_frame,

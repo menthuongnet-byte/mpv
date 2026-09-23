@@ -144,7 +144,7 @@ struct dr_buffer {
 struct gl_video {
     struct ra *ra;
 
-    struct mpv_global *global;
+    struct domi_vid_global *global;
     struct mp_log *log;
     struct gl_video_opts opts;
     struct m_config_cache *opts_cache;
@@ -4295,7 +4295,7 @@ void gl_video_set_osd_source(struct gl_video *p, struct osd_state *osd)
 }
 
 struct gl_video *gl_video_init(struct ra *ra, struct mp_log *log,
-                               struct mpv_global *g)
+                               struct domi_vid_global *g)
 {
     struct gl_video *p = talloc_ptrtype(NULL, p);
     *p = (struct gl_video) {

@@ -23,7 +23,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "mpv_talloc.h"
+#include "domi_vid_talloc.h"
 
 #include "common/common.h"
 #include "common/global.h"
@@ -54,7 +54,7 @@
 #define EARLY_FILE_BUF 5000
 
 struct mp_log_root {
-    struct mpv_global *global;
+    struct domi_vid_global *global;
     mp_mutex lock;
     mp_mutex log_file_lock;
     mp_cond log_file_wakeup;
@@ -306,7 +306,7 @@ void mp_msg_set_term_title(struct mp_log *log, const char *title)
     }
 }
 
-bool mp_msg_has_status_line(struct mpv_global *global)
+bool mp_msg_has_status_line(struct domi_vid_global *global)
 {
     struct mp_log_root *root = global->log->root;
     mp_mutex_lock(&root->lock);
@@ -738,7 +738,7 @@ struct mp_log *mp_log_new(void *talloc_ctx, struct mp_log *parent,
     return log;
 }
 
-void mp_msg_init(struct mpv_global *global)
+void mp_msg_init(struct domi_vid_global *global)
 {
     mp_assert(!global->log);
 
@@ -824,7 +824,7 @@ static void terminate_log_file_thread(struct mp_log_root *root)
 
 // If opt is different from *current_path, update *current_path and return true.
 // No lock must be held; passed values must be accessible without.
-static bool check_new_path(struct mpv_global *global, char *opt,
+static bool check_new_path(struct domi_vid_global *global, char *opt,
                            char **current_path)
 {
     void *tmp = talloc_new(NULL);
@@ -848,7 +848,7 @@ static bool check_new_path(struct mpv_global *global, char *opt,
     return res;
 }
 
-void mp_msg_update_msglevels(struct mpv_global *global, struct MPOpts *opts)
+void mp_msg_update_msglevels(struct domi_vid_global *global, struct MPOpts *opts)
 {
     struct mp_log_root *root = global->log->root;
 
@@ -941,7 +941,7 @@ void mp_msg_update_msglevels(struct mpv_global *global, struct MPOpts *opts)
     }
 }
 
-void mp_msg_force_stderr(struct mpv_global *global, bool force_stderr)
+void mp_msg_force_stderr(struct domi_vid_global *global, bool force_stderr)
 {
     struct mp_log_root *root = global->log->root;
 
@@ -951,14 +951,14 @@ void mp_msg_force_stderr(struct mpv_global *global, bool force_stderr)
 }
 
 // Only to be called from the main thread.
-bool mp_msg_has_log_file(struct mpv_global *global)
+bool mp_msg_has_log_file(struct domi_vid_global *global)
 {
     struct mp_log_root *root = global->log->root;
 
     return !!root->log_file;
 }
 
-void mp_msg_uninit(struct mpv_global *global)
+void mp_msg_uninit(struct domi_vid_global *global)
 {
     struct mp_log_root *root = global->log->root;
     mp_msg_flush_status_line(global->log, true);
@@ -998,7 +998,7 @@ void mp_msg_uninit(struct mpv_global *global)
 //   a write thread, and hence non-blocking (can overwrite old messages).
 //   it's also bigger than the actual file buffer (early: 5000, actual: 100).
 
-static void mp_msg_set_early_logging_raw(struct mpv_global *global, bool enable,
+static void mp_msg_set_early_logging_raw(struct domi_vid_global *global, bool enable,
                                          struct mp_log_buffer **root_logbuf,
                                          int size, int level)
 {
@@ -1025,7 +1025,7 @@ static void mp_msg_set_early_logging_raw(struct mpv_global *global, bool enable,
     mp_mutex_unlock(&root->lock);
 }
 
-void mp_msg_set_early_logging(struct mpv_global *global, bool enable)
+void mp_msg_set_early_logging(struct domi_vid_global *global, bool enable)
 {
     struct mp_log_root *root = global->log->root;
 
@@ -1037,7 +1037,7 @@ void mp_msg_set_early_logging(struct mpv_global *global, bool enable)
                                  EARLY_FILE_BUF, MP_LOG_BUFFER_MSGL_LOGFILE);
 }
 
-struct mp_log_buffer *mp_msg_log_buffer_new(struct mpv_global *global,
+struct mp_log_buffer *mp_msg_log_buffer_new(struct domi_vid_global *global,
                                             int size, int level,
                                             void (*wakeup_cb)(void *ctx),
                                             void *wakeup_cb_ctx)
@@ -1207,15 +1207,15 @@ const char *const mp_log_levels[MSGL_MAX + 1] = {
     [MSGL_STATS]        = "stats",
 };
 
-const int mp_mpv_log_levels[MSGL_MAX + 1] = {
-    [MSGL_FATAL]        = MPV_LOG_LEVEL_FATAL,
-    [MSGL_ERR]          = MPV_LOG_LEVEL_ERROR,
-    [MSGL_WARN]         = MPV_LOG_LEVEL_WARN,
-    [MSGL_INFO]         = MPV_LOG_LEVEL_INFO,
+const int mp_domi_vid_log_levels[MSGL_MAX + 1] = {
+    [MSGL_FATAL]        = domi_vid_LOG_LEVEL_FATAL,
+    [MSGL_ERR]          = domi_vid_LOG_LEVEL_ERROR,
+    [MSGL_WARN]         = domi_vid_LOG_LEVEL_WARN,
+    [MSGL_INFO]         = domi_vid_LOG_LEVEL_INFO,
     [MSGL_STATUS]       = 0, // never used
-    [MSGL_V]            = MPV_LOG_LEVEL_V,
-    [MSGL_DEBUG]        = MPV_LOG_LEVEL_DEBUG,
-    [MSGL_TRACE]        = MPV_LOG_LEVEL_TRACE,
+    [MSGL_V]            = domi_vid_LOG_LEVEL_V,
+    [MSGL_DEBUG]        = domi_vid_LOG_LEVEL_DEBUG,
+    [MSGL_TRACE]        = domi_vid_LOG_LEVEL_TRACE,
     [MSGL_STATS]        = 0, // never used
 };
 

@@ -832,7 +832,7 @@ Program Behavior
     directory is used to load configuration files, and all other configuration
     directories are ignored. This means the global mpv configuration directory
     as well as per-user directories are ignored, and overrides through
-    environment variables (``MPV_HOME``) are also ignored.
+    environment variables (``domi_vid_HOME``) are also ignored.
 
     Note that the cache and state paths (``~~/cache``, ``~~/state``) are not
     considered "configuration" and keep their auto-detection logic.
@@ -5437,7 +5437,7 @@ Terminal
 
         Some messages are printed before the command line is parsed and are
         therefore not affected by ``--msg-level``. To control these messages,
-        you have to use the ``MPV_VERBOSE`` environment variable; see
+        you have to use the ``domi_vid_VERBOSE`` environment variable; see
         `ENVIRONMENT VARIABLES`_ for details.
 
     Available levels:
@@ -7904,7 +7904,7 @@ them.
     are not supported.
 
     Applications using libmpv with the render API need to provide the ICC
-    profile via ``MPV_RENDER_PARAM_ICC_PROFILE``.
+    profile via ``domi_vid_RENDER_PARAM_ICC_PROFILE``.
 
 ``--icc-cache``
     Store and load 3DLUTs created from the ICC profile on disk in the
@@ -8153,7 +8153,7 @@ Video Sync
 
     This option is interesting for client API users using the render API
     because you can stop it from limiting your FPS
-    (see ``mpv_render_context_render()`` documentation).
+    (see ``domi_vid_render_context_render()`` documentation).
 
     This applies only to audio timing modes (e.g. ``--video-sync=audio``). In
     other modes (``--video-sync=display-...``), video timing relies on vsync

@@ -23,7 +23,7 @@
 
 #include "osdep/io.h"
 
-#include "mpv_talloc.h"
+#include "domi_vid_talloc.h"
 
 #include "config.h"
 
@@ -483,7 +483,7 @@ int stream_create_with_args(struct stream_open_args *args, struct stream **ret)
 }
 
 struct stream *stream_create(const char *url, int flags,
-                             struct mp_cancel *c, struct mpv_global *global)
+                             struct mp_cancel *c, struct domi_vid_global *global)
 {
     struct stream_open_args args = {
         .global = global,
@@ -496,7 +496,7 @@ struct stream *stream_create(const char *url, int flags,
     return s;
 }
 
-stream_t *open_output_stream(const char *filename, struct mpv_global *global)
+stream_t *open_output_stream(const char *filename, struct domi_vid_global *global)
 {
     struct stream *s = stream_create(filename, STREAM_ORIGIN_DIRECT | STREAM_WRITE,
                                      NULL, global);
@@ -890,14 +890,14 @@ struct bstr stream_read_complete(struct stream *s, void *talloc_ctx,
 }
 
 struct bstr stream_read_file(const char *filename, void *talloc_ctx,
-                             struct mpv_global *global, int max_size)
+                             struct domi_vid_global *global, int max_size)
 {
     return stream_read_file2(filename, talloc_ctx, STREAM_READ_FILE_FLAGS_DEFAULT,
                              global, max_size);
 }
 
 struct bstr stream_read_file2(const char *filename, void *talloc_ctx,
-                              int flags, struct mpv_global *global, int max_size)
+                              int flags, struct domi_vid_global *global, int max_size)
 {
     struct bstr res = {0};
     stream_t *s = stream_create(filename, flags, NULL, global);

@@ -3,15 +3,15 @@
 # file identification script
 #
 # manual usage:
-#   mpv_identify.sh foo.mkv
+#   domi_vid_identify.sh foo.mkv
 #
 # sh/dash/ksh/bash usage:
-#   . mpv_identify.sh FOO_ foo.mkv
+#   . domi_vid_identify.sh FOO_ foo.mkv
 # will fill properties into variables like FOO_length
 #
 # zsh usage:
-#   mpv_identify() { emulate -L sh; . mpv_identify.sh "$@"; }
-#   mpv_identify FOO_ foo.mkv
+#   domi_vid_identify() { emulate -L sh; . domi_vid_identify.sh "$@"; }
+#   domi_vid_identify FOO_ foo.mkv
 # will fill properties into variables like FOO_length
 #
 # When multiple files were specified, their info will be put into FOO_* for the
@@ -20,7 +20,7 @@
 __midentify__main() {
 
     case "$0" in
-        mpv_identify.sh|*/mpv_identify.sh)
+        domi_vid_identify.sh|*/domi_vid_identify.sh)
             # we are NOT being sourced
             [ -n "$1" ] && set -- '' "$@"
             ;;

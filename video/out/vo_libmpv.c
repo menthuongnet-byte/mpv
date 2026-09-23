@@ -7,7 +7,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "mpv_talloc.h"
+#include "domi_vid_talloc.h"
 #include "common/common.h"
 #include "misc/bstr.h"
 #include "misc/dispatch.h"
@@ -32,7 +32,7 @@
 #endif
 
 /*
- * mpv_render_context is managed by the host application - the host application
+ * domi_vid_render_context is managed by the host application - the host application
  * can access it any time, even if the VO is destroyed (or not created yet).
  *
  * - the libmpv user can mix render API and normal API; thus render API
@@ -43,23 +43,23 @@
  *   render API user anyway, and the (unlikely) deadlock is avoided with
  *   a timeout
  *
- *  Locking:  mpv core > VO > mpv_render_context.lock > mp_client_api.lock
- *              > mpv_render_context.update_lock
+ *  Locking:  mpv core > VO > domi_vid_render_context.lock > mp_client_api.lock
+ *              > domi_vid_render_context.update_lock
  *  And: render thread > VO (wait for present)
  *       VO > render thread (wait for present done, via timeout)
  *
  *  Locking gets more complex with advanced_control enabled. Use
- *  mpv_render_context.dispatch with care; synchronous calls can add lock
+ *  domi_vid_render_context.dispatch with care; synchronous calls can add lock
  *  dependencies.
  */
 
 struct vo_priv {
-    struct mpv_render_context *ctx; // immutable after init
+    struct domi_vid_render_context *ctx; // immutable after init
 };
 
-struct mpv_render_context {
+struct domi_vid_render_context {
     struct mp_log *log;
-    struct mpv_global *global;
+    struct domi_vid_global *global;
     struct mp_client_api *client_api;
 
     atomic_bool in_use;
@@ -78,7 +78,7 @@ struct mpv_render_context {
     mp_cond update_cond;     // paired with update_lock
 
     // --- Protected by update_lock
-    mpv_render_update_fn update_cb;
+    domi_vid_render_update_fn update_cb;
     void *update_cb_ctx;
 
     mp_mutex lock;
@@ -104,7 +104,7 @@ struct mpv_render_context {
     // --- Mostly immutable after init.
     struct mp_hwdec_devices *hwdec_devs;
 
-    // --- All of these can only be accessed from mpv_render_*() API, for
+    // --- All of these can only be accessed from domi_vid_render_*() API, for
     //     which the user makes sure they're called synchronized.
     struct render_backend *renderer;
     struct m_config_cache *vo_opts_cache;
@@ -117,7 +117,7 @@ const struct render_backend_fns *render_backends[] = {
     NULL
 };
 
-static void update(struct mpv_render_context *ctx)
+static void update(struct domi_vid_render_context *ctx)
 {
     mp_mutex_lock(&ctx->update_lock);
     if (ctx->update_cb)
@@ -127,7 +127,7 @@ static void update(struct mpv_render_context *ctx)
     mp_mutex_unlock(&ctx->update_lock);
 }
 
-void *get_mpv_render_param(mpv_render_param *params, mpv_render_param_type type,
+void *get_domi_vid_render_param(domi_vid_render_param *params, domi_vid_render_param_type type,
                            void *def)
 {
     for (int n = 0; params && params[n].type; n++) {
@@ -137,7 +137,7 @@ void *get_mpv_render_param(mpv_render_param *params, mpv_render_param_type type,
     return def;
 }
 
-static void forget_frames(struct mpv_render_context *ctx, bool all)
+static void forget_frames(struct domi_vid_render_context *ctx, bool all)
 {
     mp_cond_broadcast(&ctx->video_wait);
     if (all) {
@@ -148,7 +148,7 @@ static void forget_frames(struct mpv_render_context *ctx, bool all)
 
 static void dispatch_wakeup(void *ptr)
 {
-    struct mpv_render_context *ctx = ptr;
+    struct domi_vid_render_context *ctx = ptr;
 
     update(ctx);
 }
@@ -156,15 +156,15 @@ static void dispatch_wakeup(void *ptr)
 static struct mp_image *render_get_image(void *ptr, int imgfmt, int w, int h,
                                          int stride_align, int flags)
 {
-    struct mpv_render_context *ctx = ptr;
+    struct domi_vid_render_context *ctx = ptr;
 
     return ctx->renderer->fns->get_image(ctx->renderer, imgfmt, w, h, stride_align, flags);
 }
 
-int mpv_render_context_create(mpv_render_context **res, mpv_handle *mpv,
-                              mpv_render_param *params)
+int domi_vid_render_context_create(domi_vid_render_context **res, domi_vid_handle *mpv,
+                              domi_vid_render_param *params)
 {
-    mpv_render_context *ctx = talloc_zero(NULL, mpv_render_context);
+    domi_vid_render_context *ctx = talloc_zero(NULL, domi_vid_render_context);
     mp_mutex_init(&ctx->control_lock);
     mp_mutex_init(&ctx->lock);
     mp_mutex_init(&ctx->update_lock);
@@ -173,7 +173,7 @@ int mpv_render_context_create(mpv_render_context **res, mpv_handle *mpv,
 
     ctx->global = mp_client_get_global(mpv);
     ctx->client_api = ctx->global->client_api;
-    ctx->log = mp_log_new(ctx, ctx->global->log, "libmpv_render");
+    ctx->log = mp_log_new(ctx, ctx->global->log, "libdomi_vid_render");
 
     ctx->vo_opts_cache = m_config_cache_alloc(ctx, ctx->global, &vo_sub_opts);
     ctx->vo_opts = ctx->vo_opts_cache->opts;
@@ -181,10 +181,10 @@ int mpv_render_context_create(mpv_render_context **res, mpv_handle *mpv,
     ctx->dispatch = mp_dispatch_create(ctx);
     mp_dispatch_set_wakeup_fn(ctx->dispatch, dispatch_wakeup, ctx);
 
-    if (GET_MPV_RENDER_PARAM(params, MPV_RENDER_PARAM_ADVANCED_CONTROL, int, 0))
+    if (GET_domi_vid_RENDER_PARAM(params, domi_vid_RENDER_PARAM_ADVANCED_CONTROL, int, 0))
         ctx->advanced_control = true;
 
-    int err = MPV_ERROR_NOT_IMPLEMENTED;
+    int err = domi_vid_ERROR_NOT_IMPLEMENTED;
     for (int n = 0; render_backends[n]; n++) {
         ctx->renderer = talloc_zero(NULL, struct render_backend);
         *ctx->renderer = (struct render_backend){
@@ -198,12 +198,12 @@ int mpv_render_context_create(mpv_render_context **res, mpv_handle *mpv,
         ctx->renderer->fns->destroy(ctx->renderer);
         talloc_free(ctx->renderer->priv);
         TA_FREEP(&ctx->renderer);
-        if (err != MPV_ERROR_NOT_IMPLEMENTED)
+        if (err != domi_vid_ERROR_NOT_IMPLEMENTED)
             break;
     }
 
     if (err < 0) {
-        mpv_render_context_free(ctx);
+        domi_vid_render_context_free(ctx);
         return err;
     }
 
@@ -218,17 +218,17 @@ int mpv_render_context_create(mpv_render_context **res, mpv_handle *mpv,
         ctx->dr = dr_helper_create(ctx->dispatch, render_get_image, ctx);
 
     if (!mp_set_main_render_context(ctx->client_api, ctx, true)) {
-        MP_ERR(ctx, "There is already a mpv_render_context set.\n");
-        mpv_render_context_free(ctx);
-        return MPV_ERROR_GENERIC;
+        MP_ERR(ctx, "There is already a domi_vid_render_context set.\n");
+        domi_vid_render_context_free(ctx);
+        return domi_vid_ERROR_GENERIC;
     }
 
     *res = ctx;
     return 0;
 }
 
-void mpv_render_context_set_update_callback(mpv_render_context *ctx,
-                                            mpv_render_update_fn callback,
+void domi_vid_render_context_set_update_callback(domi_vid_render_context *ctx,
+                                            domi_vid_render_update_fn callback,
                                             void *callback_ctx)
 {
     mp_mutex_lock(&ctx->update_lock);
@@ -239,7 +239,7 @@ void mpv_render_context_set_update_callback(mpv_render_context *ctx,
     mp_mutex_unlock(&ctx->update_lock);
 }
 
-void mp_render_context_set_control_callback(mpv_render_context *ctx,
+void mp_render_context_set_control_callback(domi_vid_render_context *ctx,
                                             mp_render_cb_control_fn callback,
                                             void *callback_ctx)
 {
@@ -249,7 +249,7 @@ void mp_render_context_set_control_callback(mpv_render_context *ctx,
     mp_mutex_unlock(&ctx->control_lock);
 }
 
-void mpv_render_context_free(mpv_render_context *ctx)
+void domi_vid_render_context_free(domi_vid_render_context *ctx)
 {
     if (!ctx)
         return;
@@ -279,8 +279,8 @@ void mpv_render_context_free(mpv_render_context *ctx)
             // case may even try to allocate new ones).
             //
             // Once the VO is released, ctx->dispatch becomes truly inactive.
-            // (The libmpv API user could call mpv_render_context_update() while
-            // mpv_render_context_free() is being called, but of course this is
+            // (The libmpv API user could call domi_vid_render_context_update() while
+            // domi_vid_render_context_free() is being called, but of course this is
             // invalid.)
             mp_dispatch_queue_process(ctx->dispatch, INFINITY);
         }
@@ -327,18 +327,18 @@ void mpv_render_context_free(mpv_render_context *ctx)
 // Try to mark the context as "in exclusive use" (e.g. by a VO).
 // Note: the function must not acquire any locks, because it's called with an
 // external leaf lock held.
-bool mp_render_context_acquire(mpv_render_context *ctx)
+bool mp_render_context_acquire(domi_vid_render_context *ctx)
 {
     bool prev = false;
     return atomic_compare_exchange_strong(&ctx->in_use, &prev, true);
 }
 
-int mpv_render_context_render(mpv_render_context *ctx, mpv_render_param *params)
+int domi_vid_render_context_render(domi_vid_render_context *ctx, domi_vid_render_param *params)
 {
     mp_mutex_lock(&ctx->lock);
 
     int do_render =
-        !GET_MPV_RENDER_PARAM(params, MPV_RENDER_PARAM_SKIP_RENDERING, int, 0);
+        !GET_domi_vid_RENDER_PARAM(params, domi_vid_RENDER_PARAM_SKIP_RENDERING, int, 0);
 
     if (do_render) {
         int vp_w, vp_h;
@@ -414,7 +414,7 @@ int mpv_render_context_render(mpv_render_context *ctx, mpv_render_param *params)
     if (frame != &dummy)
         talloc_free(frame);
 
-    if (GET_MPV_RENDER_PARAM(params, MPV_RENDER_PARAM_BLOCK_FOR_TARGET_TIME,
+    if (GET_domi_vid_RENDER_PARAM(params, domi_vid_RENDER_PARAM_BLOCK_FOR_TARGET_TIME,
                              int, 1))
     {
         mp_mutex_lock(&ctx->lock);
@@ -426,7 +426,7 @@ int mpv_render_context_render(mpv_render_context *ctx, mpv_render_param *params)
     return err;
 }
 
-void mpv_render_context_report_swap(mpv_render_context *ctx)
+void domi_vid_render_context_report_swap(domi_vid_render_context *ctx)
 {
     MP_STATS(ctx, "glcb-reportflip");
 
@@ -436,7 +436,7 @@ void mpv_render_context_report_swap(mpv_render_context *ctx)
     mp_mutex_unlock(&ctx->lock);
 }
 
-uint64_t mpv_render_context_update(mpv_render_context *ctx)
+uint64_t domi_vid_render_context_update(domi_vid_render_context *ctx)
 {
     uint64_t res = 0;
 
@@ -444,35 +444,35 @@ uint64_t mpv_render_context_update(mpv_render_context *ctx)
 
     mp_mutex_lock(&ctx->lock);
     if (ctx->next_frame)
-        res |= MPV_RENDER_UPDATE_FRAME;
+        res |= domi_vid_RENDER_UPDATE_FRAME;
     mp_mutex_unlock(&ctx->lock);
     return res;
 }
 
-int mpv_render_context_set_parameter(mpv_render_context *ctx,
-                                     mpv_render_param param)
+int domi_vid_render_context_set_parameter(domi_vid_render_context *ctx,
+                                     domi_vid_render_param param)
 {
     return ctx->renderer->fns->set_parameter(ctx->renderer, param);
 }
 
-int mpv_render_context_get_info(mpv_render_context *ctx,
-                                mpv_render_param param)
+int domi_vid_render_context_get_info(domi_vid_render_context *ctx,
+                                domi_vid_render_param param)
 {
-    int res = MPV_ERROR_NOT_IMPLEMENTED;
+    int res = domi_vid_ERROR_NOT_IMPLEMENTED;
     mp_mutex_lock(&ctx->lock);
 
     switch (param.type) {
-    case MPV_RENDER_PARAM_NEXT_FRAME_INFO: {
-        mpv_render_frame_info *info = param.data;
-        *info = (mpv_render_frame_info){0};
+    case domi_vid_RENDER_PARAM_NEXT_FRAME_INFO: {
+        domi_vid_render_frame_info *info = param.data;
+        *info = (domi_vid_render_frame_info){0};
         struct vo_frame *frame = ctx->next_frame;
         if (frame) {
             info->flags =
-                MPV_RENDER_FRAME_INFO_PRESENT |
-                (frame->redraw ? MPV_RENDER_FRAME_INFO_REDRAW : 0) |
-                (frame->repeat ? MPV_RENDER_FRAME_INFO_REPEAT : 0) |
+                domi_vid_RENDER_FRAME_INFO_PRESENT |
+                (frame->redraw ? domi_vid_RENDER_FRAME_INFO_REDRAW : 0) |
+                (frame->repeat ? domi_vid_RENDER_FRAME_INFO_REPEAT : 0) |
                 (frame->display_synced && !frame->redraw ?
-                    MPV_RENDER_FRAME_INFO_BLOCK_VSYNC : 0);
+                    domi_vid_RENDER_FRAME_INFO_BLOCK_VSYNC : 0);
             info->target_time = frame->pts;
         }
         res = 0;
@@ -488,7 +488,7 @@ int mpv_render_context_get_info(mpv_render_context *ctx,
 static bool draw_frame(struct vo *vo, struct vo_frame *frame)
 {
     struct vo_priv *p = vo->priv;
-    struct mpv_render_context *ctx = p->ctx;
+    struct domi_vid_render_context *ctx = p->ctx;
 
     mp_mutex_lock(&ctx->lock);
     mp_assert(!ctx->next_frame);
@@ -504,7 +504,7 @@ static bool draw_frame(struct vo *vo, struct vo_frame *frame)
 static void flip_page(struct vo *vo)
 {
     struct vo_priv *p = vo->priv;
-    struct mpv_render_context *ctx = p->ctx;
+    struct domi_vid_render_context *ctx = p->ctx;
     int64_t until = mp_time_ns() + MP_TIME_MS_TO_NS(200);
 
     mp_mutex_lock(&ctx->lock);
@@ -513,14 +513,14 @@ static void flip_page(struct vo *vo)
     while (ctx->next_frame) {
         if (mp_cond_timedwait_until(&ctx->video_wait, &ctx->lock, until)) {
             if (ctx->next_frame) {
-                MP_VERBOSE(vo, "mpv_render_context_render() not being called "
+                MP_VERBOSE(vo, "domi_vid_render_context_render() not being called "
                            "or stuck.\n");
                 goto done;
             }
         }
     }
 
-    // Unblock mpv_render_context_render().
+    // Unblock domi_vid_render_context_render().
     ctx->present_count += 1;
     mp_cond_broadcast(&ctx->video_wait);
 
@@ -529,12 +529,12 @@ static void flip_page(struct vo *vo)
 
     // Wait until frame was presented
     while (ctx->expected_flip_count > ctx->flip_count) {
-        // mpv_render_report_swap() is declared as optional API.
+        // domi_vid_render_report_swap() is declared as optional API.
         // Assume the user calls it consistently _if_ it's called at all.
         if (!ctx->flip_count)
             break;
         if (mp_cond_timedwait_until(&ctx->video_wait, &ctx->lock, until)) {
-            MP_VERBOSE(vo, "mpv_render_report_swap() not being called.\n");
+            MP_VERBOSE(vo, "domi_vid_render_report_swap() not being called.\n");
             goto done;
         }
     }
@@ -557,7 +557,7 @@ done:
 static int query_format(struct vo *vo, int format)
 {
     struct vo_priv *p = vo->priv;
-    struct mpv_render_context *ctx = p->ctx;
+    struct domi_vid_render_context *ctx = p->ctx;
 
     bool ok = false;
     mp_mutex_lock(&ctx->lock);
@@ -570,7 +570,7 @@ static int query_format(struct vo *vo, int format)
 static void run_control_on_render_thread(void *p)
 {
     void **args = p;
-    struct mpv_render_context *ctx = args[0];
+    struct domi_vid_render_context *ctx = args[0];
     int request = (intptr_t)args[1];
     void *data = args[2];
     int ret = VO_NOTIMPL;
@@ -600,7 +600,7 @@ static void run_control_on_render_thread(void *p)
 static int control(struct vo *vo, uint32_t request, void *data)
 {
     struct vo_priv *p = vo->priv;
-    struct mpv_render_context *ctx = p->ctx;
+    struct domi_vid_render_context *ctx = p->ctx;
 
     switch (request) {
     case VOCTRL_RESET:
@@ -657,7 +657,7 @@ static struct mp_image *get_image(struct vo *vo, int imgfmt, int w, int h,
                                   int stride_align, int flags)
 {
     struct vo_priv *p = vo->priv;
-    struct mpv_render_context *ctx = p->ctx;
+    struct domi_vid_render_context *ctx = p->ctx;
 
     if (ctx->dr)
         return dr_helper_get_image(ctx->dr, imgfmt, w, h, stride_align, flags);
@@ -668,7 +668,7 @@ static struct mp_image *get_image(struct vo *vo, int imgfmt, int w, int h,
 static int reconfig(struct vo *vo, struct mp_image_params *params)
 {
     struct vo_priv *p = vo->priv;
-    struct mpv_render_context *ctx = p->ctx;
+    struct domi_vid_render_context *ctx = p->ctx;
 
     mp_mutex_lock(&ctx->lock);
     forget_frames(ctx, true);
@@ -685,7 +685,7 @@ static int reconfig(struct vo *vo, struct mp_image_params *params)
 static void uninit(struct vo *vo)
 {
     struct vo_priv *p = vo->priv;
-    struct mpv_render_context *ctx = p->ctx;
+    struct domi_vid_render_context *ctx = p->ctx;
 
     control(vo, VOCTRL_UNINIT, NULL);
 
@@ -719,7 +719,7 @@ static int preinit(struct vo *vo)
 
     struct vo_priv *p = vo->priv;
 
-    struct mpv_render_context *ctx =
+    struct domi_vid_render_context *ctx =
         mp_client_api_acquire_render_context(vo->global->client_api);
     p->ctx = ctx;
 

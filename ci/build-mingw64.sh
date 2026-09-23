@@ -377,7 +377,7 @@ export CFLAGS LDFLAGS
 build=mingw_build
 rm -rf $build
 
-mpv_args=(
+domi_vid_args=(
     --cross-file "$prefix_dir/crossfile" $common_args
     --buildtype debugoptimized
     --force-fallback-for=mujs
@@ -386,7 +386,7 @@ mpv_args=(
     -Dlua=luajit
     -D{amf,shaderc,spirv-cross,d3d11,javascript,libcurl}=enabled
 )
-meson setup $build "${mpv_args[@]}"
+meson setup $build "${domi_vid_args[@]}"
 meson compile -C $build
 
 if [ "$2" = pack ]; then

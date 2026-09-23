@@ -31,7 +31,7 @@
 #include <libavutil/lfg.h>
 
 #include "misc/mp_assert.h"
-#include "mpv_talloc.h"
+#include "domi_vid_talloc.h"
 #include "dither.h"
 
 #define MAX_SIZEB 8

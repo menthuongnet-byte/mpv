@@ -24,7 +24,7 @@
 #include <limits.h>
 #include <math.h>
 
-#include "mpv_talloc.h"
+#include "domi_vid_talloc.h"
 
 #include "demux.h"
 #include "timeline.h"
@@ -596,7 +596,7 @@ static void fix_filenames(struct tl_parts *parts, char *source_path)
     }
 }
 
-static void build_mpv_edl_timeline(struct timeline *tl)
+static void build_domi_vid_edl_timeline(struct timeline *tl)
 {
     struct priv *p = tl->demuxer->priv;
 
@@ -664,5 +664,5 @@ const struct demuxer_desc demuxer_desc_edl = {
     .name = "edl",
     .desc = "Edit decision list",
     .open = try_open_file,
-    .load_timeline = build_mpv_edl_timeline,
+    .load_timeline = build_domi_vid_edl_timeline,
 };

@@ -141,11 +141,11 @@ class TouchBar: NSTouchBar, NSTouchBarDelegate, EventSubscriber {
             .previousChapter, .nextChapter, .cycleAudio, .cycleSubtitle, .currentPosition, .timeLeft]
         observers += [observe(\.isVisible, options: [.new]) { _, change in self.changed(visibility: change.newValue) }]
 
-        event?.subscribe(self, event: .init(name: "duration", format: MPV_FORMAT_INT64))
-        event?.subscribe(self, event: .init(name: "time-pos", format: MPV_FORMAT_INT64))
-        event?.subscribe(self, event: .init(name: "speed", format: MPV_FORMAT_DOUBLE))
-        event?.subscribe(self, event: .init(name: "pause", format: MPV_FORMAT_FLAG))
-        event?.subscribe(self, event: .init(name: "MPV_EVENT_END_FILE"))
+        event?.subscribe(self, event: .init(name: "duration", format: domi_vid_FORMAT_INT64))
+        event?.subscribe(self, event: .init(name: "time-pos", format: domi_vid_FORMAT_INT64))
+        event?.subscribe(self, event: .init(name: "speed", format: domi_vid_FORMAT_DOUBLE))
+        event?.subscribe(self, event: .init(name: "pause", format: domi_vid_FORMAT_FLAG))
+        event?.subscribe(self, event: .init(name: "domi_vid_EVENT_END_FILE"))
     }
 
     required init?(coder: NSCoder) {
@@ -273,7 +273,7 @@ class TouchBar: NSTouchBar, NSTouchBarDelegate, EventSubscriber {
 
     func handle(event: EventHelper.Event) {
         switch event.name {
-        case "MPV_EVENT_END_FILE":
+        case "domi_vid_EVENT_END_FILE":
             position = 0
             duration = 0
         case "time-pos": position = max(event.int ?? 0, 0)

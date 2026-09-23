@@ -299,7 +299,7 @@ static const struct va_native_display *const native_displays[] = {
     NULL
 };
 
-static struct AVBufferRef *va_create_standalone(struct mpv_global *global,
+static struct AVBufferRef *va_create_standalone(struct domi_vid_global *global,
         struct mp_log *log, struct hwcontext_create_dev_params *params)
 {
     struct AVBufferRef *ret = NULL;

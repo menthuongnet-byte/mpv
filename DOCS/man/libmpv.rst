@@ -36,7 +36,7 @@ API
 
 A C plugin must export the following function::
 
-    int mpv_open_cplugin(mpv_handle *handle)
+    int domi_vid_open_cplugin(domi_vid_handle *handle)
 
 The plugin function will be called on loading time. This function must not
 return as long as your plugin is loaded (it runs in its own thread). The
@@ -50,12 +50,12 @@ Return values other than ``0`` and ``-1`` are reserved, and trigger undefined
 behavior.
 
 Within the plugin function, you can call libmpv API functions. The ``handle``
-is created by ``mpv_create_client()`` (or actually an internal equivalent),
-and belongs to you. You can call ``mpv_wait_event()`` to wait for things
-happening, and so on. However do not call ``mpv_destroy()`` or
-``mpv_terminate_destroy()`` on this handle.
+is created by ``domi_vid_create_client()`` (or actually an internal equivalent),
+and belongs to you. You can call ``domi_vid_wait_event()`` to wait for things
+happening, and so on. However do not call ``domi_vid_destroy()`` or
+``domi_vid_terminate_destroy()`` on this handle.
 
-Note that the player might block until your plugin calls ``mpv_wait_event()``
+Note that the player might block until your plugin calls ``domi_vid_wait_event()``
 for the first time. This gives you a chance to install initial hooks etc.
 before playback begins.
 
@@ -69,8 +69,8 @@ libmpv. What your plugins use are not symbols from a libmpv binary, but
 symbols from the mpv host binary.
 
 On Windows to make symbols from the host binary available, you have to define
-MPV_CPLUGIN_DYNAMIC_SYM when compiling cplugin. This will load symbols
-dynamically, before calling ``mpv_open_cplugin()``.
+domi_vid_CPLUGIN_DYNAMIC_SYM when compiling cplugin. This will load symbols
+dynamically, before calling ``domi_vid_open_cplugin()``.
 
 Examples
 --------

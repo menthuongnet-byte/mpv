@@ -80,7 +80,7 @@ struct osd_state {
 
     struct m_config_cache *opts_cache;
     struct mp_osd_render_opts *opts;
-    struct mpv_global *global;
+    struct domi_vid_global *global;
     struct mp_log *log;
     struct stats_ctx *stats;
 

@@ -110,7 +110,7 @@ This release requires FFmpeg 6.1 or newer and libplacebo 6.338.2 or newer.
 - demux_mkv: map and expose hearing/visual impaired flags
 - player/misc: show percentage progress for --stream-dump
 - command: fix null dereference for invalid command in input-commands
-- cplugin: fix missing init of pfn_mpv_get_time_ns
+- cplugin: fix missing init of pfn_domi_vid_get_time_ns
 - vo_dmabuf_wayland: actually reuse OSD buffers
 - mp_image: add support for AVAlphaMode
 - vo_gpu_next: add --border-background=blur and --background-blur-radius

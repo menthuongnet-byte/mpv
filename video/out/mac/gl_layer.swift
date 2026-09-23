@@ -214,7 +214,7 @@ class GLLayer: CAOpenGLLayer {
         return cglContext
     }
 
-    let updateCallback: mpv_render_update_fn = { (ctx) in
+    let updateCallback: domi_vid_render_update_fn = { (ctx) in
         let layer: GLLayer = unsafeBitCast(ctx, to: GLLayer.self)
         layer.update()
     }

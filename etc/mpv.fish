@@ -27,7 +27,7 @@ function _complete_mpv
     complete --command mpv $opt_type (string trim --left --chars '-' -- $opt) $argv[2..]
 end
 
-function _complete_mpv_run_help
+function _complete_domi_vid_run_help
     mpv $argv \
         # Remove the text before the option list
         | string match --regex --invert '^\w.*:' \
@@ -35,7 +35,7 @@ function _complete_mpv_run_help
 end
 
 # Print the possible values for the option
-function _complete_mpv_option -a opt
+function _complete_domi_vid_option -a opt
     # We insert a tab so that it is recognized as the description of the argument
     set --local value_description_rewrite 's/ /\t/'
     switch $opt
@@ -44,24 +44,24 @@ function _complete_mpv_option -a opt
             set value_description_rewrite 's/\'([^\']+)\'\s+\((.*)\)$/\1\t\2/'
     end
 
-    _complete_mpv_run_help $opt=help \
+    _complete_domi_vid_run_help $opt=help \
         | sed -E $value_description_rewrite
 end
 
 # Print the possible values for the image option
-function _complete_mpv_image_option -a opt
+function _complete_domi_vid_image_option -a opt
     mpv $opt=help | sed -e 's/.*: //' -e 's/ /\n/g'
 end
 
 # Print the possible values for the profile option
-function _complete_mpv_profile_option -a opt
-    _complete_mpv_run_help $opt=
+function _complete_domi_vid_profile_option -a opt
+    _complete_domi_vid_run_help $opt=
 end
 
 # Cache all the mpv options
-set --local mpv_options (mpv --no-config --list-options | string match --entire --regex '^\s*--' | string trim)
+set --local domi_vid_options (mpv --no-config --list-options | string match --entire --regex '^\s*--' | string trim)
 
-for opt_line in $mpv_options
+for opt_line in $domi_vid_options
     set --local opt_line_split (string split --max 1 ' ' -- $opt_line | string trim)
     set --local opt $opt_line_split[1]
     set --local doc $opt_line_split[2]
@@ -74,7 +74,7 @@ for opt_line in $mpv_options
             if string match -q -r '\[file\]' $doc
                 _complete_mpv $opt --force-files
             else
-                _complete_mpv $opt --exclusive --arguments "help (_complete_mpv_option $opt)"
+                _complete_mpv $opt --exclusive --arguments "help (_complete_domi_vid_option $opt)"
             end
         case Flag
             if string match -q -r '\[not in config files\]' $doc
@@ -83,11 +83,11 @@ for opt_line in $mpv_options
                 _complete_mpv $opt --exclusive --arguments 'yes no help'
             end
         case 'Choices:' Object
-            _complete_mpv $opt --exclusive --arguments "help (_complete_mpv_option $opt)"
+            _complete_mpv $opt --exclusive --arguments "help (_complete_domi_vid_option $opt)"
         case Image
-            _complete_mpv $opt --exclusive --arguments "help (_complete_mpv_image_option $opt)"
+            _complete_mpv $opt --exclusive --arguments "help (_complete_domi_vid_image_option $opt)"
         case Profile
-            _complete_mpv $opt --exclusive --arguments "help (_complete_mpv_profile_option $opt)"
+            _complete_mpv $opt --exclusive --arguments "help (_complete_domi_vid_profile_option $opt)"
         case '*'
             # Unimplemented categories
             _complete_mpv $opt

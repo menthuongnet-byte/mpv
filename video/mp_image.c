@@ -30,7 +30,7 @@
 #include <libavutil/mastering_display_metadata.h>
 #include <libplacebo/utils/libav.h>
 
-#include "mpv_talloc.h"
+#include "domi_vid_talloc.h"
 
 #include "common/av_common.h"
 #include "common/common.h"

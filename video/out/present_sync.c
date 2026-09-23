@@ -18,7 +18,7 @@
 #include <time.h>
 
 #include "misc/linked_list.h"
-#include "mpv_talloc.h"
+#include "domi_vid_talloc.h"
 #include "osdep/timer.h"
 #include "present_sync.h"
 

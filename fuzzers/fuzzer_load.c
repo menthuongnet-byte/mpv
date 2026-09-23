@@ -30,20 +30,20 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
     if (size > MAX_FUZZ_SIZE)
         return 0;
 
-#ifdef MPV_LOAD_CONFIG_FILE
+#ifdef domi_vid_LOAD_CONFIG_FILE
     // config file size limit, see m_config_parse_config_file()
     if (size > 1000000000)
         return 0;
 #endif
 
-#ifdef MPV_LOAD_INPUT_CONF
+#ifdef domi_vid_LOAD_INPUT_CONF
     // input config file size limit, see parse_config_file() in input.c
     if (size > 1000000)
         return 0;
 #endif
 
     // fmemopen doesn't have associated file descriptor, so we do copy.
-    int fd = memfd_create("fuzz_mpv_load", MFD_CLOEXEC | MFD_ALLOW_SEALING);
+    int fd = memfd_create("fuzz_domi_vid_load", MFD_CLOEXEC | MFD_ALLOW_SEALING);
     if (fd == -1)
         exit(1);
     if (fd != 42 && (dup3(fd, 42, O_CLOEXEC) != 42 || close(fd)))
@@ -66,31 +66,31 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
 
     set_fontconfig_sysroot();
 
-    mpv_handle *ctx = mpv_create();
+    domi_vid_handle *ctx = domi_vid_create();
     if (!ctx)
         exit(1);
 
-    check_error(mpv_set_option_string(ctx, "vo", "null"));
-    check_error(mpv_set_option_string(ctx, "ao", "null"));
-    check_error(mpv_set_option_string(ctx, "ao-null-untimed", "yes"));
-    check_error(mpv_set_option_string(ctx, "untimed", "yes"));
-    check_error(mpv_set_option_string(ctx, "video-osd", "no"));
-    check_error(mpv_set_option_string(ctx, "msg-level", "all=trace"));
-    check_error(mpv_set_option_string(ctx, "network-timeout", "1"));
-#ifdef MPV_DEMUXER
-    check_error(mpv_set_option_string(ctx, "demuxer", MPV_DEMUXER));
+    check_error(domi_vid_set_option_string(ctx, "vo", "null"));
+    check_error(domi_vid_set_option_string(ctx, "ao", "null"));
+    check_error(domi_vid_set_option_string(ctx, "ao-null-untimed", "yes"));
+    check_error(domi_vid_set_option_string(ctx, "untimed", "yes"));
+    check_error(domi_vid_set_option_string(ctx, "video-osd", "no"));
+    check_error(domi_vid_set_option_string(ctx, "msg-level", "all=trace"));
+    check_error(domi_vid_set_option_string(ctx, "network-timeout", "1"));
+#ifdef domi_vid_DEMUXER
+    check_error(domi_vid_set_option_string(ctx, "demuxer", domi_vid_DEMUXER));
 #endif
 
-    check_error(mpv_initialize(ctx));
+    check_error(domi_vid_initialize(ctx));
 
-    const char *cmd[] = {"load" MPV_LOAD, filename, NULL};
-    check_error(mpv_command(ctx, cmd));
+    const char *cmd[] = {"load" domi_vid_LOAD, filename, NULL};
+    check_error(domi_vid_command(ctx, cmd));
 
-#ifdef MPV_LOADFILE
+#ifdef domi_vid_LOADFILE
     player_loop(ctx);
 #endif
 
-    mpv_terminate_destroy(ctx);
+    domi_vid_terminate_destroy(ctx);
 
     if (close(fd))
         exit(1);

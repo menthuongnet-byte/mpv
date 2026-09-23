@@ -31,7 +31,7 @@
 #include "config.h"
 #include "options/m_config.h"
 #include "options/m_option.h"
-#include "mpv_talloc.h"
+#include "domi_vid_talloc.h"
 #include "common/av_common.h"
 #include "common/msg.h"
 #include "common/global.h"
@@ -164,7 +164,7 @@ const struct m_sub_options demux_conf = {
 
 struct demux_internal {
     struct mp_log *log;
-    struct mpv_global *global;
+    struct domi_vid_global *global;
     struct demux_packet_pool *packet_pool;
     struct stats_ctx *stats;
 
@@ -3520,7 +3520,7 @@ struct parent_stream_info {
     char *server_filename;
 };
 
-static struct demuxer *open_given_type(struct mpv_global *global,
+static struct demuxer *open_given_type(struct domi_vid_global *global,
                                        struct mp_log *log,
                                        const struct demuxer_desc *desc,
                                        struct stream *stream,
@@ -3666,7 +3666,7 @@ static const int d_force[]   = {DEMUX_CHECK_FORCE, -1};
 static struct demuxer *demux_open(struct stream *stream,
                                   struct mp_cancel *cancel,
                                   struct demuxer_params *params,
-                                  struct mpv_global *global)
+                                  struct domi_vid_global *global)
 {
     const int *check_levels = d_normal;
     const struct demuxer_desc *check_desc = NULL;
@@ -3729,7 +3729,7 @@ done:
     return demuxer;
 }
 
-static struct stream *create_webshit_concat_stream(struct mpv_global *global,
+static struct stream *create_webshit_concat_stream(struct domi_vid_global *global,
                                                    struct mp_cancel *c,
                                                    bstr init, struct stream *real)
 {
@@ -3754,7 +3754,7 @@ static struct stream *create_webshit_concat_stream(struct mpv_global *global,
 struct demuxer *demux_open_url(const char *url,
                                struct demuxer_params *params,
                                struct mp_cancel *cancel,
-                               struct mpv_global *global)
+                               struct domi_vid_global *global)
 {
     if (!params)
         return NULL;

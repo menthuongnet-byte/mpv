@@ -126,21 +126,21 @@ void mp_raw_time_init(void)
     char *end;
 
     // 1..1000 ms max timetout for hires (used in "perwait" mode)
-    if ((v = getenv("MPV_HRT_MAX"))) {
+    if ((v = getenv("domi_vid_HRT_MAX"))) {
         int64_t hmax = strtoll(v, &end, 10);
         if (*end == '\0' && hmax >= MP_TIME_MS_TO_NS(1) && hmax <= MP_TIME_MS_TO_NS(1000))
             hires_max = hmax;
     }
 
     // hires resolution clamped by the available resolution range (not used in "never" mode)
-    if ((v = getenv("MPV_HRT_RES"))) {
+    if ((v = getenv("domi_vid_HRT_RES"))) {
         int64_t res = strtoll(v, &end, 10);
         if (*end == '\0' && res >= max_res * INT64_C(100) && res <= min_res * INT64_C(100))
             hires_res = res;
     }
 
     // "always"/"never"/"perwait"  (or "auto" - same as unset)
-    if (!(v = getenv("MPV_HRT")) || !strcmp(v, "auto"))
+    if (!(v = getenv("domi_vid_HRT")) || !strcmp(v, "auto"))
         v = IsWindows10OrGreater() ? "perwait" : "always";
 
     if (!strcmp(v, "perwait")) {

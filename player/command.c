@@ -35,7 +35,7 @@
 #include <libavutil/common.h>
 #include <libavutil/timecode.h>
 
-#include "mpv_talloc.h"
+#include "domi_vid_talloc.h"
 #include "client.h"
 #include "clipboard/clipboard.h"
 #include "external_files.h"
@@ -121,8 +121,8 @@ struct command_ctx {
     struct mp_cmd_ctx *cache_dump_cmd; // in progress cache dumping
 
     char **script_props;
-    mpv_node udata;
-    mpv_node mdata;
+    domi_vid_node udata;
+    domi_vid_node mdata;
 
     int hwdec_osd_mode;
 
@@ -152,8 +152,8 @@ struct overlay {
 };
 
 struct hook_handler {
-    char *client;   // client mpv_handle name (for logging)
-    int64_t client_id; // client mpv_handle ID
+    char *client;   // client domi_vid_handle name (for logging)
+    int64_t client_id; // client domi_vid_handle ID
     char *type;     // kind of hook, e.g. "on_load"
     uint64_t user_id; // user-chosen ID
     int priority;   // priority for global hook order
@@ -224,14 +224,14 @@ static int invoke_hook_handler(struct MPContext *mpctx, struct hook_handler *h)
     h->active = true;
 
     uint64_t reply_id = 0;
-    mpv_event_hook *m = talloc_ptrtype(NULL, m);
-    *m = (mpv_event_hook){
+    domi_vid_event_hook *m = talloc_ptrtype(NULL, m);
+    *m = (domi_vid_event_hook){
         .name = talloc_strdup(m, h->type),
         .id = h->seq,
     },
     reply_id = h->user_id;
     char *name = mp_tprintf(22, "@%"PRIi64, h->client_id);
-    int r = mp_client_send_event(mpctx, name, reply_id, MPV_EVENT_HOOK, m);
+    int r = mp_client_send_event(mpctx, name, reply_id, domi_vid_EVENT_HOOK, m);
     if (r < 0) {
         MP_MSG(mpctx, mp_client_id_exists(mpctx, h->client_id) ? MSGL_WARN : MSGL_V,
                "Failed sending hook command %s/%s. Removing hook.\n", h->client,
@@ -285,7 +285,7 @@ int mp_hook_continue(struct MPContext *mpctx, int64_t client_id, uint64_t id)
     }
 
     MP_ERR(mpctx, "invalid hook API usage\n");
-    return MPV_ERROR_INVALID_PARAMETER;
+    return domi_vid_ERROR_INVALID_PARAMETER;
 }
 
 static int compare_hook(const void *pa, const void *pb)
@@ -561,18 +561,18 @@ static int mp_property_env(void *ctx, struct m_property *prop,
         return M_PROPERTY_OK;
     case M_PROPERTY_GET:
     case M_PROPERTY_GET_NODE: {
-        struct mpv_node node;
-        node_init(&node, MPV_FORMAT_NODE_MAP, NULL);
+        struct domi_vid_node node;
+        node_init(&node, domi_vid_FORMAT_NODE_MAP, NULL);
         for (char **env = environ; env && *env; env++) {
             char *sep = strchr(*env, '=');
             if (!sep)
                 continue;
             bstr key = { .start = *env, .len = sep - *env };
-            struct mpv_node *np = node_map_badd(&node, key, MPV_FORMAT_NONE);
-            np->format = MPV_FORMAT_STRING;
+            struct domi_vid_node *np = node_map_badd(&node, key, domi_vid_FORMAT_NONE);
+            np->format = domi_vid_FORMAT_STRING;
             np->u.string = talloc_strdup(node.u.list, sep + 1);
         }
-        *(struct mpv_node *)arg = node;
+        *(struct domi_vid_node *)arg = node;
         return M_PROPERTY_OK;
     }
     case M_PROPERTY_KEY_ACTION: {
@@ -1029,12 +1029,12 @@ static int get_chapter_entry(int item, int action, void *arg, void *ctx)
 }
 
 static int parse_node_chapters(struct MPContext *mpctx,
-                               struct mpv_node *given_chapters)
+                               struct domi_vid_node *given_chapters)
 {
     if (!mpctx->demuxer)
         return M_PROPERTY_UNAVAILABLE;
 
-    if (given_chapters->format != MPV_FORMAT_NODE_ARRAY)
+    if (given_chapters->format != domi_vid_FORMAT_NODE_ARRAY)
         return M_PROPERTY_ERROR;
 
     double len = get_time_length(mpctx);
@@ -1044,30 +1044,30 @@ static int parse_node_chapters(struct MPContext *mpctx,
     mpctx->chapters = talloc_array(NULL, struct demux_chapter, 0);
 
     for (int n = 0; n < given_chapters->u.list->num; n++) {
-        struct mpv_node *chapter_data = &given_chapters->u.list->values[n];
+        struct domi_vid_node *chapter_data = &given_chapters->u.list->values[n];
 
-        if (chapter_data->format != MPV_FORMAT_NODE_MAP)
+        if (chapter_data->format != domi_vid_FORMAT_NODE_MAP)
             continue;
 
-        mpv_node_list *chapter_data_elements = chapter_data->u.list;
+        domi_vid_node_list *chapter_data_elements = chapter_data->u.list;
 
         double time = -1;
         char *title = 0;
 
         for (int e = 0; e < chapter_data_elements->num; e++) {
-            struct mpv_node *chapter_data_element =
+            struct domi_vid_node *chapter_data_element =
                 &chapter_data_elements->values[e];
             char *key = chapter_data_elements->keys[e];
             switch (chapter_data_element->format) {
-            case MPV_FORMAT_INT64:
+            case domi_vid_FORMAT_INT64:
                 if (strcmp(key, "time") == 0)
                     time = (double)chapter_data_element->u.int64;
                 break;
-            case MPV_FORMAT_DOUBLE:
+            case domi_vid_FORMAT_DOUBLE:
                 if (strcmp(key, "time") == 0)
                     time = chapter_data_element->u.double_;
                 break;
-            case MPV_FORMAT_STRING:
+            case domi_vid_FORMAT_STRING:
                 if (strcmp(key, "title") == 0)
                     title = chapter_data_element->u.string;
                 break;
@@ -1121,7 +1121,7 @@ static int mp_property_list_chapters(void *ctx, struct m_property *prop,
         return M_PROPERTY_OK;
     }
     case M_PROPERTY_SET: {
-        struct mpv_node *given_chapters = arg;
+        struct domi_vid_node *given_chapters = arg;
         return parse_node_chapters(mpctx, given_chapters);
     }
     }
@@ -1321,24 +1321,24 @@ static int get_tag_entry(int item, int action, void *arg, void *ctx)
 static int tag_property(int action, void *arg, struct mp_tags *tags)
 {
     switch (action) {
-    case M_PROPERTY_GET_NODE: // same as GET, because type==mpv_node
+    case M_PROPERTY_GET_NODE: // same as GET, because type==domi_vid_node
     case M_PROPERTY_GET: {
-        mpv_node_list *list = talloc_zero(NULL, mpv_node_list);
-        mpv_node node = {
-            .format = MPV_FORMAT_NODE_MAP,
+        domi_vid_node_list *list = talloc_zero(NULL, domi_vid_node_list);
+        domi_vid_node node = {
+            .format = domi_vid_FORMAT_NODE_MAP,
             .u.list = list,
         };
         list->num = tags->num_keys;
-        list->values = talloc_array(list, mpv_node, list->num);
+        list->values = talloc_array(list, domi_vid_node, list->num);
         list->keys = talloc_array(list, char*, list->num);
         for (int n = 0; n < tags->num_keys; n++) {
             list->keys[n] = talloc_strdup(list, tags->keys[n]);
-            list->values[n] = (struct mpv_node){
-                .format = MPV_FORMAT_STRING,
+            list->values[n] = (struct domi_vid_node){
+                .format = domi_vid_FORMAT_STRING,
                 .u.string = talloc_strdup(list, tags->values[n]),
             };
         }
-        *(mpv_node*)arg = node;
+        *(domi_vid_node*)arg = node;
         return M_PROPERTY_OK;
     }
     case M_PROPERTY_GET_TYPE: {
@@ -1617,8 +1617,8 @@ static int mp_property_demuxer_cache_state(void *ctx, struct m_property *prop,
     struct demux_reader_state s;
     demux_get_reader_state(mpctx->demuxer, &s);
 
-    struct mpv_node *r = (struct mpv_node *)arg;
-    node_init(r, MPV_FORMAT_NODE_MAP, NULL);
+    struct domi_vid_node *r = (struct domi_vid_node *)arg;
+    node_init(r, domi_vid_FORMAT_NODE_MAP, NULL);
 
     if (s.ts_info.end != MP_NOPTS_VALUE)
         node_map_add_double(r, "cache-end", s.ts_info.end);
@@ -1645,14 +1645,14 @@ static int mp_property_demuxer_cache_state(void *ctx, struct m_property *prop,
     if (s.ts_last != MP_NOPTS_VALUE)
         node_map_add_double(r, "debug-ts-last", s.ts_last);
 
-    struct mpv_node *stream_types =
-        node_map_add(r, "ts-per-stream", MPV_FORMAT_NODE_ARRAY);
+    struct domi_vid_node *stream_types =
+        node_map_add(r, "ts-per-stream", domi_vid_FORMAT_NODE_ARRAY);
     for (int n = 0; n < STREAM_TYPE_COUNT; n++) {
         struct demux_ctrl_ts_info ts = s.ts_per_stream[n];
         if (ts.duration == -1)
             continue;
 
-        struct mpv_node *st = node_array_add(stream_types, MPV_FORMAT_NODE_MAP);
+        struct domi_vid_node *st = node_array_add(stream_types, domi_vid_FORMAT_NODE_MAP);
         node_map_add_string(st, "type",
             n == STREAM_VIDEO ? "video" :
             n == STREAM_AUDIO ? "audio" :
@@ -1667,11 +1667,11 @@ static int mp_property_demuxer_cache_state(void *ctx, struct m_property *prop,
     node_map_add_flag(r, "bof-cached", s.bof_cached);
     node_map_add_flag(r, "eof-cached", s.eof_cached);
 
-    struct mpv_node *ranges =
-        node_map_add(r, "seekable-ranges", MPV_FORMAT_NODE_ARRAY);
+    struct domi_vid_node *ranges =
+        node_map_add(r, "seekable-ranges", domi_vid_FORMAT_NODE_ARRAY);
     for (int n = s.num_seek_ranges - 1; n >= 0; n--) {
         struct demux_seek_range *range = &s.seek_ranges[n];
-        struct mpv_node *sub = node_array_add(ranges, MPV_FORMAT_NODE_MAP);
+        struct domi_vid_node *sub = node_array_add(ranges, domi_vid_FORMAT_NODE_MAP);
         node_map_add_double(sub, "start", range->start);
         node_map_add_double(sub, "end", range->end);
     }
@@ -3021,20 +3021,20 @@ static int mp_property_vo_configured(void *ctx, struct m_property *prop,
                         mpctx->video_out && mpctx->video_out->config_ok);
 }
 
-static void get_frame_perf(struct mpv_node *node, struct mp_frame_perf *perf)
+static void get_frame_perf(struct domi_vid_node *node, struct mp_frame_perf *perf)
 {
     for (int i = 0; i < perf->count; i++) {
         struct mp_pass_perf *data = &perf->perf[i];
-        struct mpv_node *pass = node_array_add(node, MPV_FORMAT_NODE_MAP);
+        struct domi_vid_node *pass = node_array_add(node, domi_vid_FORMAT_NODE_MAP);
 
         node_map_add_string(pass, "desc", perf->desc[i]);
-        node_map_add(pass, "last", MPV_FORMAT_INT64)->u.int64 = data->last;
-        node_map_add(pass, "avg", MPV_FORMAT_INT64)->u.int64 = data->avg;
-        node_map_add(pass, "peak", MPV_FORMAT_INT64)->u.int64 = data->peak;
-        node_map_add(pass, "count", MPV_FORMAT_INT64)->u.int64 = data->count;
-        struct mpv_node *samples = node_map_add(pass, "samples", MPV_FORMAT_NODE_ARRAY);
+        node_map_add(pass, "last", domi_vid_FORMAT_INT64)->u.int64 = data->last;
+        node_map_add(pass, "avg", domi_vid_FORMAT_INT64)->u.int64 = data->avg;
+        node_map_add(pass, "peak", domi_vid_FORMAT_INT64)->u.int64 = data->peak;
+        node_map_add(pass, "count", domi_vid_FORMAT_INT64)->u.int64 = data->count;
+        struct domi_vid_node *samples = node_map_add(pass, "samples", domi_vid_FORMAT_NODE_ARRAY);
         for (int n = 0; n < data->count; n++)
-            node_array_add(samples, MPV_FORMAT_INT64)->u.int64 = data->samples[n];
+            node_array_add(samples, domi_vid_FORMAT_INT64)->u.int64 = data->samples[n];
     }
 }
 
@@ -3087,13 +3087,13 @@ static int mp_property_vo_passes(void *ctx, struct m_property *prop,
     }
 
     case M_PROPERTY_GET: {
-        struct mpv_node node;
-        node_init(&node, MPV_FORMAT_NODE_MAP, NULL);
-        struct mpv_node *fresh = node_map_add(&node, "fresh", MPV_FORMAT_NODE_ARRAY);
-        struct mpv_node *redraw = node_map_add(&node, "redraw", MPV_FORMAT_NODE_ARRAY);
+        struct domi_vid_node node;
+        node_init(&node, domi_vid_FORMAT_NODE_MAP, NULL);
+        struct domi_vid_node *fresh = node_map_add(&node, "fresh", domi_vid_FORMAT_NODE_ARRAY);
+        struct domi_vid_node *redraw = node_map_add(&node, "redraw", domi_vid_FORMAT_NODE_ARRAY);
         get_frame_perf(fresh, &data->fresh);
         get_frame_perf(redraw, &data->redraw);
-        *(struct mpv_node *)arg = node;
+        *(struct domi_vid_node *)arg = node;
         break;
     }
     }
@@ -3112,7 +3112,7 @@ static int mp_property_perf_info(void *ctx, struct m_property *p, int action,
         *(struct m_option *)arg = (struct m_option){.type = CONF_TYPE_NODE};
         return M_PROPERTY_OK;
     case M_PROPERTY_GET: {
-        stats_global_query(mpctx->global, (struct mpv_node *)arg);
+        stats_global_query(mpctx->global, (struct domi_vid_node *)arg);
         return M_PROPERTY_OK;
     }
     }
@@ -3292,8 +3292,8 @@ static int mp_property_tablet_pos(void *ctx, struct m_property *prop,
             &tool_stylus_btn1_pressed, &tool_stylus_btn2_pressed, &tool_stylus_btn3_pressed,
             &pad_focus, pad_buttons_pressed, &pad_buttons);
 
-        struct mpv_node node;
-        node_init(&node, MPV_FORMAT_NODE_MAP, NULL);
+        struct domi_vid_node node;
+        node_init(&node, domi_vid_FORMAT_NODE_MAP, NULL);
         node_map_add_int64(&node, "x", xs);
         node_map_add_int64(&node, "y", ys);
         node_map_add_flag(&node, "tool-in-proximity", tool_in_proximity);
@@ -3303,13 +3303,13 @@ static int mp_property_tablet_pos(void *ctx, struct m_property *prop,
         node_map_add_string(&node, "tool-stylus-btn3", tool_stylus_btn3_pressed ? "pressed" : "released");
         node_map_add_flag(&node, "pad-focus", pad_focus);
 
-        struct mpv_node *args = node_map_add(&node, "pad-btns", MPV_FORMAT_NODE_MAP);
+        struct domi_vid_node *args = node_map_add(&node, "pad-btns", domi_vid_FORMAT_NODE_MAP);
         for (int i = 0; i < pad_buttons; i++) {
             char *name = mp_tprintf(2, "%d", i + 1);
             node_map_add_string(args, name, pad_buttons_pressed[i] ? "pressed" : "released");
         }
 
-        *(struct mpv_node *)arg = node;
+        *(struct domi_vid_node *)arg = node;
         return M_PROPERTY_OK;
     }
     }
@@ -3568,11 +3568,11 @@ static int mp_property_sub_lines(void *ctx, struct m_property *prop,
         if (!lines)
             return M_PROPERTY_UNAVAILABLE;
 
-        struct mpv_node *node = arg;
-        node_init(node, MPV_FORMAT_NODE_ARRAY, NULL);
+        struct domi_vid_node *node = arg;
+        node_init(node, domi_vid_FORMAT_NODE_ARRAY, NULL);
         for (int i = 0; i < lines->num_entries; i++) {
             struct sub_line *line = &lines->entries[i];
-            struct mpv_node *entry = node_array_add(node, MPV_FORMAT_NODE_MAP);
+            struct domi_vid_node *entry = node_array_add(node, domi_vid_FORMAT_NODE_MAP);
             node_map_add_string(entry, "text", line->text);
             node_map_add_double(entry, "start", line->start);
             if (line->end != MP_NOPTS_VALUE)
@@ -3978,7 +3978,7 @@ static int mp_property_lavf_demuxers(void *ctx, struct m_property *prop,
 static int mp_property_version(void *ctx, struct m_property *prop,
                                int action, void *arg)
 {
-    return m_property_strdup_ro(action, arg, mpv_version);
+    return m_property_strdup_ro(action, arg, domi_vid_version);
 }
 
 static int mp_property_configuration(void *ctx, struct m_property *prop,
@@ -4219,7 +4219,7 @@ static int mp_profile_list(void *ctx, struct m_property *prop,
         *(struct m_option *)arg = (struct m_option){.type = CONF_TYPE_NODE};
         return M_PROPERTY_OK;
     case M_PROPERTY_GET: {
-        *(struct mpv_node *)arg = m_config_get_profiles(mpctx->mconfig);
+        *(struct domi_vid_node *)arg = m_config_get_profiles(mpctx->mconfig);
         return M_PROPERTY_OK;
     }
     }
@@ -4234,22 +4234,22 @@ static int mp_property_commands(void *ctx, struct m_property *prop,
         *(struct m_option *)arg = (struct m_option){.type = CONF_TYPE_NODE};
         return M_PROPERTY_OK;
     case M_PROPERTY_GET: {
-        struct mpv_node *root = arg;
-        node_init(root, MPV_FORMAT_NODE_ARRAY, NULL);
+        struct domi_vid_node *root = arg;
+        node_init(root, domi_vid_FORMAT_NODE_ARRAY, NULL);
 
         for (int n = 0; mp_cmds[n].name; n++) {
             const struct mp_cmd_def *cmd = &mp_cmds[n];
-            struct mpv_node *entry = node_array_add(root, MPV_FORMAT_NODE_MAP);
+            struct domi_vid_node *entry = node_array_add(root, domi_vid_FORMAT_NODE_MAP);
 
             node_map_add_string(entry, "name", cmd->name);
 
-            struct mpv_node *args =
-                node_map_add(entry, "args", MPV_FORMAT_NODE_ARRAY);
+            struct domi_vid_node *args =
+                node_map_add(entry, "args", domi_vid_FORMAT_NODE_ARRAY);
             for (int i = 0; i < MP_CMD_DEF_MAX_ARGS; i++) {
                 const struct m_option *a = &cmd->args[i];
                 if (!a->type)
                     break;
-                struct mpv_node *ae = node_array_add(args, MPV_FORMAT_NODE_MAP);
+                struct domi_vid_node *ae = node_array_add(args, domi_vid_FORMAT_NODE_MAP);
                 node_map_add_string(ae, "name", a->name);
                 node_map_add_string(ae, "type", a->type->name);
                 node_map_add_flag(ae, "optional", a->flags & MP_CMD_OPT_ARG);
@@ -4263,17 +4263,17 @@ static int mp_property_commands(void *ctx, struct m_property *prop,
                             if (val)
                                 node_map_add_string(ae, "default-value", val);
                         }
-                        struct mpv_node *choices =
-                            node_map_add(ae, "choices", MPV_FORMAT_NODE_ARRAY);
+                        struct domi_vid_node *choices =
+                            node_map_add(ae, "choices", domi_vid_FORMAT_NODE_ARRAY);
                         for (int j = 0; alt[j].name; j++) {
-                           struct mpv_node *ce = node_array_add(choices, MPV_FORMAT_NONE);
-                           ce->format = MPV_FORMAT_STRING;
+                           struct domi_vid_node *ce = node_array_add(choices, domi_vid_FORMAT_NONE);
+                           ce->format = domi_vid_FORMAT_STRING;
                            ce->u.string = talloc_strdup(choices->u.list, alt[j].name);
                         }
                     }
                 } else if (a->defval) {
-                    struct mpv_node *def =
-                        node_map_add(ae, "default-value", MPV_FORMAT_NONE);
+                    struct domi_vid_node *def =
+                        node_map_add(ae, "default-value", domi_vid_FORMAT_NONE);
                     m_option_get_node(a, ae->u.list, def, (void *)a->defval);
                 }
             }
@@ -4296,7 +4296,7 @@ static int mp_property_bindings(void *ctx, struct m_property *prop,
         *(struct m_option *)arg = (struct m_option){.type = CONF_TYPE_NODE};
         return M_PROPERTY_OK;
     case M_PROPERTY_GET: {
-        *(struct mpv_node *)arg = mp_input_get_bindings(mpctx->input);
+        *(struct domi_vid_node *)arg = mp_input_get_bindings(mpctx->input);
         return M_PROPERTY_OK;
     }
     }
@@ -4307,7 +4307,7 @@ static int mp_property_mdata(void *ctx, struct m_property *prop,
                                 int action, void *arg)
 {
     MPContext *mpctx = ctx;
-    mpv_node *node = &mpctx->command_ctx->mdata;
+    domi_vid_node *node = &mpctx->command_ctx->mdata;
 
     switch (action) {
     case M_PROPERTY_GET_TYPE:
@@ -4353,7 +4353,7 @@ static int do_list_udata(int item, int action, void *arg, void *ctx);
 struct udata_ctx {
     MPContext *mpctx;
     const char *path;
-    mpv_node *node;
+    domi_vid_node *node;
     void *ta_parent;
     int depth;
 };
@@ -4361,14 +4361,14 @@ struct udata_ctx {
 static int do_op_udata(struct udata_ctx* ctx, int action, void *arg)
 {
     MPContext *mpctx = ctx->mpctx;
-    mpv_node *node = ctx->node;
+    domi_vid_node *node = ctx->node;
 
     switch (action) {
     case M_PROPERTY_GET_TYPE:
         *(struct m_option *)arg = udata_type;
         return M_PROPERTY_OK;
     case M_PROPERTY_GET:
-    case M_PROPERTY_GET_NODE: // same as GET, because type==mpv_node
+    case M_PROPERTY_GET_NODE: // same as GET, because type==domi_vid_node
         mp_assert(node);
         m_option_copy(&udata_type, arg, node);
         return M_PROPERTY_OK;
@@ -4389,11 +4389,11 @@ static int do_op_udata(struct udata_ctx* ctx, int action, void *arg)
         mp_assert(node);
 
         // If we're operating on an array, sub-object access is handled by m_property_read_list
-        if (node->format == MPV_FORMAT_NODE_ARRAY)
+        if (node->format == domi_vid_FORMAT_NODE_ARRAY)
             return m_property_read_list(action, arg, node->u.list->num, &do_list_udata, ctx);
 
         // Sub-objects only make sense for arrays and maps
-        if (node->format != MPV_FORMAT_NODE_MAP)
+        if (node->format != domi_vid_FORMAT_NODE_MAP)
             return M_PROPERTY_NOT_IMPLEMENTED;
 
         struct m_property_action_arg *act = arg;
@@ -4432,7 +4432,7 @@ static int do_op_udata(struct udata_ctx* ctx, int action, void *arg)
         }
 
         // Look up the next level down
-        mpv_node *cnode = node_map_bget(node, key);
+        domi_vid_node *cnode = node_map_bget(node, key);
 
         if (!cnode) {
             switch (act->action) {
@@ -4441,7 +4441,7 @@ static int do_op_udata(struct udata_ctx* ctx, int action, void *arg)
                     // If we're doing a set, and the key doesn't exist, create it.
                     // If we're recursing another layer down, make it an empty map;
                     // otherwise, make it NONE, since we'll be overwriting it at the next level.
-                    cnode = node_map_badd(node, key, has_split ? MPV_FORMAT_NODE_MAP : MPV_FORMAT_NONE);
+                    cnode = node_map_badd(node, key, has_split ? domi_vid_FORMAT_NODE_MAP : domi_vid_FORMAT_NONE);
                     if (!cnode)
                         return M_PROPERTY_ERROR;
                     break;
@@ -4587,8 +4587,8 @@ static int mp_property_clipboard(void *ctx, struct m_property *prop,
         return M_PROPERTY_OK;
     case M_PROPERTY_GET:
     case M_PROPERTY_GET_NODE: {
-        struct mpv_node node;
-        node_init(&node, MPV_FORMAT_NODE_MAP, NULL);
+        struct domi_vid_node node;
+        node_init(&node, domi_vid_FORMAT_NODE_MAP, NULL);
         char *data = NULL;
         if (get_clipboard(mpctx, &data, &params) == M_PROPERTY_OK) {
             node_map_add_string(&node, "text", data);
@@ -4600,7 +4600,7 @@ static int mp_property_clipboard(void *ctx, struct m_property *prop,
             node_map_add_string(&node, "text-primary", data);
             talloc_free(data);
         }
-        *(struct mpv_node *)arg = node;
+        *(struct domi_vid_node *)arg = node;
         return M_PROPERTY_OK;
     }
     case M_PROPERTY_KEY_ACTION: {
@@ -4884,14 +4884,14 @@ static const struct m_property mp_properties_base[] = {
 // Each entry describes which properties an event (possibly) changes.
 #define E(x, ...) [x] = (const char*const[]){__VA_ARGS__, NULL}
 static const char *const *const mp_event_property_change[] = {
-    E(MPV_EVENT_START_FILE, "*"),
-    E(MPV_EVENT_END_FILE, "*"),
-    E(MPV_EVENT_FILE_LOADED, "*"),
+    E(domi_vid_EVENT_START_FILE, "*"),
+    E(domi_vid_EVENT_END_FILE, "*"),
+    E(domi_vid_EVENT_FILE_LOADED, "*"),
     E(MP_EVENT_CHANGE_ALL, "*"),
     E(MP_EVENT_TRACKS_CHANGED, "track-list", "current-tracks"),
     E(MP_EVENT_TRACK_SWITCHED, "track-list", "current-tracks"),
-    E(MPV_EVENT_IDLE, "*"),
-    E(MPV_EVENT_TICK, "time-pos", "audio-pts", "stream-pos", "avsync",
+    E(domi_vid_EVENT_IDLE, "*"),
+    E(domi_vid_EVENT_TICK, "time-pos", "audio-pts", "stream-pos", "avsync",
       "percent-pos", "time-remaining", "playtime-remaining", "playback-time",
       "estimated-vf-fps", "total-avsync-change", "audio-speed-correction",
       "video-speed-correction", "vo-delayed-frame-count", "mistimed-frame-count",
@@ -4902,17 +4902,17 @@ static const char *const *const mp_event_property_change[] = {
       "secondary-sub-end", "sub-lines", "secondary-sub-lines", "video-out-params",
       "video-dec-params", "video-params", "deinterlace-active", "video-target-params"),
     E(MP_EVENT_DURATION_UPDATE, "duration"),
-    E(MPV_EVENT_VIDEO_RECONFIG, "video-out-params", "video-params",
+    E(domi_vid_EVENT_VIDEO_RECONFIG, "video-out-params", "video-params",
       "video-format", "video-codec", "video-bitrate", "dwidth", "dheight",
       "width", "height", "container-fps", "aspect", "aspect-name", "vo-configured", "current-vo",
       "video-dec-params", "osd-dimensions", "hwdec", "hwdec-current", "hwdec-interop",
       "window-id", "track-list", "current-tracks"),
-    E(MPV_EVENT_AUDIO_RECONFIG, "audio-format", "audio-codec", "audio-bitrate",
+    E(domi_vid_EVENT_AUDIO_RECONFIG, "audio-format", "audio-codec", "audio-bitrate",
       "samplerate", "channels", "audio", "volume", "volume-gain", "mute",
       "current-ao", "audio-codec-name", "audio-params", "track-list", "current-tracks",
       "audio-out-params", "volume-max", "volume-gain-min", "volume-gain-max", "mixer-active"),
-    E(MPV_EVENT_SEEK, "seeking", "core-idle", "eof-reached"),
-    E(MPV_EVENT_PLAYBACK_RESTART, "seeking", "core-idle", "eof-reached"),
+    E(domi_vid_EVENT_SEEK, "seeking", "core-idle", "eof-reached"),
+    E(domi_vid_EVENT_PLAYBACK_RESTART, "seeking", "core-idle", "eof-reached"),
     E(MP_EVENT_METADATA_UPDATE, "metadata", "filtered-metadata", "media-title"),
     E(MP_EVENT_CHAPTER_CHANGE, "chapter", "chapter-metadata"),
     E(MP_EVENT_CACHE_UPDATE,
@@ -5586,8 +5586,8 @@ static void cmd_osd_overlay(void *p)
 
     osd_set_external(mpctx->osd, &ov);
 
-    struct mpv_node *res = &cmd->result;
-    node_init(res, MPV_FORMAT_NODE_MAP, NULL);
+    struct domi_vid_node *res = &cmd->result;
+    node_init(res, domi_vid_FORMAT_NODE_MAP, NULL);
 
     // (An empty rc uses INFINITY, avoid in JSON, just leave it unset.)
     if (rc[0] < rc[2] && rc[1] < rc[3]) {
@@ -5839,12 +5839,12 @@ void mp_cmd_ctx_complete(struct mp_cmd_ctx *cmd)
 {
     cmd->completed = true;
     if (!cmd->success)
-        mpv_free_node_contents(&cmd->result);
+        domi_vid_free_node_contents(&cmd->result);
     if (cmd->on_completion)
         cmd->on_completion(cmd);
     if (cmd->abort)
         mp_abort_remove(cmd->mpctx, cmd->abort);
-    mpv_free_node_contents(&cmd->result);
+    domi_vid_free_node_contents(&cmd->result);
     talloc_free(cmd);
 }
 
@@ -6394,8 +6394,8 @@ static void cmd_expand_text(void *p)
     struct mp_cmd_ctx *cmd = p;
     struct MPContext *mpctx = cmd->mpctx;
 
-    cmd->result = (mpv_node){
-        .format = MPV_FORMAT_STRING,
+    cmd->result = (domi_vid_node){
+        .format = domi_vid_FORMAT_STRING,
         .u.string = mp_property_expand_string(mpctx, cmd->args[0].v.s)
     };
 }
@@ -6405,8 +6405,8 @@ static void cmd_expand_path(void *p)
     struct mp_cmd_ctx *cmd = p;
     struct MPContext *mpctx = cmd->mpctx;
 
-    cmd->result = (mpv_node){
-        .format = MPV_FORMAT_STRING,
+    cmd->result = (domi_vid_node){
+        .format = domi_vid_FORMAT_STRING,
         .u.string = mp_get_user_path(NULL, mpctx->global, cmd->args[0].v.s)
     };
 }
@@ -6417,8 +6417,8 @@ static void cmd_normalize_path(void *p)
     struct MPContext *mpctx = cmd->mpctx;
 
     char *path = mp_get_user_path(NULL, mpctx->global, cmd->args[0].v.s);
-    cmd->result = (mpv_node){
-        .format = MPV_FORMAT_STRING,
+    cmd->result = (domi_vid_node){
+        .format = domi_vid_FORMAT_STRING,
         .u.string = mp_normalize_path(NULL, path),
     };
 
@@ -6432,8 +6432,8 @@ static void cmd_escape_ass(void *p)
 
     osd_mangle_ass(&dst, cmd->args[0].v.s, true);
 
-    cmd->result = (mpv_node){
-        .format = MPV_FORMAT_STRING,
+    cmd->result = (domi_vid_node){
+        .format = domi_vid_FORMAT_STRING,
         .u.string = dst.len ? (char *)dst.start : talloc_strdup(NULL, ""),
     };
 }
@@ -6496,8 +6496,8 @@ static void cmd_loadfile(void *p)
     struct playlist_entry *at = get_insert_entry(mpctx, &action, insert_at_idx);
     playlist_insert_at(mpctx->playlist, entry, at);
 
-    struct mpv_node *res = &cmd->result;
-    node_init(res, MPV_FORMAT_NODE_MAP, NULL);
+    struct domi_vid_node *res = &cmd->result;
+    node_init(res, domi_vid_FORMAT_NODE_MAP, NULL);
     node_map_add_int64(res, "playlist_entry_id", entry->id);
 
     if (action.type == LOAD_TYPE_REPLACE || (action.play && !mpctx->playlist->current)) {
@@ -6549,8 +6549,8 @@ static void cmd_loadlist(void *p)
             mp_set_playlist_entry(mpctx, new);
         }
 
-        struct mpv_node *res = &cmd->result;
-        node_init(res, MPV_FORMAT_NODE_MAP, NULL);
+        struct domi_vid_node *res = &cmd->result;
+        node_init(res, domi_vid_FORMAT_NODE_MAP, NULL);
         if (num_entries) {
             node_map_add_int64(res, "playlist_entry_id", first->id);
             node_map_add_int64(res, "num_entries", num_entries);
@@ -6967,8 +6967,8 @@ static void cmd_subprocess(void *p)
 
     mp_core_lock(mpctx);
 
-    struct mpv_node *res = &cmd->result;
-    node_init(res, MPV_FORMAT_NODE_MAP, NULL);
+    struct domi_vid_node *res = &cmd->result;
+    node_init(res, domi_vid_FORMAT_NODE_MAP, NULL);
     node_map_add_int64(res, "status", status);
     node_map_add_flag(res, "killed_by_us", status == MP_SUBPROCESS_EKILLED_BY_US);
     node_map_add_string(res, "error_string", error ? error : "");
@@ -6976,9 +6976,9 @@ static void cmd_subprocess(void *p)
     for (int fd = 1; fd < 3; fd++) {
         if (!fdctx[fd].capture)
             continue;
-        struct mpv_byte_array *ba =
-            node_map_add(res, sname[fd], MPV_FORMAT_BYTE_ARRAY)->u.ba;
-        *ba = (struct mpv_byte_array){
+        struct domi_vid_byte_array *ba =
+            node_map_add(res, sname[fd], domi_vid_FORMAT_BYTE_ARRAY)->u.ba;
+        *ba = (struct domi_vid_byte_array){
             .data = talloc_steal(ba, fdctx[fd].output.start),
             .size = fdctx[fd].output.len,
         };
@@ -7109,7 +7109,7 @@ static void cmd_script_binding(void *p)
     struct mp_cmd *incmd = cmd->cmd;
     struct MPContext *mpctx = cmd->mpctx;
 
-    mpv_event_client_message event = {0};
+    domi_vid_event_client_message event = {0};
     char *name = cmd->args[0].v.s;
     if (!name || !name[0]) {
         cmd->success = false;
@@ -7144,7 +7144,7 @@ static void cmd_script_binding(void *p)
                                       incmd->key_text ? incmd->key_text : "",
                                       scale_s, cmd->args[1].v.s};
         if (mp_client_send_event_dup(mpctx, target,
-                                     MPV_EVENT_CLIENT_MESSAGE, &event) < 0)
+                                     domi_vid_EVENT_CLIENT_MESSAGE, &event) < 0)
         {
             MP_VERBOSE(mpctx, "Can't find script '%s' when handling input.\n",
                         target ? target : "-");
@@ -7160,14 +7160,14 @@ static void cmd_script_message_to(void *p)
     struct mp_cmd_ctx *cmd = p;
     struct MPContext *mpctx = cmd->mpctx;
 
-    mpv_event_client_message *event = talloc_ptrtype(NULL, event);
-    *event = (mpv_event_client_message){0};
+    domi_vid_event_client_message *event = talloc_ptrtype(NULL, event);
+    *event = (domi_vid_event_client_message){0};
     for (int n = 1; n < cmd->num_args; n++) {
         MP_TARRAY_APPEND(event, event->args, event->num_args,
                          talloc_strdup(event, cmd->args[n].v.s));
     }
     if (mp_client_send_event(mpctx, cmd->args[0].v.s, 0,
-                                MPV_EVENT_CLIENT_MESSAGE, event) < 0)
+                                domi_vid_EVENT_CLIENT_MESSAGE, event) < 0)
     {
         MP_VERBOSE(mpctx, "Can't find script '%s' to send message to.\n",
                    cmd->args[0].v.s);
@@ -7181,10 +7181,10 @@ static void cmd_script_message(void *p)
     struct MPContext *mpctx = cmd->mpctx;
 
     const char **args = talloc_array(NULL, const char *, cmd->num_args);
-    mpv_event_client_message event = {.args = args};
+    domi_vid_event_client_message event = {.args = args};
     for (int n = 0; n < cmd->num_args; n++)
         event.args[event.num_args++] = cmd->args[n].v.s;
-    mp_client_broadcast_event(mpctx, MPV_EVENT_CLIENT_MESSAGE, &event);
+    mp_client_broadcast_event(mpctx, domi_vid_EVENT_CLIENT_MESSAGE, &event);
     talloc_free(args);
 }
 
@@ -7343,8 +7343,8 @@ static void cmd_load_script(void *p)
     char *script = cmd->args[0].v.s;
     int64_t id = mp_load_user_script(mpctx, script);
     if (id > 0) {
-        struct mpv_node *res = &cmd->result;
-        node_init(res, MPV_FORMAT_NODE_MAP, NULL);
+        struct domi_vid_node *res = &cmd->result;
+        node_init(res, domi_vid_FORMAT_NODE_MAP, NULL);
         node_map_add_int64(res, "client_id", id);
     } else {
         cmd->success = false;
@@ -8190,10 +8190,10 @@ void command_init(struct MPContext *mpctx)
         ctx->properties[count++] = prop;
     }
 
-    node_init(&ctx->mdata, MPV_FORMAT_NODE_ARRAY, NULL);
+    node_init(&ctx->mdata, domi_vid_FORMAT_NODE_ARRAY, NULL);
     talloc_steal(ctx, ctx->mdata.u.list);
 
-    node_init(&ctx->udata, MPV_FORMAT_NODE_MAP, NULL);
+    node_init(&ctx->udata, domi_vid_FORMAT_NODE_MAP, NULL);
     talloc_steal(ctx, ctx->udata.u.list);
     talloc_free(prop_names);
 }
@@ -8202,29 +8202,29 @@ static void command_event(struct MPContext *mpctx, int event, void *arg)
 {
     struct command_ctx *ctx = mpctx->command_ctx;
 
-    if (event == MPV_EVENT_START_FILE) {
+    if (event == domi_vid_EVENT_START_FILE) {
         ctx->last_seek_pts = MP_NOPTS_VALUE;
         ctx->marked_pts = MP_NOPTS_VALUE;
         ctx->marked_permanent = false;
     }
 
-    if (event == MPV_EVENT_PLAYBACK_RESTART) {
+    if (event == domi_vid_EVENT_PLAYBACK_RESTART) {
         ctx->last_seek_time = mp_time_sec();
         run_command_opts(mpctx);
     }
 
-    if (event == MPV_EVENT_VIDEO_RECONFIG && ctx->hwdec_osd_mode) {
+    if (event == domi_vid_EVENT_VIDEO_RECONFIG && ctx->hwdec_osd_mode) {
         show_property_osd(mpctx, "hwdec", ctx->hwdec_osd_mode);
         ctx->hwdec_osd_mode = 0;
     }
 
-    if (event == MPV_EVENT_IDLE)
+    if (event == domi_vid_EVENT_IDLE)
         run_command_opts(mpctx);
 
-    if (event == MPV_EVENT_END_FILE)
+    if (event == domi_vid_EVENT_END_FILE)
         mp_msg_flush_status_line(mpctx->log, false);
 
-    if (event == MPV_EVENT_END_FILE || event == MPV_EVENT_FILE_LOADED) {
+    if (event == domi_vid_EVENT_END_FILE || event == domi_vid_EVENT_FILE_LOADED) {
         // Update chapters - does nothing if something else is visible.
         set_osd_bar_chapters(mpctx, OSD_BAR_SEEK);
     }
@@ -8446,7 +8446,7 @@ void mp_option_run_callback(struct MPContext *mpctx, struct mp_option_callback *
             mp_decoder_wrapper_control(dec, VDCTRL_REINIT, NULL);
             // filter chain might not change (which normally triggers this), but
             // hwdec will.
-            mp_notify(mpctx, MPV_EVENT_VIDEO_RECONFIG, NULL);
+            mp_notify(mpctx, domi_vid_EVENT_VIDEO_RECONFIG, NULL);
             double last_pts = mpctx->video_pts;
             if (last_pts != MP_NOPTS_VALUE)
                 queue_seek(mpctx, MPSEEK_ABSOLUTE, last_pts, MPSEEK_EXACT, 0);

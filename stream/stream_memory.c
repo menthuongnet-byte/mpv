@@ -47,7 +47,7 @@ const stream_info_t stream_info_memory = {
 
 // The data is copied.
 // Caller may need to set stream.stream_origin correctly.
-struct stream *stream_memory_open(struct mpv_global *global, void *data, int len)
+struct stream *stream_memory_open(struct domi_vid_global *global, void *data, int len)
 {
     mp_assert(len >= 0);
 

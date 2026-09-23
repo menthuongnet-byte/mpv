@@ -39,7 +39,7 @@ struct ao {
     const struct ao_driver *driver;
     bool driver_initialized;
     void *priv;
-    struct mpv_global *global;
+    struct domi_vid_global *global;
     struct encode_lavc_context *encode_lavc_ctx;
     void (*wakeup_cb)(void *ctx);
     void *wakeup_ctx;

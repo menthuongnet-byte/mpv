@@ -21,7 +21,7 @@
 #include <math.h>
 #include <assert.h>
 
-#include "mpv_talloc.h"
+#include "domi_vid_talloc.h"
 
 #include "config.h"
 #include "ao.h"
@@ -161,7 +161,7 @@ const struct m_sub_options ao_conf = {
     },
 };
 
-static struct ao *ao_alloc(bool probing, struct mpv_global *global,
+static struct ao *ao_alloc(bool probing, struct domi_vid_global *global,
                            void (*wakeup_cb)(void *ctx), void *wakeup_ctx,
                            char *name)
 {
@@ -199,7 +199,7 @@ error:
     return NULL;
 }
 
-static struct ao *ao_init(bool probing, struct mpv_global *global,
+static struct ao *ao_init(bool probing, struct domi_vid_global *global,
                           void (*wakeup_cb)(void *ctx), void *wakeup_ctx,
                           struct encode_lavc_context *encode_lavc_ctx, int flags,
                           int samplerate, int format, struct mp_chmap channels,
@@ -288,7 +288,7 @@ static void split_ao_device(void *tmp, char *opt, char **out_ao, char **out_dev)
     *out_ao = bstrto0(tmp, b_ao);
 }
 
-struct ao *ao_init_best(struct mpv_global *global,
+struct ao *ao_init_best(struct domi_vid_global *global,
                         int init_flags,
                         void (*wakeup_cb)(void *ctx), void *wakeup_ctx,
                         struct encode_lavc_context *encode_lavc_ctx,
@@ -458,7 +458,7 @@ bool ao_untimed(struct ao *ao)
 // ---
 
 struct ao_hotplug {
-    struct mpv_global *global;
+    struct domi_vid_global *global;
     void (*wakeup_cb)(void *ctx);
     void *wakeup_ctx;
     // A single AO instance is used to listen to hotplug events. It wouldn't
@@ -472,7 +472,7 @@ struct ao_hotplug {
     bool needs_update;
 };
 
-struct ao_hotplug *ao_hotplug_create(struct mpv_global *global,
+struct ao_hotplug *ao_hotplug_create(struct domi_vid_global *global,
                                      void (*wakeup_cb)(void *ctx),
                                      void *wakeup_ctx)
 {
@@ -597,7 +597,7 @@ static void dummy_wakeup(void *ctx)
 {
 }
 
-void ao_print_devices(struct mpv_global *global, struct mp_log *log,
+void ao_print_devices(struct domi_vid_global *global, struct mp_log *log,
                       struct ao *playback_ao)
 {
     struct ao_hotplug *hp = ao_hotplug_create(global, dummy_wakeup, NULL);

@@ -128,16 +128,16 @@ endif
 if get_option('libmpv')
     file = join_paths(source_root, 'etc', 'mpv-icon-8bit-16x16.png')
 
-    exe = executable('libmpv-test-file-loading', 'libmpv_test_file_loading.c',
-                     include_directories: incdir, dependencies: libmpv_dep)
+    exe = executable('libmpv-test-file-loading', 'libdomi_vid_test_file_loading.c',
+                     include_directories: incdir, dependencies: libdomi_vid_dep)
     test('libmpv-test-file-loading', exe, args: file, suite: 'libmpv')
 
-    exe = executable('libmpv-test-lavfi-complex', 'libmpv_test_lavfi_complex.c',
-                     include_directories: incdir, dependencies: libmpv_dep)
+    exe = executable('libmpv-test-lavfi-complex', 'libdomi_vid_test_lavfi_complex.c',
+                     include_directories: incdir, dependencies: libdomi_vid_dep)
     test('libmpv-test-lavfi-complex', exe, args: file, suite: 'libmpv')
 
-    exe = executable('libmpv-test-options', 'libmpv_test_options.c',
-                     include_directories: incdir, dependencies: libmpv_dep)
+    exe = executable('libmpv-test-options', 'libdomi_vid_test_options.c',
+                     include_directories: incdir, dependencies: libdomi_vid_dep)
     test('libmpv-test-options', exe, suite: 'libmpv')
 
     # Old versions of ffmpeg are bugged when setting forced tracks and older
@@ -149,8 +149,8 @@ if get_option('libmpv')
         endif
     endif
 
-    exe = executable('libmpv-encode', 'libmpv_encode.c',
-                     include_directories: incdir, dependencies: libmpv_dep)
+    exe = executable('libmpv-encode', 'libdomi_vid_encode.c',
+                     include_directories: incdir, dependencies: libdomi_vid_dep)
     test('libmpv-encode', exe, suite: 'libmpv')
 
     mpvlib = libmpv
@@ -160,7 +160,7 @@ if get_option('libmpv')
         shared = true
     endif
     if shared
-        exe = executable('libmpv-lifetime', sources: 'libmpv_lifetime.c',
+        exe = executable('libmpv-lifetime', sources: 'libdomi_vid_lifetime.c',
                          include_directories: incdir_public)
         test('libmpv-lifetime', exe, depends: mpvlib, suite: 'libmpv')
     endif

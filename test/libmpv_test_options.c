@@ -15,7 +15,7 @@
  * License along with mpv.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "libmpv_common.h"
+#include "libdomi_vid_common.h"
 
 // Dummy values for test_options_and_properties
 static const char *str = "string";
@@ -23,20 +23,20 @@ static int flag = 1;
 static int64_t int_ = 20;
 static double double_ = 1.5;
 
-static void check_results(const char *properties[], enum mpv_format formats[])
+static void check_results(const char *properties[], enum domi_vid_format formats[])
 {
     for (int i = 0; properties[i]; i++) {
         switch (formats[i]) {
-        case MPV_FORMAT_STRING:
+        case domi_vid_FORMAT_STRING:
             check_string(properties[i], str);
             break;
-        case MPV_FORMAT_FLAG:
+        case domi_vid_FORMAT_FLAG:
             check_flag(properties[i], flag);
             break;
-        case MPV_FORMAT_INT64:
+        case domi_vid_FORMAT_INT64:
             check_int(properties[i], int_);
             break;
-        case MPV_FORMAT_DOUBLE:
+        case domi_vid_FORMAT_DOUBLE:
             check_double(properties[i], double_);
             break;
         }
@@ -44,23 +44,23 @@ static void check_results(const char *properties[], enum mpv_format formats[])
 }
 
 static void set_options_and_properties(const char *options[], const char *properties[],
-                                              enum mpv_format formats[])
+                                              enum domi_vid_format formats[])
 {
     for (int i = 0; options[i]; i++) {
         switch (formats[i]) {
-        case MPV_FORMAT_STRING:
+        case domi_vid_FORMAT_STRING:
             set_option_or_property(options[i], formats[i], &str, true);
             set_option_or_property(properties[i], formats[i], &str, false);
             break;
-        case MPV_FORMAT_FLAG:
+        case domi_vid_FORMAT_FLAG:
             set_option_or_property(options[i], formats[i], &flag, true);
             set_option_or_property(properties[i], formats[i], &flag, false);
             break;
-        case MPV_FORMAT_INT64:
+        case domi_vid_FORMAT_INT64:
             set_option_or_property(options[i], formats[i], &int_, true);
             set_option_or_property(properties[i], formats[i], &int_, false);
             break;
-        case MPV_FORMAT_DOUBLE:
+        case domi_vid_FORMAT_DOUBLE:
             set_option_or_property(options[i], formats[i], &double_, true);
             set_option_or_property(properties[i], formats[i], &double_, false);
             break;
@@ -91,11 +91,11 @@ static void test_options_and_properties(void)
     };
 
     // Must match above ordering.
-    enum mpv_format formats[] = {
-        MPV_FORMAT_STRING,
-        MPV_FORMAT_FLAG,
-        MPV_FORMAT_INT64,
-        MPV_FORMAT_DOUBLE,
+    enum domi_vid_format formats[] = {
+        domi_vid_FORMAT_STRING,
+        domi_vid_FORMAT_FLAG,
+        domi_vid_FORMAT_INT64,
+        domi_vid_FORMAT_DOUBLE,
     };
 
     set_options_and_properties(options, properties, formats);
@@ -103,11 +103,11 @@ static void test_options_and_properties(void)
     check_results(options, formats);
     check_results(properties, formats);
 
-    // Ensure the format is still MPV_FORMAT_FLAG for these property types.
-    mpv_node result_node;
-    get_property("idle-active", MPV_FORMAT_NODE, &result_node);
-    if (result_node.format != MPV_FORMAT_FLAG)
-        fail("Node: expected mpv format '%d' but got '%d'!\n", MPV_FORMAT_FLAG, result_node.format);
+    // Ensure the format is still domi_vid_FORMAT_FLAG for these property types.
+    domi_vid_node result_node;
+    get_property("idle-active", domi_vid_FORMAT_NODE, &result_node);
+    if (result_node.format != domi_vid_FORMAT_FLAG)
+        fail("Node: expected mpv format '%d' but got '%d'!\n", domi_vid_FORMAT_FLAG, result_node.format);
 
     // Always should be true.
     if (result_node.u.flag != 1)
@@ -119,7 +119,7 @@ int main(int argc, char *argv[])
     if (argc != 1)
         return 1;
 
-    ctx = mpv_create();
+    ctx = domi_vid_create();
     if (!ctx)
         return 1;
 
@@ -133,7 +133,7 @@ int main(int argc, char *argv[])
     printf("================ SHUTDOWN ================\n");
 
     command_string("quit");
-    while (wrap_wait_event()->event_id != MPV_EVENT_SHUTDOWN) {}
+    while (wrap_wait_event()->event_id != domi_vid_EVENT_SHUTDOWN) {}
 
     return 0;
 }

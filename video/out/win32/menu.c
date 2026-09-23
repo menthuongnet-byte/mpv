@@ -20,7 +20,7 @@
 
 #include "mpv/client.h"
 #include "osdep/io.h"
-#include "mpv_talloc.h"
+#include "domi_vid_talloc.h"
 
 #include "menu.h"
 
@@ -32,14 +32,14 @@ struct menu_ctx {
     void *ta_data; // talloc context for MENUITEMINFOW.dwItemData
 };
 
-#define SYS_MENU_MPV_START_ID (WM_USER + 100) // separator + submenu
-#define MENU_MPV_START_ID (SYS_MENU_MPV_START_ID + 2)
+#define SYS_MENU_domi_vid_START_ID (WM_USER + 100) // separator + submenu
+#define MENU_domi_vid_START_ID (SYS_MENU_domi_vid_START_ID + 2)
 
 // append menu item to HMENU
 static int append_menu(HMENU hmenu, UINT fMask, UINT fType, UINT fState,
                        wchar_t *title, HMENU submenu, UINT item_id, void *data)
 {
-    static UINT id = MENU_MPV_START_ID;
+    static UINT id = MENU_domi_vid_START_ID;
     MENUITEMINFOW mii = {0};
 
     mii.cbSize = sizeof(mii);
@@ -47,7 +47,7 @@ static int append_menu(HMENU hmenu, UINT fMask, UINT fType, UINT fState,
     mii.wID = item_id ? item_id : id++;
     // menu id must be less than 0xF000 and greater than WM_USER
     if (id >= 0xF000)
-        id = MENU_MPV_START_ID;
+        id = MENU_domi_vid_START_ID;
 
     if (fMask & MIIM_FTYPE)
         mii.fType = fType;
@@ -66,12 +66,12 @@ static int append_menu(HMENU hmenu, UINT fMask, UINT fType, UINT fState,
 }
 
 // build fState for menu item creation
-static int build_state(mpv_node *node)
+static int build_state(domi_vid_node *node)
 {
     int fState = 0;
     for (int i = 0; i < node->u.list->num; i++) {
-        mpv_node *item = &node->u.list->values[i];
-        if (item->format != MPV_FORMAT_STRING)
+        domi_vid_node *item = &node->u.list->values[i];
+        if (item->format != domi_vid_FORMAT_STRING)
             continue;
 
         if (strcmp(item->u.string, "hidden") == 0) {
@@ -101,25 +101,25 @@ static wchar_t *build_title(void *talloc_ctx, char *title, char *shortcut)
 //
 // node structure:
 //
-// MPV_FORMAT_NODE_ARRAY
-//   MPV_FORMAT_NODE_MAP (menu item)
-//      "type"           MPV_FORMAT_STRING
-//      "title"          MPV_FORMAT_STRING
-//      "cmd"            MPV_FORMAT_STRING
-//      "shortcut"       MPV_FORMAT_STRING
-//      "state"          MPV_FORMAT_NODE_ARRAY[MPV_FORMAT_STRING]
-//      "submenu"        MPV_FORMAT_NODE_ARRAY[menu item]
-static void build_menu(void *talloc_ctx, HMENU hmenu, struct mpv_node *node)
+// domi_vid_FORMAT_NODE_ARRAY
+//   domi_vid_FORMAT_NODE_MAP (menu item)
+//      "type"           domi_vid_FORMAT_STRING
+//      "title"          domi_vid_FORMAT_STRING
+//      "cmd"            domi_vid_FORMAT_STRING
+//      "shortcut"       domi_vid_FORMAT_STRING
+//      "state"          domi_vid_FORMAT_NODE_ARRAY[domi_vid_FORMAT_STRING]
+//      "submenu"        domi_vid_FORMAT_NODE_ARRAY[menu item]
+static void build_menu(void *talloc_ctx, HMENU hmenu, struct domi_vid_node *node)
 {
-    if (node->format != MPV_FORMAT_NODE_ARRAY)
+    if (node->format != domi_vid_FORMAT_NODE_ARRAY)
         return;
 
     for (int i = 0; i < node->u.list->num; i++) {
-        mpv_node *item = &node->u.list->values[i];
-        if (item->format != MPV_FORMAT_NODE_MAP)
+        domi_vid_node *item = &node->u.list->values[i];
+        if (item->format != domi_vid_FORMAT_NODE_MAP)
             continue;
 
-        mpv_node_list *list = item->u.list;
+        domi_vid_node_list *list = item->u.list;
 
         char *type = "";
         char *title = NULL;
@@ -130,10 +130,10 @@ static void build_menu(void *talloc_ctx, HMENU hmenu, struct mpv_node *node)
 
         for (int j = 0; j < list->num; j++) {
             char *key = list->keys[j];
-            mpv_node *value = &list->values[j];
+            domi_vid_node *value = &list->values[j];
 
             switch (value->format) {
-            case MPV_FORMAT_STRING:
+            case domi_vid_FORMAT_STRING:
                 if (strcmp(key, "title") == 0) {
                     title = value->u.string;
                 } else if (strcmp(key, "cmd") == 0) {
@@ -144,7 +144,7 @@ static void build_menu(void *talloc_ctx, HMENU hmenu, struct mpv_node *node)
                     shortcut = value->u.string;
                 }
                 break;
-            case MPV_FORMAT_NODE_ARRAY:
+            case domi_vid_FORMAT_NODE_ARRAY:
                 if (strcmp(key, "state") == 0) {
                     fState = build_state(value);
                 } else if (strcmp(key, "submenu") == 0) {
@@ -196,9 +196,9 @@ struct menu_ctx *mp_win32_menu_init(HWND hwnd)
     ctx->sys_menu = GetSystemMenu(hwnd, FALSE);
     ctx->ta_data = talloc_new(ctx);
     append_menu(ctx->sys_menu, MIIM_FTYPE, MFT_SEPARATOR, 0, NULL, NULL,
-                SYS_MENU_MPV_START_ID + 0, NULL);
+                SYS_MENU_domi_vid_START_ID + 0, NULL);
     append_menu(ctx->sys_menu, MIIM_STRING | MIIM_SUBMENU, 0, 0, L"mp&v", ctx->menu,
-                SYS_MENU_MPV_START_ID + 1, NULL);
+                SYS_MENU_domi_vid_START_ID + 1, NULL);
     return ctx;
 }
 
@@ -228,18 +228,18 @@ void mp_win32_menu_show(struct menu_ctx *ctx, HWND hwnd)
                      hwnd, NULL);
 }
 
-void mp_win32_menu_update(struct menu_ctx *ctx, struct mpv_node *data)
+void mp_win32_menu_update(struct menu_ctx *ctx, struct domi_vid_node *data)
 {
     while (GetMenuItemCount(ctx->menu) > 0)
         DeleteMenu(ctx->menu, 0, MF_BYPOSITION);
     talloc_free_children(ctx->ta_data);
 
-    bool has_menu = data->format == MPV_FORMAT_NODE_ARRAY &&
+    bool has_menu = data->format == domi_vid_FORMAT_NODE_ARRAY &&
                     data->u.list->num > 0;
 
-    EnableMenuItem(ctx->sys_menu, SYS_MENU_MPV_START_ID + 0, MF_BYCOMMAND |
+    EnableMenuItem(ctx->sys_menu, SYS_MENU_domi_vid_START_ID + 0, MF_BYCOMMAND |
                    (has_menu ? MF_ENABLED : MF_GRAYED));
-    EnableMenuItem(ctx->sys_menu, SYS_MENU_MPV_START_ID + 1, MF_BYCOMMAND |
+    EnableMenuItem(ctx->sys_menu, SYS_MENU_domi_vid_START_ID + 1, MF_BYCOMMAND |
                    (has_menu ? MF_ENABLED : MF_GRAYED));
 
     if (!has_menu)

@@ -24,7 +24,7 @@
 #include "common/tags.h"
 #include "demux/demux.h"
 #include "misc/charset_conv.h"
-#include "mpv_talloc.h"
+#include "domi_vid_talloc.h"
 #include "network.h"
 #include "options/m_config.h"
 #include "options/m_option.h"

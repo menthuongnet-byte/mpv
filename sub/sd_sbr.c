@@ -21,7 +21,7 @@
 #include <subrandr/subrandr.h>
 #include <subrandr/logging.h>
 
-#include "mpv_talloc.h"
+#include "domi_vid_talloc.h"
 
 #include "options/m_config.h"
 #include "options/options.h"

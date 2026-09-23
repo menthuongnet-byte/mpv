@@ -290,7 +290,7 @@ struct priv {
     uint32_t refresh_rate;
 
 #if HAVE_DRM
-    struct mpv_opengl_drm_params_v2 drm_params;
+    struct domi_vid_opengl_drm_params_v2 drm_params;
 #endif
 };
 

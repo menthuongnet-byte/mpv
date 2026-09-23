@@ -14,7 +14,7 @@
 #include "stats.h"
 
 struct stats_base {
-    struct mpv_global *global;
+    struct domi_vid_global *global;
 
     atomic_bool active;
 
@@ -77,7 +77,7 @@ static void stats_destroy(void *p)
     mp_mutex_destroy(&stats->lock);
 }
 
-void stats_global_init(struct mpv_global *global)
+void stats_global_init(struct domi_vid_global *global)
 {
     mp_assert(!global->stats);
     struct stats_base *stats = talloc_zero(global, struct stats_base);
@@ -88,10 +88,10 @@ void stats_global_init(struct mpv_global *global)
     stats->global = global;
 }
 
-static void add_stat(struct mpv_node *list, struct stat_entry *e,
+static void add_stat(struct domi_vid_node *list, struct stat_entry *e,
                      const char *suffix, double num_val, char *text)
 {
-    struct mpv_node *ne = node_array_add(list, MPV_FORMAT_NODE_MAP);
+    struct domi_vid_node *ne = node_array_add(list, domi_vid_FORMAT_NODE_MAP);
 
     node_map_add_string(ne, "name", suffix ?
         mp_tprintf(80, "%s/%s", e->full_name, suffix) : e->full_name);
@@ -107,7 +107,7 @@ static int cmp_entry(const void *p1, const void *p2)
     return strcmp((*e1)->full_name, (*e2)->full_name);
 }
 
-void stats_global_query(struct mpv_global *global, struct mpv_node *out)
+void stats_global_query(struct domi_vid_global *global, struct domi_vid_node *out)
 {
     struct stats_base *stats = global->stats;
     mp_assert(stats);
@@ -130,7 +130,7 @@ void stats_global_query(struct mpv_global *global, struct mpv_node *out)
         }
     }
 
-    node_init(out, MPV_FORMAT_NODE_ARRAY, NULL);
+    node_init(out, domi_vid_FORMAT_NODE_ARRAY, NULL);
 
 #define FMT_T(e, t) ((t) > 0 ? mp_tprintf(80, "%.3f ms (%.2f%%)", (e), ((e) / (t)) * 100) \
                              : mp_tprintf(80, "%.3f ms", (e)))
@@ -139,7 +139,7 @@ void stats_global_query(struct mpv_global *global, struct mpv_node *out)
     double t_ms = 0;
     if (stats->last_time) {
         t_ms = MP_TIME_NS_TO_MS(now - stats->last_time);
-        struct mpv_node *ne = node_array_add(out, MPV_FORMAT_NODE_MAP);
+        struct domi_vid_node *ne = node_array_add(out, domi_vid_FORMAT_NODE_MAP);
         node_map_add_string(ne, "name", "poll-time");
         node_map_add_double(ne, "value", t_ms);
         node_map_add_string(ne, "text", FMT_T(t_ms, 0));
@@ -219,7 +219,7 @@ static void stats_ctx_destroy(void *p)
     mp_mutex_unlock(&ctx->base->lock);
 }
 
-struct stats_ctx *stats_ctx_create(void *ta_parent, struct mpv_global *global,
+struct stats_ctx *stats_ctx_create(void *ta_parent, struct domi_vid_global *global,
                                    const char *prefix)
 {
     struct stats_base *base = global->stats;

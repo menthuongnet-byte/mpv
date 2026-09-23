@@ -19,7 +19,7 @@
 #include <assert.h>
 #include <limits.h>
 
-#include "mpv_talloc.h"
+#include "domi_vid_talloc.h"
 
 #include "common/common.h"
 #include "img_convert.h"

@@ -21,12 +21,12 @@
 #define MAX_JSON_DEPTH 50
 
 struct bstr;
-struct mpv_node;
+struct domi_vid_node;
 
-int json_parse(void *ta_parent, struct mpv_node *dst, char **src, int max_depth);
-int json_append(struct bstr *b, const struct mpv_node *src, int indent);
+int json_parse(void *ta_parent, struct domi_vid_node *dst, char **src, int max_depth);
+int json_append(struct bstr *b, const struct domi_vid_node *src, int indent);
 void json_skip_whitespace(char **src);
-int json_write(char **s, struct mpv_node *src);
-int json_write_pretty(char **s, struct mpv_node *src);
+int json_write(char **s, struct domi_vid_node *src);
+int json_write_pretty(char **s, struct domi_vid_node *src);
 
 #endif

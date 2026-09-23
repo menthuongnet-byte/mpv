@@ -67,7 +67,7 @@ int image_writer_format_from_ext(bstr ext);
  *       can be used to store snapshots of anamorphic video.
  */
 bool write_image(struct mp_image *image, const struct image_writer_opts *opts,
-                const char *filename, struct mpv_global *global,
+                const char *filename, struct domi_vid_global *global,
                  struct mp_log *log, bool overwrite);
 
 // Debugging helper.

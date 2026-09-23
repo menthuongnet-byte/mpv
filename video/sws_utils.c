@@ -210,7 +210,7 @@ struct mp_sws_context *mp_sws_alloc(void *talloc_ctx)
 // Enable auto-update of parameters from command line. Don't try to set custom
 // options (other than possibly .src/.dst), because they might be overwritten
 // if the user changes any options.
-void mp_sws_enable_cmdline_opts(struct mp_sws_context *ctx, struct mpv_global *g)
+void mp_sws_enable_cmdline_opts(struct mp_sws_context *ctx, struct domi_vid_global *g)
 {
     // Should only ever be NULL for tests.
     if (!g)

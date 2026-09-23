@@ -22,7 +22,7 @@
 #include "video/out/drm_common.h"
 
 extern const struct m_sub_options drm_conf;
-static struct AVBufferRef *drm_create_standalone(struct mpv_global *global,
+static struct AVBufferRef *drm_create_standalone(struct domi_vid_global *global,
         struct mp_log *log, struct hwcontext_create_dev_params *params)
 {
     void *tmp = talloc_new(NULL);

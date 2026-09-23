@@ -198,7 +198,7 @@ void scaler_conf_merge(struct scaler_config *dst, const struct scaler_config *sr
                        enum scaler_unit unit);
 
 struct gl_video *gl_video_init(struct ra *ra, struct mp_log *log,
-                               struct mpv_global *g);
+                               struct domi_vid_global *g);
 void gl_video_uninit(struct gl_video *p);
 void gl_video_set_osd_source(struct gl_video *p, struct osd_state *osd);
 bool gl_video_check_format(struct gl_video *p, int mp_format);

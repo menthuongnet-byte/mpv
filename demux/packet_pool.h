@@ -19,7 +19,7 @@
 
 struct demux_packet_pool;
 struct demux_packet;
-struct mpv_global;
+struct domi_vid_global;
 
 /**
  * Initializes the demux packet pool.
@@ -29,7 +29,7 @@ struct mpv_global;
  *
  * @param global Pointer to the global context.
  */
-void demux_packet_pool_init(struct mpv_global *global);
+void demux_packet_pool_init(struct domi_vid_global *global);
 
 /**
  * Returns the demux packet pool context for client use.
@@ -37,7 +37,7 @@ void demux_packet_pool_init(struct mpv_global *global);
  * @param global Pointer to the global context.
  * @return Pointer to the demux packet context.
  */
-struct demux_packet_pool *demux_packet_pool_get(struct mpv_global *global);
+struct demux_packet_pool *demux_packet_pool_get(struct domi_vid_global *global);
 
 /**
  * Clears the demux packet pool.

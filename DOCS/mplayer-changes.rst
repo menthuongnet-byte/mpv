@@ -235,7 +235,7 @@ Command Line Switches
     ``-fsmode-dontuse``         (removed)
     ``-fstype``                 ``--x11-netwm`` (changed semantics)
     ``-hardframedrop``          ``--framedrop=hard``
-    ``-identify``               (removed; use TOOLS/mpv_identify.sh)
+    ``-identify``               (removed; use TOOLS/domi_vid_identify.sh)
     ``-idx``                    ``--index``
     ``-lavdopts ...``           ``--vd-lavc-...``
     ``-lavfdopts``              ``--demuxer-lavf-...``
@@ -391,7 +391,7 @@ Slave mode
   made slave mode incompatible to most applications, it was removed as useless
   cruft. The client API (see below) is provided instead.
 
-  ``--identify`` was replaced by the ``TOOLS/mpv_identify.sh`` wrapper script.
+  ``--identify`` was replaced by the ``TOOLS/domi_vid_identify.sh`` wrapper script.
 
 * For some time (until including release 0.4.x), mpv supported a
   ``--slave-broken`` option. The following options are equivalent:

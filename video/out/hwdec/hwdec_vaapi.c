@@ -62,7 +62,7 @@ static VADisplay *create_wayland_va_display(struct ra *ra)
 
 static VADisplay *create_drm_va_display(struct ra *ra)
 {
-    mpv_opengl_drm_params_v2 *params = ra_get_native_resource(ra, "drm_params_v2");
+    domi_vid_opengl_drm_params_v2 *params = ra_get_native_resource(ra, "drm_params_v2");
     if (!params || params->render_fd == -1)
         return NULL;
 

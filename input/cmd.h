@@ -28,7 +28,7 @@
 
 struct mp_log;
 struct mp_cmd;
-struct mpv_node;
+struct domi_vid_node;
 
 struct mp_cmd_def {
     const char *name;   // user-visible name (as used in input.conf)
@@ -146,7 +146,7 @@ struct mp_cmd *mp_input_parse_cmd_str(struct mp_log *log, bstr str,
 // i.e. a ";" argument does not start a new command.
 struct mp_cmd *mp_input_parse_cmd_strv(struct mp_log *log, const char **argv);
 
-struct mp_cmd *mp_input_parse_cmd_node(struct mp_log *log, struct mpv_node *node);
+struct mp_cmd *mp_input_parse_cmd_node(struct mp_log *log, struct domi_vid_node *node);
 
 // After getting a command from mp_input_get_cmd you need to free it using this
 // function

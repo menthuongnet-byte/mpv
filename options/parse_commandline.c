@@ -119,7 +119,7 @@ static void process_non_option(struct playlist *files, const char *arg)
 
 // returns M_OPT_... error code
 int m_config_parse_mp_command_line(m_config_t *config, struct playlist *files,
-                                   struct mpv_global *global, char **argv)
+                                   struct domi_vid_global *global, char **argv)
 {
     int ret = M_OPT_UNKNOWN;
     int mode = 0;
@@ -239,7 +239,7 @@ err_out:
  * command line parsing), and --really-quiet suppresses messages printed
  * during normal options parsing.
  */
-void m_config_preparse_command_line(m_config_t *config, struct mpv_global *global,
+void m_config_preparse_command_line(m_config_t *config, struct domi_vid_global *global,
                                     int *verbose, char **argv)
 {
     struct parse_state p = {config, argv, mp_null_log};

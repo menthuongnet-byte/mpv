@@ -277,7 +277,7 @@ typedef struct demuxer {
     struct mp_tags *metadata;
 
     void *priv;   // demuxer-specific internal data
-    struct mpv_global *global;
+    struct domi_vid_global *global;
     struct mp_log *log, *glog;
     struct demux_packet_pool *packet_pool;
     struct demuxer_params *params;
@@ -322,7 +322,7 @@ struct mp_cancel;
 struct demuxer *demux_open_url(const char *url,
                                struct demuxer_params *params,
                                struct mp_cancel *cancel,
-                               struct mpv_global *global);
+                               struct domi_vid_global *global);
 
 void demux_start_thread(struct demuxer *demuxer);
 void demux_stop_thread(struct demuxer *demuxer);

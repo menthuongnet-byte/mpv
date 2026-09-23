@@ -21,7 +21,7 @@
 #include "options/m_option.h"
 
 struct input_ctx;
-struct mpv_handle;
+struct domi_vid_handle;
 
 enum {
     FRAME_VISIBLE = 0,
@@ -105,9 +105,9 @@ struct macos_opts {
 void cocoa_init_media_keys(void);
 void cocoa_uninit_media_keys(void);
 void cocoa_set_input_context(struct input_ctx *input_context);
-void cocoa_set_mpv_handle(struct mpv_handle *ctx);
+void cocoa_set_domi_vid_handle(struct domi_vid_handle *ctx);
 void cocoa_init_cocoa_cb(void);
-// multithreaded wrapper for mpv_main
+// multithreaded wrapper for domi_vid_main
 int cocoa_main(int argc, char *argv[]);
 
 extern const struct m_sub_options macos_conf;

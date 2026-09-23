@@ -263,7 +263,7 @@ class MenuBar: NSObject, EventSubscriber {
         NSApp.mainMenu = mainMenu
         NSApp.servicesMenu = servicesMenu
 
-        event?.subscribe(self, event: .init(name: "path", format: MPV_FORMAT_STRING))
+        event?.subscribe(self, event: .init(name: "path", format: domi_vid_FORMAT_STRING))
     }
 
     func createMenu(parentMenu: NSMenu, configs: [Config]) {
@@ -301,8 +301,8 @@ class MenuBar: NSObject, EventSubscriber {
         NSApp.orderFrontStandardAboutPanel(options: [
             .applicationName: "mpv",
             .applicationIcon: appIcon,
-            .applicationVersion: String(cString: swift_mpv_version),
-            .init(rawValue: "Copyright"): String(cString: swift_mpv_copyright)
+            .applicationVersion: String(cString: swift_domi_vid_version),
+            .init(rawValue: "Copyright"): String(cString: swift_domi_vid_copyright)
         ])
     }
 

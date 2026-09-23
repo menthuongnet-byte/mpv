@@ -5,7 +5,7 @@
 #include <libavutil/buffer.h>
 
 #include "misc/dispatch.h"
-#include "mpv_talloc.h"
+#include "domi_vid_talloc.h"
 #include "osdep/threads.h"
 #include "video/mp_image.h"
 

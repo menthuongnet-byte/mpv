@@ -23,7 +23,7 @@
 struct MPContext;
 struct mp_image;
 struct mp_log;
-struct mpv_global;
+struct domi_vid_global;
 
 // One time initialization at program start.
 void screenshot_init(struct MPContext *mpctx);
@@ -36,7 +36,7 @@ void handle_each_frame_screenshot(struct MPContext *mpctx);
  * If global!=NULL, use command line scaler options etc.
  */
 struct mp_image *convert_image(struct mp_image *image, int destfmt,
-                               struct mpv_global *global, struct mp_log *log);
+                               struct domi_vid_global *global, struct mp_log *log);
 
 // Handlers for the user-facing commands.
 void cmd_screenshot(void *p);

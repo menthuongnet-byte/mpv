@@ -93,7 +93,7 @@ static void cache_destroy(void *p)
 // Create a cache. This also initializes the cache file from the options. The
 // log parameter must stay valid until demux_cache is destroyed.
 // Free with talloc_free().
-struct demux_cache *demux_cache_create(struct mpv_global *global,
+struct demux_cache *demux_cache_create(struct domi_vid_global *global,
                                        struct mp_log *log)
 {
     struct demux_cache *cache = talloc_zero(NULL, struct demux_cache);

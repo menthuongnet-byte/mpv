@@ -23,7 +23,7 @@
 
 #include <libavutil/avutil.h>
 
-#include "mpv_talloc.h"
+#include "domi_vid_talloc.h"
 
 #include "misc/thread_pool.h"
 #include "misc/thread_tools.h"
@@ -1296,9 +1296,9 @@ static MP_THREAD_VOID open_demux_thread(void *ctx)
         MP_VERBOSE(mpctx, "Opening failed or was aborted: %s\n", mpctx->open_url);
 
         if (p.demuxer_failed) {
-            mpctx->open_res_error = MPV_ERROR_UNKNOWN_FORMAT;
+            mpctx->open_res_error = domi_vid_ERROR_UNKNOWN_FORMAT;
         } else {
-            mpctx->open_res_error = MPV_ERROR_LOADING_FAILED;
+            mpctx->open_res_error = domi_vid_ERROR_LOADING_FAILED;
         }
     }
 
@@ -1720,28 +1720,28 @@ static void append_to_watch_history(struct MPContext *mpctx)
 
     char *title = (char *)mp_find_non_filename_media_title(mpctx);
 
-    mpv_node_list *list = talloc_zero(ctx, mpv_node_list);
-    mpv_node node = {
-        .format = MPV_FORMAT_NODE_MAP,
+    domi_vid_node_list *list = talloc_zero(ctx, domi_vid_node_list);
+    domi_vid_node node = {
+        .format = domi_vid_FORMAT_NODE_MAP,
         .u.list = list,
     };
     list->num = title ? 3 : 2;
     list->keys = talloc_array(ctx, char*, list->num);
-    list->values = talloc_array(ctx, mpv_node, list->num);
+    list->values = talloc_array(ctx, domi_vid_node, list->num);
     list->keys[0] = "time";
-    list->values[0] = (struct mpv_node) {
-        .format = MPV_FORMAT_INT64,
+    list->values[0] = (struct domi_vid_node) {
+        .format = domi_vid_FORMAT_INT64,
         .u.int64 = time(NULL),
     };
     list->keys[1] = "path";
-    list->values[1] = (struct mpv_node) {
-        .format = MPV_FORMAT_STRING,
+    list->values[1] = (struct domi_vid_node) {
+        .format = domi_vid_FORMAT_STRING,
         .u.string = mpctx->filename,
     };
     if (title) {
         list->keys[2] = "title";
-        list->values[2] = (struct mpv_node) {
-            .format = MPV_FORMAT_STRING,
+        list->values[2] = (struct domi_vid_node) {
+            .format = domi_vid_FORMAT_STRING,
             .u.string = title,
         };
     }
@@ -1796,18 +1796,18 @@ static void play_current_file(struct MPContext *mpctx)
     if (mpctx->stop_play || !mpctx->playlist->current)
         return;
 
-    mpv_event_start_file start_event = {
+    domi_vid_event_start_file start_event = {
         .playlist_entry_id = mpctx->playlist->current->id,
     };
-    mpv_event_end_file end_event = {
+    domi_vid_event_end_file end_event = {
         .playlist_entry_id = start_event.playlist_entry_id,
     };
 
-    mp_notify(mpctx, MPV_EVENT_START_FILE, &start_event);
+    mp_notify(mpctx, domi_vid_EVENT_START_FILE, &start_event);
 
     mp_cancel_reset(mpctx->playback_abort);
 
-    mpctx->error_playing = MPV_ERROR_LOADING_FAILED;
+    mpctx->error_playing = domi_vid_ERROR_LOADING_FAILED;
     mpctx->filename = NULL;
     mpctx->shown_aframes = 0;
     mpctx->shown_vframes = 0;
@@ -1897,7 +1897,7 @@ static void play_current_file(struct MPContext *mpctx)
         if (strcmp(mpctx->stream_open_filename, mpctx->filename) != 0 &&
             !mpctx->stop_play)
         {
-            mpctx->error_playing = MPV_ERROR_LOADING_FAILED;
+            mpctx->error_playing = domi_vid_ERROR_LOADING_FAILED;
             open_demux_reentrant(mpctx);
         }
     }
@@ -2019,7 +2019,7 @@ static void play_current_file(struct MPContext *mpctx)
 
     if (!mpctx->vo_chain && !mpctx->ao_chain && opts->stream_auto_sel) {
         MP_FATAL(mpctx, "No video or audio streams selected.\n");
-        mpctx->error_playing = MPV_ERROR_NOTHING_TO_PLAY;
+        mpctx->error_playing = domi_vid_ERROR_NOTHING_TO_PLAY;
         goto terminate_playback;
     }
 
@@ -2037,7 +2037,7 @@ static void play_current_file(struct MPContext *mpctx)
     mpctx->playing->playlist_prev_attempt = false;
     mpctx->playlist->playlist_completed = false;
     mpctx->playlist->playlist_started = true;
-    mp_notify(mpctx, MPV_EVENT_FILE_LOADED, NULL);
+    mp_notify(mpctx, domi_vid_EVENT_FILE_LOADED, NULL);
     update_screensaver_state(mpctx);
     clear_playlist_paths(mpctx);
 
@@ -2141,7 +2141,7 @@ terminate_playback:
         mpctx->stop_play = PT_ERROR;
 
     if (mpctx->stop_play == PT_ERROR && !mpctx->error_playing)
-        mpctx->error_playing = MPV_ERROR_GENERIC;
+        mpctx->error_playing = domi_vid_ERROR_GENERIC;
 
     bool nothing_played = !mpctx->shown_aframes && !mpctx->shown_vframes &&
                           mpctx->error_playing <= 0;
@@ -2151,14 +2151,14 @@ terminate_playback:
     case AT_END_OF_FILE:
     {
         if (mpctx->error_playing == 0 && nothing_played)
-            mpctx->error_playing = MPV_ERROR_NOTHING_TO_PLAY;
+            mpctx->error_playing = domi_vid_ERROR_NOTHING_TO_PLAY;
         if (mpctx->error_playing < 0) {
             end_event.error = mpctx->error_playing;
-            end_event.reason = MPV_END_FILE_REASON_ERROR;
+            end_event.reason = domi_vid_END_FILE_REASON_ERROR;
         } else if (mpctx->error_playing == 2) {
-            end_event.reason = MPV_END_FILE_REASON_REDIRECT;
+            end_event.reason = domi_vid_END_FILE_REASON_REDIRECT;
         } else {
-            end_event.reason = MPV_END_FILE_REASON_EOF;
+            end_event.reason = domi_vid_END_FILE_REASON_EOF;
         }
         if (mpctx->playing) {
             mpctx->playing->init_failed = nothing_played;
@@ -2171,14 +2171,14 @@ terminate_playback:
     // Note that error_playing is meaningless in these cases.
     case PT_NEXT_ENTRY:
     case PT_CURRENT_ENTRY:
-    case PT_STOP:           end_event.reason = MPV_END_FILE_REASON_STOP; break;
-    case PT_QUIT:           end_event.reason = MPV_END_FILE_REASON_QUIT; break;
+    case PT_STOP:           end_event.reason = domi_vid_END_FILE_REASON_STOP; break;
+    case PT_QUIT:           end_event.reason = domi_vid_END_FILE_REASON_QUIT; break;
     };
-    mp_notify(mpctx, MPV_EVENT_END_FILE, &end_event);
+    mp_notify(mpctx, domi_vid_EVENT_END_FILE, &end_event);
 
     MP_VERBOSE(mpctx, "finished playback, %s (reason %d)\n",
-               mpv_error_string(end_event.error), end_event.reason);
-    if (end_event.error == MPV_ERROR_UNKNOWN_FORMAT)
+               domi_vid_error_string(end_event.error), end_event.reason);
+    if (end_event.error == domi_vid_ERROR_UNKNOWN_FORMAT)
         MP_ERR(mpctx, "Failed to recognize file format.\n");
 
     if (mpctx->playing)

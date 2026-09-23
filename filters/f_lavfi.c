@@ -407,7 +407,7 @@ static bool init_pads(struct lavfi *c)
             goto error;
 
         char name[256];
-        snprintf(name, sizeof(name), "mpv_sink_%s", pad->name);
+        snprintf(name, sizeof(name), "domi_vid_sink_%s", pad->name);
 
         if (avfilter_graph_create_filter(&pad->buffer, dst_filter,
                                          name, NULL, NULL, c->graph) < 0)
@@ -502,7 +502,7 @@ static bool init_pads(struct lavfi *c)
         const AVFilter *filter = avfilter_get_by_name(filter_name);
         if (filter) {
             char name[256];
-            snprintf(name, sizeof(name), "mpv_src_%s", pad->name);
+            snprintf(name, sizeof(name), "domi_vid_src_%s", pad->name);
 
             pad->buffer = avfilter_graph_alloc_filter(c->graph, filter, name);
         }

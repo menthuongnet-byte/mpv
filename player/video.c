@@ -21,7 +21,7 @@
 #include <math.h>
 #include <assert.h>
 
-#include "mpv_talloc.h"
+#include "domi_vid_talloc.h"
 
 #include "common/msg.h"
 #include "options/options.h"
@@ -84,7 +84,7 @@ int reinit_video_filters(struct MPContext *mpctx)
 
     mp_force_video_refresh(mpctx);
 
-    mp_notify(mpctx, MPV_EVENT_VIDEO_RECONFIG, NULL);
+    mp_notify(mpctx, domi_vid_EVENT_VIDEO_RECONFIG, NULL);
 
     return 0;
 }
@@ -133,7 +133,7 @@ void uninit_video_out(struct MPContext *mpctx)
     if (mpctx->video_out) {
         vo_destroy(mpctx->video_out);
         mpctx->video_out = NULL;
-        mp_notify(mpctx, MPV_EVENT_VIDEO_RECONFIG, NULL);
+        mp_notify(mpctx, domi_vid_EVENT_VIDEO_RECONFIG, NULL);
     }
 }
 
@@ -169,7 +169,7 @@ void uninit_video_chain(struct MPContext *mpctx)
 
         mpctx->video_status = STATUS_EOF;
 
-        mp_notify(mpctx, MPV_EVENT_VIDEO_RECONFIG, NULL);
+        mp_notify(mpctx, domi_vid_EVENT_VIDEO_RECONFIG, NULL);
     }
 }
 
@@ -244,7 +244,7 @@ void reinit_video_chain_src(struct MPContext *mpctx, struct track *track)
         if (!mpctx->video_out) {
             MP_FATAL(mpctx, "Error opening/initializing "
                     "the selected video_out (--vo) device.\n");
-            mpctx->error_playing = MPV_ERROR_VO_INIT_FAILED;
+            mpctx->error_playing = domi_vid_ERROR_VO_INIT_FAILED;
             goto err_out;
         }
         mpctx->mouse_cursor_visible = true;
@@ -1053,7 +1053,7 @@ void write_video(struct MPContext *mpctx)
     struct vo *vo = vo_c->vo;
 
     if (vo_c->filter->reconfig_happened) {
-        mp_notify(mpctx, MPV_EVENT_VIDEO_RECONFIG, NULL);
+        mp_notify(mpctx, domi_vid_EVENT_VIDEO_RECONFIG, NULL);
         vo_c->filter->reconfig_happened = false;
     }
 
@@ -1206,10 +1206,10 @@ void write_video(struct MPContext *mpctx)
 
         int vo_r = vo_reconfig2(vo, mpctx->next_frames[0]);
         if (vo_r < 0) {
-            mpctx->error_playing = MPV_ERROR_VO_INIT_FAILED;
+            mpctx->error_playing = domi_vid_ERROR_VO_INIT_FAILED;
             goto error;
         }
-        mp_notify(mpctx, MPV_EVENT_VIDEO_RECONFIG, NULL);
+        mp_notify(mpctx, domi_vid_EVENT_VIDEO_RECONFIG, NULL);
     } else {
         // Update parameters that don't require reconfiguring the VO.
         mp_mutex_lock(&vo->params_mutex);
@@ -1315,7 +1315,7 @@ void write_video(struct MPContext *mpctx)
         }
     }
 
-    mp_notify(mpctx, MPV_EVENT_TICK, NULL);
+    mp_notify(mpctx, domi_vid_EVENT_TICK, NULL);
 
     // hr-seek past EOF -> returns last frame, but terminates playback. The
     // early EOF is needed to trigger the exit before the next seek is executed.

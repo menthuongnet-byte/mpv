@@ -70,7 +70,7 @@ struct ao_device_list {
 };
 
 struct ao;
-struct mpv_global;
+struct domi_vid_global;
 struct input_ctx;
 struct encode_lavc_context;
 
@@ -82,7 +82,7 @@ struct ao_opts {
     bool audio_set_media_role;
 };
 
-struct ao *ao_init_best(struct mpv_global *global,
+struct ao *ao_init_best(struct domi_vid_global *global,
                         int init_flags,
                         void (*wakeup_cb)(void *ctx), void *wakeup_ctx,
                         struct encode_lavc_context *encode_lavc_ctx,
@@ -108,13 +108,13 @@ void ao_request_reload(struct ao *ao);
 void ao_hotplug_event(struct ao *ao);
 
 struct ao_hotplug;
-struct ao_hotplug *ao_hotplug_create(struct mpv_global *global,
+struct ao_hotplug *ao_hotplug_create(struct domi_vid_global *global,
                                      void (*wakeup_cb)(void *ctx),
                                      void *wakeup_ctx);
 void ao_hotplug_destroy(struct ao_hotplug *hp);
 bool ao_hotplug_check_update(struct ao_hotplug *hp);
 struct ao_device_list *ao_hotplug_get_device_list(struct ao_hotplug *hp, struct ao *playback_ao);
 
-void ao_print_devices(struct mpv_global *global, struct mp_log *log, struct ao *playback_ao);
+void ao_print_devices(struct domi_vid_global *global, struct mp_log *log, struct ao *playback_ao);
 
 #endif /* MPLAYER_AUDIO_OUT_H */

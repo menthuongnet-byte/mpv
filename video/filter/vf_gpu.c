@@ -57,7 +57,7 @@ static int offscreen_ctx_api_help(struct mp_log *log, const struct m_option *opt
     return M_OPT_EXIT;
 }
 
-static struct offscreen_ctx *offscreen_ctx_create(struct mpv_global *global,
+static struct offscreen_ctx *offscreen_ctx_create(struct domi_vid_global *global,
                                                   struct mp_log *log,
                                                   const char *api)
 {

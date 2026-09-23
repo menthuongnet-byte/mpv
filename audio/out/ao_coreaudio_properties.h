@@ -16,8 +16,8 @@
  * License along with mpv.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef MPV_COREAUDIO_PROPERTIES_H
-#define MPV_COREAUDIO_PROPERTIES_H
+#ifndef domi_vid_COREAUDIO_PROPERTIES_H
+#define domi_vid_COREAUDIO_PROPERTIES_H
 
 #include <AudioToolbox/AudioToolbox.h>
 
@@ -58,4 +58,4 @@ Boolean ca_settable(AudioObjectID id, ca_scope scope, ca_sel selector,
 
 #define CA_SETTABLE(id, sel, data) ca_settable(id, CA_GLOBAL, sel, data)
 
-#endif /* MPV_COREAUDIO_PROPERTIES_H */
+#endif /* domi_vid_COREAUDIO_PROPERTIES_H */

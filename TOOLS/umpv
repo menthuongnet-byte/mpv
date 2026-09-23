@@ -50,7 +50,7 @@ def get_socket_path() -> str:
         return r"\\.\pipe\umpv"
 
     base_dir = (
-        os.getenv("UMPV_SOCKET_DIR") or
+        os.getenv("Udomi_vid_SOCKET_DIR") or
         os.getenv("XDG_RUNTIME_DIR") or
         os.getenv("HOME") or
         os.getenv("TMPDIR")
@@ -59,7 +59,7 @@ def get_socket_path() -> str:
     if not base_dir:
         raise Exception("Could not determine a base directory for the socket. "
                         "Ensure that one of the following environment variables is set: "
-                        "UMPV_SOCKET_DIR, XDG_RUNTIME_DIR, HOME or TMPDIR.")
+                        "Udomi_vid_SOCKET_DIR, XDG_RUNTIME_DIR, HOME or TMPDIR.")
 
     return os.path.join(base_dir, ".umpv")
 
@@ -75,14 +75,14 @@ def send_files_to_mpv(conn: socket.socket | BinaryIO, files: Iterable[str]) -> N
 
 def start_mpv(files: Iterable[str], socket_path: str) -> None:
     mpv = "mpv" if os.name != "nt" else "mpv.exe"
-    mpv_command = shlex.split(os.getenv("MPV", mpv))
-    mpv_command.extend([
+    domi_vid_command = shlex.split(os.getenv("MPV", mpv))
+    domi_vid_command.extend([
         "--profile=builtin-pseudo-gui",
         f"--input-ipc-server={socket_path}",
         "--",
     ])
-    mpv_command.extend(files)
-    subprocess.Popen(mpv_command, start_new_session=True)
+    domi_vid_command.extend(files)
+    subprocess.Popen(domi_vid_command, start_new_session=True)
 
 def main() -> None:
     files = (os.path.abspath(f) if not is_url(f) else f for f in sys.argv[1:])

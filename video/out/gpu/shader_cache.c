@@ -107,10 +107,10 @@ struct gl_shader_cache {
 
     // For the disk-cache.
     char *cache_dir;
-    struct mpv_global *global; // can be NULL
+    struct domi_vid_global *global; // can be NULL
 };
 
-struct gl_shader_cache *gl_sc_create(struct ra *ra, struct mpv_global *global,
+struct gl_shader_cache *gl_sc_create(struct ra *ra, struct domi_vid_global *global,
                                      struct mp_log *log)
 {
     struct gl_shader_cache *sc = talloc_ptrtype(NULL, sc);

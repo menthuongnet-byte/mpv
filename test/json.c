@@ -7,35 +7,35 @@
 struct entry {
     const char *src;
     const char *out_txt;
-    struct mpv_node out_data;
+    struct domi_vid_node out_data;
     bool expect_fail;
 };
 
 #define TEXT(...) #__VA_ARGS__
 
-#define VAL_LIST(...) (struct mpv_node[]){__VA_ARGS__}
+#define VAL_LIST(...) (struct domi_vid_node[]){__VA_ARGS__}
 
 #define L(...) __VA_ARGS__
 
-#define NODE_INT64(v) {.format = MPV_FORMAT_INT64,  .u = { .int64 = (v) }}
-#define NODE_STR(v)   {.format = MPV_FORMAT_STRING, .u = { .string = (v) }}
-#define NODE_BOOL(v)  {.format = MPV_FORMAT_FLAG,   .u = { .flag = (bool)(v) }}
-#define NODE_FLOAT(v) {.format = MPV_FORMAT_DOUBLE, .u = { .double_ = (v) }}
-#define NODE_NONE()   {.format = MPV_FORMAT_NONE }
-#define NODE_ARRAY(...) {.format = MPV_FORMAT_NODE_ARRAY, .u = { .list =    \
-    &(struct mpv_node_list) {                                               \
-        .num = sizeof(VAL_LIST(__VA_ARGS__)) / sizeof(struct mpv_node),     \
+#define NODE_INT64(v) {.format = domi_vid_FORMAT_INT64,  .u = { .int64 = (v) }}
+#define NODE_STR(v)   {.format = domi_vid_FORMAT_STRING, .u = { .string = (v) }}
+#define NODE_BOOL(v)  {.format = domi_vid_FORMAT_FLAG,   .u = { .flag = (bool)(v) }}
+#define NODE_FLOAT(v) {.format = domi_vid_FORMAT_DOUBLE, .u = { .double_ = (v) }}
+#define NODE_NONE()   {.format = domi_vid_FORMAT_NONE }
+#define NODE_ARRAY(...) {.format = domi_vid_FORMAT_NODE_ARRAY, .u = { .list =    \
+    &(struct domi_vid_node_list) {                                               \
+        .num = sizeof(VAL_LIST(__VA_ARGS__)) / sizeof(struct domi_vid_node),     \
         .values = VAL_LIST(__VA_ARGS__)}}}
-#define EMPTY_NODE_ARRAY {.format = MPV_FORMAT_NODE_ARRAY, .u = { .list =    \
-    &(struct mpv_node_list) {                                               \
+#define EMPTY_NODE_ARRAY {.format = domi_vid_FORMAT_NODE_ARRAY, .u = { .list =    \
+    &(struct domi_vid_node_list) {                                               \
         .num = 0}}}
-#define NODE_MAP(k, v) {.format = MPV_FORMAT_NODE_MAP, .u = { .list =       \
-    &(struct mpv_node_list) {                                               \
-        .num = sizeof(VAL_LIST(v)) / sizeof(struct mpv_node),               \
+#define NODE_MAP(k, v) {.format = domi_vid_FORMAT_NODE_MAP, .u = { .list =       \
+    &(struct domi_vid_node_list) {                                               \
+        .num = sizeof(VAL_LIST(v)) / sizeof(struct domi_vid_node),               \
         .values = VAL_LIST(v),                                              \
         .keys = (char**)(const char *[]){k}}}}
-#define EMPTY_NODE_MAP {.format = MPV_FORMAT_NODE_MAP, .u = { .list =       \
-    &(struct mpv_node_list) {                                               \
+#define EMPTY_NODE_MAP {.format = domi_vid_FORMAT_NODE_MAP, .u = { .list =       \
+    &(struct domi_vid_node_list) {                                               \
         .num = 0}}}
 
 static const struct entry entries[] = {
@@ -78,7 +78,7 @@ int main(void)
         void *tmp = talloc_new(NULL);
         char *s = talloc_strdup(tmp, e->src);
         json_skip_whitespace(&s);
-        struct mpv_node res;
+        struct domi_vid_node res;
         bool ok = json_parse(tmp, &res, &s, MAX_JSON_DEPTH) >= 0;
         assert_true(ok != e->expect_fail);
         if (!ok) {
@@ -88,7 +88,7 @@ int main(void)
         char *d = talloc_strdup(tmp, "");
         assert_true(json_write(&d, &res) >= 0);
         assert_string_equal(e->out_txt, d);
-        assert_true(equal_mpv_node(&e->out_data, &res));
+        assert_true(equal_domi_vid_node(&e->out_data, &res));
         talloc_free(tmp);
     }
     return 0;

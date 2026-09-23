@@ -28,7 +28,7 @@
 #include <unistd.h>
 #endif
 
-#include "libmpv_common.h"
+#include "libdomi_vid_common.h"
 
 #ifndef F_OK
 #define F_OK 0
@@ -519,7 +519,7 @@ int main(int argc, char *argv[])
         return 77;
     }
 
-    ctx = mpv_create();
+    ctx = domi_vid_create();
     if (!ctx)
         return 1;
 
@@ -533,7 +533,7 @@ int main(int argc, char *argv[])
     printf("================ SHUTDOWN ================\n");
 
     command_string("quit");
-    while (wrap_wait_event()->event_id != MPV_EVENT_SHUTDOWN) {}
+    while (wrap_wait_event()->event_id != domi_vid_EVENT_SHUTDOWN) {}
 
     return 0;
 }

@@ -2,5 +2,5 @@
 
 int main(int argc, char *argv[])
 {
-    return mpv_main(argc, argv);
+    return domi_vid_main(argc, argv);
 }

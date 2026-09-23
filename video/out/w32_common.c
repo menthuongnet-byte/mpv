@@ -50,9 +50,9 @@
 #include "misc/dispatch.h"
 #include "misc/node.h"
 #include "misc/rendezvous.h"
-#include "mpv_talloc.h"
+#include "domi_vid_talloc.h"
 
-#define MPV_WINDOW_CLASS_NAME L"mpv"
+#define domi_vid_WINDOW_CLASS_NAME L"mpv"
 
 EXTERN_C IMAGE_DOS_HEADER __ImageBase;
 #define HINST_THISCOMPONENT ((HINSTANCE)&__ImageBase)
@@ -188,7 +188,7 @@ struct vo_w32_state {
 
     HIMC imc;
 
-    mpv_node menu_data;
+    domi_vid_node menu_data;
 };
 
 static inline int get_system_metrics(struct vo_w32_state *w32, int metric)
@@ -1764,7 +1764,7 @@ static void register_window_class(void)
         .hIcon = LoadIconW(HINST_THISCOMPONENT, L"IDI_ICON1"),
         .hCursor = LoadCursor(NULL, IDC_ARROW),
         .hbrBackground = (HBRUSH) GetStockObject(BLACK_BRUSH),
-        .lpszClassName = MPV_WINDOW_CLASS_NAME,
+        .lpszClassName = domi_vid_WINDOW_CLASS_NAME,
     });
 }
 
@@ -2086,7 +2086,7 @@ static MP_THREAD_VOID gui_thread(void *ptr)
     if (w32->parent) {
         RECT r;
         GetClientRect(w32->parent, &r);
-        CreateWindowExW(WS_EX_NOPARENTNOTIFY, (LPWSTR)MAKEINTATOM(cls), MPV_WINDOW_CLASS_NAME,
+        CreateWindowExW(WS_EX_NOPARENTNOTIFY, (LPWSTR)MAKEINTATOM(cls), domi_vid_WINDOW_CLASS_NAME,
                         WS_CHILD | WS_VISIBLE, 0, 0, r.right, r.bottom,
                         w32->parent, 0, HINST_THISCOMPONENT, w32);
 
@@ -2094,7 +2094,7 @@ static MP_THREAD_VOID gui_thread(void *ptr)
         if (w32->window)
             install_parent_hook(w32);
     } else {
-        CreateWindowExW(0, (LPWSTR)MAKEINTATOM(cls), MPV_WINDOW_CLASS_NAME,
+        CreateWindowExW(0, (LPWSTR)MAKEINTATOM(cls), domi_vid_WINDOW_CLASS_NAME,
                         update_style(w32, 0), CW_USEDEFAULT, SW_HIDE, 100, 100,
                         0, 0, HINST_THISCOMPONENT, w32);
     }
@@ -2633,6 +2633,6 @@ void vo_w32_set_transparency(struct vo *vo, bool enable)
 BOOL WINAPI DllMain(HANDLE dll, DWORD reason, LPVOID reserved)
 {
     if (reason == DLL_PROCESS_DETACH && window_class)
-        UnregisterClassW(MPV_WINDOW_CLASS_NAME, HINST_THISCOMPONENT);
+        UnregisterClassW(domi_vid_WINDOW_CLASS_NAME, HINST_THISCOMPONENT);
     return TRUE;
 }

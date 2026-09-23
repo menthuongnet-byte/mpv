@@ -1,8 +1,8 @@
-project('mpv',
+project('domi_vid',
         'c',
         license: ['GPL2+', 'LGPL2.1+'],
         license_files: ['LICENSE.GPL', 'LICENSE.LGPL', 'Copyright'],
-        version: files('./MPV_VERSION'),
+        version: files('./domi_vid_VERSION'),
         meson_version: '>=1.3.0',
         default_options: [
             'backend_max_links=16',
@@ -240,7 +240,7 @@ sources = files(
     'video/out/gpu/error_diffusion.c',
     'video/out/gpu/hwdec.c',
     'video/out/gpu/lcms.c',
-    'video/out/gpu/libmpv_gpu.c',
+    'video/out/gpu/libdomi_vid_gpu.c',
     'video/out/gpu/osd.c',
     'video/out/gpu/ra.c',
     'video/out/gpu/shader_cache.c',
@@ -249,7 +249,7 @@ sources = files(
     'video/out/gpu/utils.c',
     'video/out/gpu/video.c',
     'video/out/gpu/video_shaders.c',
-    'video/out/libmpv_sw.c',
+    'video/out/libdomi_vid_sw.c',
     'video/out/vo.c',
     'video/out/vo_gpu.c',
     'video/out/vo_image.c',
@@ -606,7 +606,7 @@ tools_directory = join_paths(source_root, 'TOOLS')
 docutils_wrapper = find_program(join_paths(tools_directory, 'docutils-wrapper.py'))
 file2string = find_program(join_paths(tools_directory, 'file2string.py'))
 matroska = find_program(join_paths(tools_directory, 'matroska.py'))
-mpv_desktop = find_program(join_paths(tools_directory, 'gen-mpv-desktop.py'))
+domi_vid_desktop = find_program(join_paths(tools_directory, 'gen-mpv-desktop.py'))
 
 ebml_defs = custom_target('ebml_defs.inc',
     output: 'ebml_defs.inc',
@@ -1328,7 +1328,7 @@ if features['gl']
     sources += files('video/out/opengl/common.c',
                      'video/out/opengl/context.c',
                      'video/out/opengl/formats.c',
-                     'video/out/opengl/libmpv_gl.c',
+                     'video/out/opengl/libdomi_vid_gl.c',
                      'video/out/opengl/ra_gl.c',
                      'video/out/opengl/utils.c')
 elif not features['gl'] and get_option('gl').enabled()
@@ -1680,7 +1680,7 @@ macos_cocoa_cb = get_option('macos-cocoa-cb').require(
 )
 features += {'macos-cocoa-cb': macos_cocoa_cb.allowed()}
 if features['macos-cocoa-cb']
-    swift_sources += files('osdep/mac/libmpv_helper.swift',
+    swift_sources += files('osdep/mac/libdomi_vid_helper.swift',
                            'video/out/cocoa_cb_common.swift',
                            'video/out/mac/gl_layer.swift')
 endif
@@ -1800,7 +1800,7 @@ sys.stdout.write(features)
 '''
 feature_str = run_command(python, '-c', feature_sort, feature_keys, check: true).stdout()
 conf_data.set_quoted('FULLCONFIG', feature_str)
-conf_data.set_quoted('MPV_CONFDIR', join_paths(get_option('prefix'), get_option('sysconfdir'), 'mpv'))
+conf_data.set_quoted('domi_vid_CONFDIR', join_paths(get_option('prefix'), get_option('sysconfdir'), 'mpv'))
 conf_data.set_quoted('PLATFORM', host_machine.system())
 configure_file(output : 'config.h', configuration : conf_data)
 message('List of enabled features: ' + feature_str)
@@ -1828,13 +1828,13 @@ endif
 
 
 incdir_public = include_directories('./include')
-client_h_define = cc.get_define('MPV_CLIENT_API_VERSION', prefix: '#include "mpv/client.h"',
+client_h_define = cc.get_define('domi_vid_CLIENT_API_VERSION', prefix: '#include "mpv/client.h"',
                                 include_directories: incdir_public)
 major = client_h_define.split('|')[0].split('<<')[0].strip('() ')
 minor = client_h_define.split('|')[1].strip('() ')
 client_api_version = major + '.' + minor + '.0'
 
-libmpv = library('mpv', sources, dependencies: dependencies, gnu_symbol_visibility: 'hidden',
+libmpv = library('domi_vid', sources, dependencies: dependencies, gnu_symbol_visibility: 'hidden',
                  include_directories: incdir_public,
                  link_args: cc.get_supported_link_arguments(['-Wl,-Bsymbolic']),
                  version: client_api_version, install: get_option('libmpv'),
@@ -1851,8 +1851,8 @@ if get_option('libmpv')
     install_headers(headers, subdir: 'mpv')
 
     # Allow projects to build with libmpv by cloning into ./subprojects/mpv
-    libmpv_dep = declare_dependency(include_directories: incdir_public, link_with: libmpv)
-    meson.override_dependency('mpv', libmpv_dep)
+    libdomi_vid_dep = declare_dependency(include_directories: incdir_public, link_with: libmpv)
+    meson.override_dependency('mpv', libdomi_vid_dep)
 endif
 
 if get_option('cplayer')
@@ -1912,16 +1912,16 @@ if get_option('cplayer')
 
     if not win32 and not darwin
         if meson.can_run_host_binaries()
-            mpv_protocols = custom_target('mpv_protocols',
-                output: 'mpv_protocols',
+            domi_vid_protocols = custom_target('domi_vid_protocols',
+                output: 'domi_vid_protocols',
                 command: [mpv, '--no-config','--list-protocols'],
                 capture: true,
             )
-            mpv_desktop_path = join_paths(source_root, 'etc', 'mpv.desktop')
+            domi_vid_desktop_path = join_paths(source_root, 'etc', 'mpv.desktop')
             custom_target('mpv.desktop',
-                input: mpv_protocols,
+                input: domi_vid_protocols,
                 output: 'mpv.desktop',
-                command: [mpv_desktop, mpv_desktop_path, '@INPUT@', '@OUTPUT@'],
+                command: [domi_vid_desktop, domi_vid_desktop_path, '@INPUT@', '@OUTPUT@'],
                 install: true,
                 install_tag: 'xdg',
                 install_dir: join_paths(datadir, 'applications'),

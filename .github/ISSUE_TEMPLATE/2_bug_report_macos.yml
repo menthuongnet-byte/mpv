@@ -4,7 +4,7 @@ labels: ["os:mac"]
 type: Bug
 body:
 - type: textarea
-  id: mpv_information
+  id: domi_vid_information
   attributes:
       label: "mpv Information"
       placeholder: |

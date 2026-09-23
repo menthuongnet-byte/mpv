@@ -38,7 +38,7 @@ enum mp_als_status {
  * @param parent talloc parent
  * @return a newly allocated mp_linux_als_state
  */
-// TODO: replace the mpctx parameter with mpv_global when we no longer need the
+// TODO: replace the mpctx parameter with domi_vid_global when we no longer need the
 // vo for the als-voctrl implementation.
 struct mp_als *mp_als_create(void *parent, MPContext *mpctx);
 

@@ -54,7 +54,7 @@
 // Needed because the av_log callback does not provide a library-safe message
 // callback.
 static mp_static_mutex log_lock = MP_STATIC_MUTEX_INITIALIZER;
-static struct mpv_global *log_mpv_instance;
+static struct domi_vid_global *log_domi_vid_instance;
 static struct mp_log *log_root, *log_decaudio, *log_decvideo, *log_demuxer;
 static bool log_print_prefix = true;
 static bstr log_buffer;
@@ -123,7 +123,7 @@ static void mp_msg_av_log_callback(void *ptr, int level, const char *fmt,
     // Note: mp_log is thread-safe, but destruction of the log instances is not.
     mp_mutex_lock(&log_lock);
 
-    if (!log_mpv_instance) {
+    if (!log_domi_vid_instance) {
         mp_mutex_unlock(&log_lock);
         // Fallback to stderr
         vfprintf(stderr, fmt, vl);
@@ -150,11 +150,11 @@ done:
     mp_mutex_unlock(&log_lock);
 }
 
-void init_libav(struct mpv_global *global)
+void init_libav(struct domi_vid_global *global)
 {
     mp_mutex_lock(&log_lock);
-    if (!log_mpv_instance) {
-        log_mpv_instance = global;
+    if (!log_domi_vid_instance) {
+        log_domi_vid_instance = global;
         log_root = mp_log_new(NULL, global->log, "ffmpeg");
         log_decaudio = mp_log_new(log_root, log_root, "audio");
         log_decvideo = mp_log_new(log_root, log_root, "video");
@@ -171,12 +171,12 @@ void init_libav(struct mpv_global *global)
 #endif
 }
 
-void uninit_libav(struct mpv_global *global)
+void uninit_libav(struct domi_vid_global *global)
 {
     mp_mutex_lock(&log_lock);
-    if (log_mpv_instance == global) {
+    if (log_domi_vid_instance == global) {
         av_log_set_callback(av_log_default_callback);
-        log_mpv_instance = NULL;
+        log_domi_vid_instance = NULL;
         talloc_free(log_root);
     }
     mp_mutex_unlock(&log_lock);
